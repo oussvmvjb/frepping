@@ -1,0 +1,101 @@
+.home {
+  background: #0b0f0c;
+  color: #f5f5f5;
+  min-height: 100vh;
+}
+
+/* HERO */
+.hero {
+  padding: 80px 20px;
+  text-align: center;
+  background: linear-gradient(
+    to bottom,
+    #0f1f14,
+    #000
+  );
+}
+
+.logo {
+  font-family: 'Pricedown';
+  font-size: 80px;
+  color: #39ff14;
+  letter-spacing: 4px;
+}
+
+.subtitle {
+  margin-top: 10px;
+  color: #cfcfcf;
+  letter-spacing: 2px;
+}
+
+/* BUTTONS */
+.hero-actions {
+  margin-top: 30px;
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+}
+
+.btn {
+  padding: 14px 28px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  cursor: pointer;
+  border: none;
+}
+
+.primary {
+  background: #39ff14;
+  color: #000;
+}
+
+.outline {
+  background: transparent;
+  border: 2px solid #39ff14;
+  color: #39ff14;
+}
+
+/* SECTIONS */
+.section-title {
+  font-family: 'Pricedown', sans-serif;
+  font-size: 36px;
+  margin: 40px 0 20px;
+  text-align: center;
+}
+
+/* CATEGORIES */
+.category-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 15px;
+  padding: 0 20px;
+}
+
+.category-card {
+  background: #111;
+  border: 1px solid #39ff14;
+  padding: 30px;
+  text-align: center;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+/* PRODUCTS */
+.products {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 20px;
+  padding: 0 20px 40px;
+}
+
+.product-card {
+  background: #111;
+  padding: 15px;
+  border-radius: 6px;
+}
+
+.product-card .img {
+  height: 160px;
+  background: #222;
+  margin-bottom: 10px;
+}

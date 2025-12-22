@@ -1,0 +1,39 @@
+<div class="home">
+
+  <!-- HERO -->
+  <section class="hero">
+    <h1 class="logo">FREPPING</h1>
+    <p class="subtitle">TRY CLOTHES IN 3D — LOS SANTOS STYLE</p>
+
+    <div class="hero-actions">
+      <button class="btn primary">TRY ON</button>
+      <button class="btn outline">SHOP NOW</button>
+    </div>
+  </section>
+
+  <!-- CATEGORIES -->
+  <section class="categories">
+    <h2 class="section-title">CATEGORIES</h2>
+
+    <div class="category-list">
+      <div class="category-card" routerLink="shop">TOPS</div>
+      <div class="category-card">BOTTOMS</div>
+      <div class="category-card">SHOES</div>
+      <div class="category-card">ACCESSORIES</div>
+    </div>
+  </section>
+
+  <!-- FEATURED -->
+  <section class="featured">
+    <h2 class="section-title">FEATURED DROPS</h2>
+
+    <div class="products">
+      <div class="product-card" *ngFor="let p of [1,2,3,4]">
+        <div class="img"></div>
+        <h3>STREET HOODIE</h3>
+        <span>$49</span>
+      </div>
+    </div>
+  </section>
+
+</div>

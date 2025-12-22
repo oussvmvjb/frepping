@@ -1,0 +1,43 @@
+<div class="shop-container">
+  <!-- HEADER -->
+  <header class="shop-header">
+    <h1 class="shop-title">SHOP</h1>
+    <div class="search-bar">
+      <i class="fas fa-search"></i>
+      <input type="text" placeholder="SEARCH CLOTHING..." class="search-input">
+    </div>
+  </header>
+
+  <!-- FILTERS -->
+  <section class="filters">
+    <div class="filter-section">
+      <h3 class="filter-title">CATEGORIES</h3>
+      <div class="category-filters">
+        <button 
+          *ngFor="let category of categories"
+          [class.active]="selectedCategory === category"
+          class="category-filter-btn">
+          {{category}}
+        </button>
+      </div>
+    </div>
+
+    <div class="filter-section">
+      <h3 class="filter-title">SORT BY</h3>
+    </div>
+  </section>
+
+  <!-- PRODUCTS GRID -->
+  <section class="products-section">
+    <div *ngIf="isLoading" class="loading">
+      <div class="loading-spinner"></div>
+      <p>LOADING PRODUCTS...</p>
+    </div>
+
+  
+
+   
+  </section>
+</div>
+
+<app-bottom-nav></app-bottom-nav>
