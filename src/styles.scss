@@ -1,1 +1,167 @@
 /* You can add global styles to this file, and also import other style files */
+/* Import fonts */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&display=swap');
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
+
+/* GTA Style Font (similar to Pricedown) */
+@font-face {
+  font-family: 'Pricedown';
+  src: url('/assets/fonts/Pricedown.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --dark-green: #0f1f14;
+  --black: #0b0f0c;
+  --beige: #d4b483;
+  --orange: #ff9900;
+  --neon-green: #39ff14;
+  --white: #f5f5f5;
+  --gray: #333;
+  --light-gray: #777;
+  --dark-gray: #111;
+}
+
+body {
+  font-family: 'Poppins', sans-serif;
+  background-color: var(--black);
+  color: var(--white);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--dark-gray);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--neon-green);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #2ee000;
+}
+
+/* Global Button Styles */
+.btn {
+  padding: 12px 24px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  cursor: pointer;
+  border: none;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+  font-size: 16px;
+  text-transform: uppercase;
+  font-family: 'Oswald', sans-serif;
+}
+
+.btn-primary {
+  background: var(--neon-green);
+  color: var(--black);
+}
+
+.btn-primary:hover {
+  background: #2ee000;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(57, 255, 20, 0.4);
+}
+
+.btn-outline {
+  background: transparent;
+  border: 2px solid var(--neon-green);
+  color: var(--neon-green);
+}
+
+.btn-outline:hover {
+  background: rgba(57, 255, 20, 0.1);
+}
+
+.btn-orange {
+  background: var(--orange);
+  color: var(--black);
+}
+
+.btn-orange:hover {
+  background: #e68900;
+  transform: translateY(-2px);
+}
+
+.btn-dark {
+  background: var(--dark-gray);
+  color: var(--white);
+  border: 1px solid var(--gray);
+}
+
+.btn-dark:hover {
+  border-color: var(--neon-green);
+  color: var(--neon-green);
+}
+
+/* Section Titles */
+.section-title {
+  font-family: 'Street', 'Oswald', sans-serif;
+  font-size: 32px;
+  color: var(--neon-green);
+  text-align: center;
+  margin: 30px 0 20px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  text-shadow: 0 0 10px rgba(57, 255, 20, 0.3);
+}
+
+/* Loading Animation */
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  min-height: 300px;
+}
+
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 3px solid var(--gray);
+  border-top: 3px solid var(--neon-green);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Container Padding */
+.page-container {
+  padding-bottom: 80px; /* Space for bottom nav */
+}
+
+/* Utility Classes */
+.text-center { text-align: center; }
+.text-neon { color: var(--neon-green); }
+.text-orange { color: var(--orange); }
+.text-beige { color: var(--beige); }
+.bg-dark { background: var(--dark-gray); }
+.mt-20 { margin-top: 20px; }
+.mb-20 { margin-bottom: 20px; }
+.mb-30 { margin-bottom: 30px; }
+.p-20 { padding: 20px; }

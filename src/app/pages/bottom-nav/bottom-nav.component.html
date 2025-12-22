@@ -1,0 +1,14 @@
+<nav class="bottom-nav">
+  <div class="nav-list">
+    <div *ngFor="let item of navItems" 
+         class="nav-item" 
+         (click)="navigateTo(item.path)">
+      <div class="nav-link" [class.active]="item.active">
+        <i [class]="item.icon"></i>
+        <span class="nav-label">{{item.label}}</span>
+        <span *ngIf="item.label === 'CART' && cartItemCount > 0" 
+              class="cart-badge">{{cartItemCount}}</span>
+      </div>
+    </div>
+  </div>
+</nav>

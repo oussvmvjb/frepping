@@ -1,39 +1,73 @@
-<div class="home">
-
-  <!-- HERO -->
+<div class="home page-container">
+  <!-- HERO SECTION -->
   <section class="hero">
-    <h1 class="logo">FREPPING</h1>
-    <p class="subtitle">TRY CLOTHES IN 3D — LOS SANTOS STYLE</p>
-
-    <div class="hero-actions">
-      <button class="btn primary">TRY ON</button>
-      <button class="btn outline">SHOP NOW</button>
-    </div>
-  </section>
-
-  <!-- CATEGORIES -->
-  <section class="categories">
-    <h2 class="section-title">CATEGORIES</h2>
-
-    <div class="category-list">
-      <div class="category-card" routerLink="shop">TOPS</div>
-      <div class="category-card">BOTTOMS</div>
-      <div class="category-card">SHOES</div>
-      <div class="category-card">ACCESSORIES</div>
-    </div>
-  </section>
-
-  <!-- FEATURED -->
-  <section class="featured">
-    <h2 class="section-title">FEATURED DROPS</h2>
-
-    <div class="products">
-      <div class="product-card" *ngFor="let p of [1,2,3,4]">
-        <div class="img"></div>
-        <h3>STREET HOODIE</h3>
-        <span>$49</span>
+    <div class="hero-content">
+      <h1 class="logo">FREEPPING</h1>
+      <p class="subtitle">TRY CLOTHES IN 3D — LOS SANTOS STYLE</p>
+      <div class="hero-actions">
+        <button class="btn btn-primary" (click)="goToTryOn()">
+          <i class="fas fa-user mr-2"></i>TRY ON
+        </button>
+        <button class="btn btn-outline" (click)="goToShop()">
+          <i class="fas fa-store mr-2"></i>SHOP NOW
+        </button>
       </div>
     </div>
   </section>
 
+  <!-- CATEGORIES SECTION -->
+  <section class="categories">
+    <h2 class="section-title">CATEGORIES</h2>
+    <div class="categories-grid">
+      <div *ngFor="let category of categories" 
+           class="category-item" 
+           (click)="goToCategory(category.name)">
+        <div class="category-icon">
+          <i [class]="category.icon"></i>
+        </div>
+        <span class="category-name">{{category.name}}</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURED PRODUCTS -->
+  <section class="featured">
+    <h2 class="section-title">FEATURED DROPS</h2>
+    <div class="products-grid">
+      <div *ngFor="let product of featuredProducts" 
+           class="product-card" 
+           (click)="goToProduct(product.id)">
+        <div class="product-image">
+          <span class="badge" *ngIf="product.originalPrice">SAVE ${{product.originalPrice - product.price}}</span>
+        </div>
+        <div class="product-info">
+          <h3 class="product-name">{{product.name}}</h3>
+          <div class="price-rating">
+            <div class="price">
+              <span class="current-price">${{product.price}}</span>
+              <span class="original-price" *ngIf="product.originalPrice">${{product.originalPrice}}</span>
+            </div>
+            <div class="rating">
+              <i class="fas fa-star"></i>
+              <span>{{product.rating}}</span>
+              <span class="reviews">({{product.reviewCount}})</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BANNER -->
+  <section class="banner">
+    <div class="banner-content">
+      <h2>3D VIRTUAL DRESSING ROOM</h2>
+      <p>Experience clothes like never before. Rotate, zoom, and try outfits in real-time.</p>
+      <button class="btn btn-orange" (click)="goToTryOn()">
+        <i class="fas fa-vr-cardboard mr-2"></i>LAUNCH DRESSING ROOM
+      </button>
+    </div>
+  </section>
 </div>
+
+<app-bottom-nav></app-bottom-nav>

@@ -1,42 +1,184 @@
-<div class="shop-container">
+<div class="shop page-container">
   <!-- HEADER -->
   <header class="shop-header">
     <h1 class="shop-title">SHOP</h1>
-    <div class="search-bar">
-      <i class="fas fa-search"></i>
-      <input type="text" placeholder="SEARCH CLOTHING..." class="search-input">
+    <div class="search-container">
+      <div class="search-bar">
+        <i class="fas fa-search"></i>
+        <input 
+          type="text" 
+          [(ngModel)]="searchQuery"
+          (keyup.enter)="onSearch()"
+          placeholder="SEARCH STREETWEAR..." 
+          class="search-input">
+        <button class="search-btn" (click)="onSearch()">GO</button>
+      </div>
     </div>
   </header>
 
   <!-- FILTERS -->
   <section class="filters">
-    <div class="filter-section">
-      <h3 class="filter-title">CATEGORIES</h3>
-      <div class="category-filters">
-        <button 
-          *ngFor="let category of categories"
-          [class.active]="selectedCategory === category"
-          class="category-filter-btn">
-          {{category}}
+    <div class="filter-row">
+      <div class="filter-section">
+        <h3 class="filter-title">CATEGORIES</h3>
+        <div class="category-filters">
+          <button 
+            *ngFor="let category of categories"
+            [class.active]="selectedCategory === category.name"
+            (click)="onCategorySelect(category.name)"
+            class="category-filter-btn">
+            <i [class]="category.icon"></i>
+            {{category.name}}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="filter-row">
+      <div class="filter-section">
+        <h3 class="filter-title">SORT BY</h3>
+        <div class="sort-options">
+          <select [(ngModel)]="selectedSort" (change)="onSortChange()" class="sort-select">
+            <option *ngFor="let option of sortOptions" [value]="option">{{option}}</option>
+          </select>
+        </div>
+      </div>
+      
+      <div class="filter-section">
+        <button class="btn btn-dark" (click)="clearFilters()">
+          <i class="fas fa-redo mr-2"></i>CLEAR FILTERS
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRODUCTS -->
+  <section class="products-section">
+    <div class="products-header-modern">
+      <div class="modern-header-left">
+        <h2 class="modern-title">{{selectedCategory}}</h2>
+        <span class="modern-subtitle">LOS SANTOS STREETWEAR</span>
+      </div>
+      <div class="modern-header-right">
+        <span class="modern-count">{{filteredProducts.length}} ITEMS</span>
+        <div class="modern-view-controls">
+          <button class="modern-view-btn" [class.active]="gridSize === 'small'" 
+                  (click)="gridSize = 'small'">
+            <i class="fas fa-th"></i>
+          </button>
+          <button class="modern-view-btn" [class.active]="gridSize === 'medium'" 
+                  (click)="gridSize = 'medium'">
+            <i class="fas fa-th-large"></i>
+          </button>
+          <button class="modern-view-btn" [class.active]="gridSize === 'large'" 
+                  (click)="gridSize = 'large'">
+            <i class="fas fa-square"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="isLoading" class="loading-modern">
+      <div class="modern-spinner"></div>
+      <span class="modern-loading-text">LOADING DROPS...</span>
+    </div>
+
+    <div *ngIf="!isLoading && filteredProducts.length === 0" class="no-products-modern">
+      <div class="modern-empty-state">
+        <i class="fas fa-search"></i>
+        <h3>NO MATCHES FOUND</h3>
+        <p>Your search didn't return any results</p>
+        <button class="btn-modern" (click)="clearFilters()">
+          RESET FILTERS
         </button>
       </div>
     </div>
 
-    <div class="filter-section">
-      <h3 class="filter-title">SORT BY</h3>
+    <!-- MAIN PRODUCT GRID -->
+    <div *ngIf="!isLoading && filteredProducts.length > 0" 
+         class="products-modern-grid" 
+         [ngClass]="'grid-' + gridSize">
+      
+      <div *ngFor="let product of filteredProducts" 
+           class="modern-product" 
+           (click)="goToProduct(product.id)">
+        
+        <div class="modern-product-image">
+          <!-- Product Image -->
+          <div class="product-img-container">
+            <img *ngIf="product.images && product.images[0]" 
+                 [src]="product.images[0]" 
+                 [alt]="product.name"
+                 class="product-img">
+            <div *ngIf="!product.images || !product.images[0]" class="product-img-placeholder">
+              <i class="fas fa-tshirt"></i>
+              <span>FREPPING</span>
+            </div>
+          </div>
+          
+          <!-- Status Indicators -->
+          <div class="modern-indicators">
+            <span class="modern-badge sale" *ngIf="product.originalPrice">
+              SALE
+            </span>
+            <span class="modern-badge new" *ngIf="product.isFeatured">
+              FEATURED
+            </span>
+            <span class="modern-badge out" *ngIf="!product.inStock">
+              OUT
+            </span>
+          </div>
+          
+          <!-- Quick Actions -->
+          <div class="modern-quick-actions">
+            <button class="modern-quick-btn" (click)="$event.stopPropagation(); tryOnProduct(product)">
+              <i class="fas fa-user"></i>
+            </button>
+            <button class="modern-quick-btn" (click)="$event.stopPropagation(); toggleFavorite(product.id)">
+              <i class="fas fa-heart"></i>
+            </button>
+          </div>
+        </div>
+        
+        <div class="modern-product-content">
+          <!-- Product Info -->
+          <div class="modern-product-info">
+            <div class="modern-brand">{{product.brand}}</div>
+            <h3 class="modern-product-name">{{product.name}}</h3>
+            <div class="modern-category">{{product.category}}</div>
+            
+            <div class="modern-rating">
+              <div class="stars">
+                <i *ngFor="let star of [1,2,3,4,5]" 
+                   [class]="star <= product.rating ? 'fas fa-star' : 'far fa-star'"></i>
+              </div>
+              <span class="rating-count">({{product.reviewCount}})</span>
+            </div>
+          </div>
+          
+          <!-- Price & Actions -->
+          <div class="modern-product-footer">
+            <div class="modern-price-section">
+              <div class="modern-price">
+                <span class="modern-current">${{product.price}}</span>
+                <span class="modern-original" *ngIf="product.originalPrice">
+                  ${{product.originalPrice}}
+                </span>
+              </div>
+              <div class="modern-material">
+                {{product.material}}
+              </div>
+            </div>
+            
+            <button class="modern-add-btn" 
+                    (click)="$event.stopPropagation(); addToCart(product)"
+                    [disabled]="!product.inStock">
+              <i class="fas fa-plus"></i>
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
-  </section>
-
-  <!-- PRODUCTS GRID -->
-  <section class="products-section">
-    <div *ngIf="isLoading" class="loading">
-      <div class="loading-spinner"></div>
-      <p>LOADING PRODUCTS...</p>
-    </div>
-
-  
-
-   
   </section>
 </div>
 
