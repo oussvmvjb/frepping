@@ -29,7 +29,7 @@
 }
 
 .logo {
-  font-family: 'Street', sans-serif;
+  font-family: 'Pricedown', sans-serif;
   font-size: 72px;
   color: #39ff14;
   letter-spacing: 4px;
@@ -70,6 +70,7 @@
 }
 
 .category-item {
+  
   background: #111;
   border: 1px solid #333;
   border-radius: 8px;
@@ -78,7 +79,7 @@
   cursor: pointer;
   transition: all 0.3s ease;
 }
-
+featured
 .category-item:hover {
   border-color: #39ff14;
   transform: translateY(-5px);
@@ -216,9 +217,8 @@
 }
 
 .banner-content h2 {
-  font-family: 'Street', sans-serif;
   font-size: 32px;
-  color: #39ff14;
+  color: #e4f4e2;
   margin-bottom: 15px;
   letter-spacing: 2px;
 }

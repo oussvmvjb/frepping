@@ -12,7 +12,13 @@
   font-style: normal;
   font-display: swap;
 }
-
+@font-face {
+  font-family: 'bullpen3d';
+  src: url('/assets/fonts/bullpen3d.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
 * {
   margin: 0;
   padding: 0;

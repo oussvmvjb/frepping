@@ -12,8 +12,7 @@ export const MOCK_PRODUCTS: Product[] = [
     originalPrice: 85,
     category: 'TOPS',
     images: [
-      'https://images.unsplash.com/photo-1556821840-3a63f95609a7?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1556821840-3a63f95609a7?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
+      'assets/images/products/hoodie1.png'
     ],
     sizes: ['S', 'M', 'L', 'XL'],
     colors: ['Green', 'Black'],
@@ -32,8 +31,8 @@ export const MOCK_PRODUCTS: Product[] = [
     price: 89,
     originalPrice: 120,
     category: 'BOTTOMS',
-    images: [
-      'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
+  images: [
+      'assets/images/products/pants1.png'
     ],
     sizes: ['28', '30', '32', '34'],
     colors: ['Blue', 'Black'],
@@ -52,8 +51,8 @@ export const MOCK_PRODUCTS: Product[] = [
     price: 120,
     originalPrice: 150,
     category: 'SHOES',
-    images: [
-      'https://images.unsplash.com/photo-1549298916-b41d501d3772?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
+     images: [
+      'assets/images/products/hoody1.png'
     ],
     sizes: ['8', '9', '10', '11', '12'],
     colors: ['Black/Green', 'White/Orange'],

@@ -5,11 +5,7 @@
     <div class="search-container">
       <div class="search-bar">
         <i class="fas fa-search"></i>
-        <input 
-          type="text" 
-          [(ngModel)]="searchQuery"
-          (keyup.enter)="onSearch()"
-          placeholder="SEARCH STREETWEAR..." 
+        <input type="text" [(ngModel)]="searchQuery" (keyup.enter)="onSearch()" placeholder="SEARCH STREETWEAR..."
           class="search-input">
         <button class="search-btn" (click)="onSearch()">GO</button>
       </div>
@@ -22,11 +18,8 @@
       <div class="filter-section">
         <h3 class="filter-title">CATEGORIES</h3>
         <div class="category-filters">
-          <button 
-            *ngFor="let category of categories"
-            [class.active]="selectedCategory === category.name"
-            (click)="onCategorySelect(category.name)"
-            class="category-filter-btn">
+          <button *ngFor="let category of categories" [class.active]="selectedCategory === category.name"
+            (click)="onCategorySelect(category.name)" class="category-filter-btn">
             <i [class]="category.icon"></i>
             {{category.name}}
           </button>
@@ -43,7 +36,7 @@
           </select>
         </div>
       </div>
-      
+
       <div class="filter-section">
         <button class="btn btn-dark" (click)="clearFilters()">
           <i class="fas fa-redo mr-2"></i>CLEAR FILTERS
@@ -62,16 +55,13 @@
       <div class="modern-header-right">
         <span class="modern-count">{{filteredProducts.length}} ITEMS</span>
         <div class="modern-view-controls">
-          <button class="modern-view-btn" [class.active]="gridSize === 'small'" 
-                  (click)="gridSize = 'small'">
+          <button class="modern-view-btn" [class.active]="gridSize === 'small'" (click)="gridSize = 'small'">
             <i class="fas fa-th"></i>
           </button>
-          <button class="modern-view-btn" [class.active]="gridSize === 'medium'" 
-                  (click)="gridSize = 'medium'">
+          <button class="modern-view-btn" [class.active]="gridSize === 'medium'" (click)="gridSize = 'medium'">
             <i class="fas fa-th-large"></i>
           </button>
-          <button class="modern-view-btn" [class.active]="gridSize === 'large'" 
-                  (click)="gridSize = 'large'">
+          <button class="modern-view-btn" [class.active]="gridSize === 'large'" (click)="gridSize = 'large'">
             <i class="fas fa-square"></i>
           </button>
         </div>
@@ -95,27 +85,28 @@
     </div>
 
     <!-- MAIN PRODUCT GRID -->
-    <div *ngIf="!isLoading && filteredProducts.length > 0" 
-         class="products-modern-grid" 
-         [ngClass]="'grid-' + gridSize">
-      
-      <div *ngFor="let product of filteredProducts" 
-           class="modern-product" 
-           (click)="goToProduct(product.id)">
-        
+    <div *ngIf="!isLoading && filteredProducts.length > 0" class="products-modern-grid" [ngClass]="'grid-' + gridSize">
+
+      <div *ngFor="let product of filteredProducts" class="modern-product" (click)="goToProduct(product.id)">
+
         <div class="modern-product-image">
+          <!-- GTA Background Panels -->
+          <div class="gta-panels">
+            <div class="gta-panel panel-1"></div>
+            <div class="gta-panel panel-2"></div>
+            <div class="gta-panel panel-3"></div>
+          </div>
+
           <!-- Product Image -->
           <div class="product-img-container">
-            <img *ngIf="product.images && product.images[0]" 
-                 [src]="product.images[0]" 
-                 [alt]="product.name"
-                 class="product-img">
+            <img *ngIf="product.images && product.images[0]" [src]="product.images[0]" [alt]="product.name"
+              class="product-img">
             <div *ngIf="!product.images || !product.images[0]" class="product-img-placeholder">
               <i class="fas fa-tshirt"></i>
               <span>FREPPING</span>
             </div>
           </div>
-          
+
           <!-- Status Indicators -->
           <div class="modern-indicators">
             <span class="modern-badge sale" *ngIf="product.originalPrice">
@@ -128,7 +119,7 @@
               OUT
             </span>
           </div>
-          
+
           <!-- Quick Actions -->
           <div class="modern-quick-actions">
             <button class="modern-quick-btn" (click)="$event.stopPropagation(); tryOnProduct(product)">
@@ -139,23 +130,23 @@
             </button>
           </div>
         </div>
-        
+
         <div class="modern-product-content">
           <!-- Product Info -->
           <div class="modern-product-info">
             <div class="modern-brand">{{product.brand}}</div>
             <h3 class="modern-product-name">{{product.name}}</h3>
             <div class="modern-category">{{product.category}}</div>
-            
+
             <div class="modern-rating">
               <div class="stars">
-                <i *ngFor="let star of [1,2,3,4,5]" 
-                   [class]="star <= product.rating ? 'fas fa-star' : 'far fa-star'"></i>
+                <i *ngFor="let star of [1,2,3,4,5]"
+                  [class]="star <= product.rating ? 'fas fa-star' : 'far fa-star'"></i>
               </div>
               <span class="rating-count">({{product.reviewCount}})</span>
             </div>
           </div>
-          
+
           <!-- Price & Actions -->
           <div class="modern-product-footer">
             <div class="modern-price-section">
@@ -169,10 +160,9 @@
                 {{product.material}}
               </div>
             </div>
-            
-            <button class="modern-add-btn" 
-                    (click)="$event.stopPropagation(); addToCart(product)"
-                    [disabled]="!product.inStock">
+
+            <button class="modern-add-btn" (click)="$event.stopPropagation(); addToCart(product)"
+              [disabled]="!product.inStock">
               <i class="fas fa-plus"></i>
             </button>
           </div>
