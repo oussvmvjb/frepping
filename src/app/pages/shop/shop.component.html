@@ -99,8 +99,16 @@
 
           <!-- Product Image -->
           <div class="product-img-container">
-            <img *ngIf="product.images && product.images[0]" [src]="product.images[0]" [alt]="product.name"
-              class="product-img">
+            <!-- 3D Model Viewer for .obj files -->
+            <app-model-viewer *ngIf="product.images && product.images[0] && product.images[0].endsWith('.obj')"
+              [modelPath]="product.images[0]" class="product-3d-viewer">
+            </app-model-viewer>
+
+            <!-- Regular Image for other products -->
+            <img *ngIf="product.images && product.images[0] && !product.images[0].endsWith('.obj')"
+              [src]="product.images[0]" [alt]="product.name" class="product-img">
+
+            <!-- Placeholder -->
             <div *ngIf="!product.images || !product.images[0]" class="product-img-placeholder">
               <i class="fas fa-tshirt"></i>
               <span>FREPPING</span>

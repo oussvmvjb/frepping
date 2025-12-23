@@ -31,7 +31,7 @@ export const MOCK_PRODUCTS: Product[] = [
     price: 89,
     originalPrice: 120,
     category: 'BOTTOMS',
-  images: [
+    images: [
       'assets/images/products/pants1.png'
     ],
     sizes: ['28', '30', '32', '34'],
@@ -51,7 +51,7 @@ export const MOCK_PRODUCTS: Product[] = [
     price: 120,
     originalPrice: 150,
     category: 'SHOES',
-     images: [
+    images: [
       'assets/images/products/hoody1.png'
     ],
     sizes: ['8', '9', '10', '11', '12'],
@@ -64,6 +64,26 @@ export const MOCK_PRODUCTS: Product[] = [
     material: 'Leather/Synthetic',
     isFeatured: true
   },
+  {
+    id: '4',
+    name: 'GIRL\'S GRAPHIC TEE',
+    description: 'Stylish graphic t-shirt with modern design and comfortable fit.',
+    price: 45,
+    originalPrice: 60,
+    category: 'TOPS',
+    images: [
+      'assets/3dmodel/tshert_girl.obj'
+    ],
+    sizes: ['XS', 'S', 'M', 'L'],
+    colors: ['White', 'Pink', 'Black'],
+    brand: 'FREPPING',
+    rating: 4.6,
+    reviewCount: 28,
+    inStock: true,
+    tags: ['tshirt', 'graphic', 'casual', 'girls'],
+    material: '100% Cotton',
+    isFeatured: true
+  }
   // ... add more products with image URLs
 ];
 

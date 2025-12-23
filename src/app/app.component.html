@@ -1,45 +1,54 @@
-<!-- Add cursor elements at the top -->
-<div class="gta-cursor" id="gtaCursor"></div>
-<div class="gta-aim-crosshair" id="gtaAim"></div>
+<!-- Intro Component -->
+<app-intro *ngIf="showIntro" (introFinished)="showIntro = false"></app-intro>
 
-<!-- Add GTA-style UI overlays -->
-<div class="gta-ui-overlay">
-  <!-- Radar/minimap corner -->
-  <div class="gta-radar">
-    <div class="radar-center"></div>
-    <div class="radar-north">N</div>
-  </div>
-  
-  <!-- Health/Armor bars -->
-  <div class="gta-stats">
-    <div class="stat health">
-      <div class="stat-bar" [style.width.%]="health"></div>
-      <div class="stat-label">HEALTH</div>
-    </div>
-    <div class="stat armor">
-      <div class="stat-bar" [style.width.%]="armor"></div>
-      <div class="stat-label">ARMOR</div>
-    </div>
-  </div>
-  
-  <!-- Money display -->
-  <div class="gta-money">
-    <i class="fas fa-money-bill-wave"></i>
-    <span>${{money | number}}</span>
-  </div>
-  
-  <!-- Wanted level stars -->
-  <div class="gta-wanted" *ngIf="wantedLevel > 0">
-    <div class="wanted-stars">
-      <i *ngFor="let star of getWantedStars()" 
-         class="fas fa-star wanted-star"
-         [class.active]="star.active"></i>
-    </div>
-    <div class="wanted-label">WANTED</div>
-  </div>
-</div>
+<!-- Main App Content -->
+<ng-container *ngIf="!showIntro">
+  <!-- Add cursor elements at the top -->
+  <div class="gta-cursor" id="gtaCursor" [style.opacity]="isCursorActive ? '1' : '0'"></div>
+  <div class="gta-aim-crosshair" id="gtaAim" [style.opacity]="isCursorActive ? '1' : '0'"></div>
 
-<!-- Your existing app content -->
-<div class="app-container">
-  <router-outlet></router-outlet>
-</div>
+  <!-- Add GTA-style UI overlays -->
+  <div class="gta-ui-overlay">
+    <!-- Music Toggle -->
+    <button class="gta-music-toggle" (click)="toggleAmbience()">
+      <i class="fas" [class.fa-volume-up]="isAmbiencePlaying" [class.fa-volume-mute]="!isAmbiencePlaying"></i>
+    </button>
+
+    <!-- Radar/minimap corner -->
+    <div class="gta-radar">
+      <div class="radar-center"></div>
+      <div class="radar-north">N</div>
+    </div>
+
+    <!-- Health/Armor bars -->
+    <div class="gta-stats">
+      <div class="stat health">
+        <div class="stat-bar" [style.width.%]="health"></div>
+        <div class="stat-label">HEALTH</div>
+      </div>
+      <div class="stat armor">
+        <div class="stat-bar" [style.width.%]="armor"></div>
+        <div class="stat-label">ARMOR</div>
+      </div>
+    </div>
+
+    <!-- Money display -->
+    <div class="gta-money">
+      <i class="fas fa-money-bill-wave"></i>
+      <span>${{money | number}}</span>
+    </div>
+
+    <!-- Wanted level stars -->
+    <div class="gta-wanted" *ngIf="wantedLevel > 0">
+      <div class="wanted-stars">
+        <i *ngFor="let star of getWantedStars()" class="fas fa-star wanted-star" [class.active]="star.active"></i>
+      </div>
+      <div class="wanted-label">WANTED</div>
+    </div>
+  </div>
+
+  <!-- Your existing app content -->
+  <div class="app-container">
+    <router-outlet></router-outlet>
+  </div>
+</ng-container>

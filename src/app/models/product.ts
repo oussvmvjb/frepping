@@ -6,6 +6,7 @@ export interface Product {
   originalPrice?: number;
   category: string;
   images: string[];
+  model3d?: string; // Optional 3D model path
   sizes: string[];
   colors: string[];
   brand: string;

@@ -1,0 +1,82 @@
+<div class="product-details-page">
+    <div class="product-page-container" *ngIf="product">
+
+        <div class="details-header">
+            <div class="back-button" (click)="goBack()">
+                <i class="fas fa-arrow-left"></i> BACK
+            </div>
+        </div>
+
+        <div class="product-content">
+            <!-- Left: Product Images -->
+            <div class="product-gallery">
+                <div class="main-image-container">
+                    <div class="gta-bg-elements">
+                        <div class="bg-panel panel-1"></div>
+                        <div class="bg-panel panel-2"></div>
+                        <div class="bg-panel panel-3"></div>
+                    </div>
+                    <img [src]="product.images[0]" [alt]="product.name" class="main-image">
+                </div>
+            </div>
+
+            <!-- Right: Product Info -->
+            <div class="product-info-panel">
+                <span class="product-brand">{{product.brand}} // {{product.category}}</span>
+                <h1 class="product-title">{{product.name}}</h1>
+
+                <div class="product-meta">
+                    <div class="price-tag">
+                        <span class="currency">$</span>{{product.price}}
+                        <span class="original-price" *ngIf="product.originalPrice">${{product.originalPrice}}</span>
+                    </div>
+                    <div class="rating">
+                        <i class="fas fa-star" *ngFor="let star of [1,2,3,4,5]"
+                            [style.opacity]="star <= product.rating ? 1 : 0.3"></i>
+                        <span>({{product.reviewCount}} REVIEWS)</span>
+                    </div>
+                </div>
+
+                <p class="product-description">{{product.description}}</p>
+
+                <div class="options-container">
+                    <!-- Size Selector -->
+                    <div class="option-group" *ngIf="product.sizes?.length">
+                        <h3>SELECT SIZE</h3>
+                        <div class="option-chips">
+                            <div class="chip" *ngFor="let size of product.sizes"
+                                [class.selected]="selectedSize === size" (click)="selectSize(size)">
+                                {{size}}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Color Selector -->
+                    <div class="option-group" *ngIf="product.colors?.length">
+                        <h3>SELECT COLOR</h3>
+                        <div class="option-chips">
+                            <div class="chip" *ngFor="let color of product.colors"
+                                [class.selected]="selectedColor === color" (click)="selectColor(color)">
+                                {{color}}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="gta-btn primary-btn" (click)="addToCart()">
+                        <i class="fas fa-shopping-cart"></i> ADD TO CART
+                    </button>
+                    <button class="gta-btn secondary-btn" (click)="tryOn()">
+                        <i class="fas fa-camera"></i> TRY ON
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="loading-state" *ngIf="!product">
+        <div class="spinner"></div>
+        <p>LOADING PRODUCT DATA...</p>
+    </div>
+</div>

@@ -7,18 +7,30 @@ import { HomeComponent } from './pages/home/home.component';
 import { ShopComponent } from './pages/shop/shop.component';
 import { BottomNavComponent } from './pages/bottom-nav/bottom-nav.component';
 import { FormsModule } from '@angular/forms';
+import { IntroComponent } from './components/intro/intro.component';
+import { ProductDetailsComponent } from './pages/product-details/product-details.component';
+import { TryOnComponent } from './pages/try-on/try-on.component';
+import { CartComponent } from './pages/cart/cart.component';
+import { ProfileComponent } from './pages/profile/profile.component';
+import { ModelViewerComponent } from './components/model-viewer/model-viewer.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     HomeComponent,
     ShopComponent,
-    BottomNavComponent
+    BottomNavComponent,
+    IntroComponent,
+    ProductDetailsComponent,
+    TryOnComponent,
+    CartComponent,
+    ProfileComponent,
+    ModelViewerComponent
   ],
   imports: [
     BrowserModule,
     AppRoutingModule,
-     FormsModule
+    FormsModule
   ],
   providers: [],
   bootstrap: [AppComponent]
