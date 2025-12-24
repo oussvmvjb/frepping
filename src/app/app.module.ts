@@ -13,6 +13,7 @@ import { TryOnComponent } from './pages/try-on/try-on.component';
 import { CartComponent } from './pages/cart/cart.component';
 import { ProfileComponent } from './pages/profile/profile.component';
 import { ModelViewerComponent } from './components/model-viewer/model-viewer.component';
+import { TestViewerComponent } from './test-viewer/test-viewer.component';
 
 @NgModule({
   declarations: [
@@ -25,7 +26,8 @@ import { ModelViewerComponent } from './components/model-viewer/model-viewer.com
     TryOnComponent,
     CartComponent,
     ProfileComponent,
-    ModelViewerComponent
+    ModelViewerComponent,
+    TestViewerComponent
   ],
   imports: [
     BrowserModule,

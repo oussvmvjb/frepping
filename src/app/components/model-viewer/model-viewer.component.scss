@@ -1,12 +1,213 @@
+// model-viewer.component.scss
 .model-viewer-container {
     width: 100%;
     height: 100%;
     position: relative;
+    background: #000000;
     overflow: hidden;
+    border-radius: 8px;
+    min-height: 500px;
+    border: 2px solid #39ff14;
 }
 
 .model-canvas {
+    width: 100% !important;
+    height: 100% !important;
+    display: block;
+    background: #000000 !important;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+/* Loading Overlay */
+.loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 10;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.loading-spinner {
+    width: 60px;
+    height: 60px;
+    border: 4px solid rgba(57, 255, 20, 0.1);
+    border-top: 4px solid #39ff14;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.loading-text {
+    color: #39ff14;
+    font-size: 18px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-family: 'Courier New', monospace;
+    text-shadow: 0 0 10px rgba(57, 255, 20, 0.5);
+}
+
+/* Background Controls */
+.background-controls {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    z-index: 5;
+    background: rgba(0, 0, 0, 0.8);
+    border: 1px solid rgba(57, 255, 20, 0.3);
+    border-radius: 8px;
+    padding: 10px;
+    backdrop-filter: blur(10px);
+    
+    .background-label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 10px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        
+        i {
+            color: #39ff14;
+            font-size: 14px;
+        }
+        
+        span {
+            color: #fff;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+    }
+    
+    .background-options {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+        
+        .bg-option {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #aaa;
+            padding: 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.3s ease;
+            min-width: 70px;
+            
+            &.active {
+                background: rgba(57, 255, 20, 0.2);
+                border-color: #39ff14;
+                color: #39ff14;
+            }
+            
+            &:hover {
+                background: rgba(255, 255, 255, 0.2);
+                transform: translateY(-2px);
+            }
+            
+            i {
+                font-size: 16px;
+            }
+            
+            span {
+                font-size: 10px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                font-weight: bold;
+            }
+        }
+    }
+}
+
+/* Model Loaded Indicator */
+.model-loaded {
+    position: absolute;
+    bottom: 15px;
+    left: 15px;
+    z-index: 5;
+    background: rgba(0, 0, 0, 0.8);
+    padding: 8px 15px;
+    border-radius: 20px;
+    border: 1px solid #39ff14;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    backdrop-filter: blur(5px);
+    animation: pulse 2s infinite;
+    
+    i {
+        color: #39ff14;
+        font-size: 14px;
+    }
+    
+    span {
+        color: #39ff14;
+        font-size: 12px;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+    0%, 100% { 
+        box-shadow: 0 0 0 0 rgba(57, 255, 20, 0.4);
+    }
+    50% { 
+        box-shadow: 0 0 0 5px rgba(57, 255, 20, 0);
+    }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .background-controls {
+        top: 10px;
+        right: 10px;
+        
+        .background-options {
+            grid-template-columns: repeat(4, 1fr);
+            
+            .bg-option {
+                min-width: 50px;
+                padding: 6px;
+                
+                i {
+                    font-size: 14px;
+                }
+                
+                span {
+                    font-size: 9px;
+                }
+            }
+        }
+    }
+    
+    .model-loaded {
+        bottom: 10px;
+        left: 10px;
+        padding: 6px 12px;
+        
+        span {
+            font-size: 10px;
+        }
+    }
 }

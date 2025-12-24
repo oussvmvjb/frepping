@@ -1,7 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Product } from '../../models/product';
 import { MOCK_PRODUCTS } from '../../services/mock-products.service';
+import { ModelViewerComponent } from '../../components/model-viewer/model-viewer.component';
 
 @Component({
   selector: 'app-product-details',
@@ -12,6 +13,12 @@ export class ProductDetailsComponent implements OnInit {
   product: Product | undefined;
   selectedSize: string = '';
   selectedColor: string = '';
+  selectedImageIndex: number = 0;
+  isRotating: boolean = true;
+  has3DModel: boolean = false;
+  show3DView: boolean = true;
+  
+  @ViewChild(ModelViewerComponent) modelViewer!: ModelViewerComponent;
 
   constructor(
     private route: ActivatedRoute,
@@ -22,6 +29,7 @@ export class ProductDetailsComponent implements OnInit {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.product = MOCK_PRODUCTS.find(p => p.id === id);
+      this.checkFor3DModel();
     }
 
     // Default selections
@@ -29,6 +37,73 @@ export class ProductDetailsComponent implements OnInit {
       if (this.product.sizes?.length > 0) this.selectedSize = this.product.sizes[0];
       if (this.product.colors?.length > 0) this.selectedColor = this.product.colors[0];
     }
+  }
+
+  checkFor3DModel(): void {
+    if (!this.product || !this.product.images || this.product.images.length === 0) {
+      this.has3DModel = false;
+      this.show3DView = false;
+      return;
+    }
+    
+    // Check if first image is a 3D model
+    const firstImage = this.product.images[0];
+    this.has3DModel = firstImage?.endsWith('.obj') || 
+                     this.product.has3DModel || 
+                     false;
+    
+    // Show 3D view by default if available
+    this.show3DView = this.has3DModel;
+  }
+
+  // 3D Controls
+  toggleRotation(): void {
+    this.isRotating = !this.isRotating;
+    if (this.modelViewer) {
+      this.modelViewer.toggleRotation();
+    }
+  }
+
+  changeColor(): void {
+    if (this.modelViewer) {
+      this.modelViewer.changeColor();
+    }
+  }
+
+  resetView(): void {
+    if (this.modelViewer) {
+      this.modelViewer.resetView();
+    }
+  }
+
+  getCurrentImage(): string {
+    if (!this.product?.images || this.product.images.length === 0) {
+      return 'assets/images/placeholder.jpg';
+    }
+    
+    // If showing 3D, return first image (might be 3D model)
+    if (this.show3DView && this.has3DModel) {
+      return this.product.images[0];
+    }
+    
+    // Otherwise, return the selected image from thumbnails
+    const images = this.getImageThumbnails();
+    return images[this.selectedImageIndex] || images[0] || 'assets/images/placeholder.jpg';
+  }
+
+  getImageThumbnails(): string[] {
+    if (!this.product?.images) return [];
+    
+    // Filter out 3D models, only return regular images
+    return this.product.images.filter(img => 
+      !img.endsWith('.obj') && 
+      !img.endsWith('.fbx') && 
+      !img.endsWith('.glb')
+    );
+  }
+
+  selectImage(index: number): void {
+    this.selectedImageIndex = index;
   }
 
   selectSize(size: string): void {
@@ -53,7 +128,12 @@ export class ProductDetailsComponent implements OnInit {
 
   tryOn(): void {
     if (!this.product) return;
-    this.router.navigate(['/try-on'], { queryParams: { productId: this.product.id } });
+    this.router.navigate(['/try-on'], { 
+      queryParams: { 
+        productId: this.product.id,
+        modelUrl: this.has3DModel ? this.product.images[0] : null
+      } 
+    });
   }
 
   goBack(): void {

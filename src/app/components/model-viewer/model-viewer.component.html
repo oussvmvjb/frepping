@@ -1,3 +1,39 @@
+<!-- model-viewer.component.html -->
 <div class="model-viewer-container">
     <canvas #canvas class="model-canvas"></canvas>
+    
+    <div *ngIf="" class="loading-overlay">
+        <div class="loading-spinner"></div>
+        <span class="loading-text">LOADING 3D PRODUCT...</span>
+    </div>
+    
+    <div *ngIf="" class="background-controls">
+        <div class="background-label">
+            <i class="fas fa-image"></i>
+            <span>BACKGROUND</span>
+        </div>
+        <div class="background-options">
+            <button class="bg-option" (click)="changeBackground('studio')" [class.active]="backgroundType === 'studio'">
+                <i class="fas fa-video"></i>
+                <span>STUDIO</span>
+            </button>
+            <button class="bg-option" (click)="changeBackground('street')" [class.active]="backgroundType === 'street'">
+                <i class="fas fa-road"></i>
+                <span>STREET</span>
+            </button>
+            <button class="bg-option" (click)="changeBackground('showroom')" [class.active]="backgroundType === 'showroom'">
+                <i class="fas fa-store"></i>
+                <span>SHOWROOM</span>
+            </button>
+            <button class="bg-option" (click)="changeBackground('gradient')" [class.active]="backgroundType === 'gradient'">
+                <i class="fas fa-gradient"></i>
+                <span>GRADIENT</span>
+            </button>
+        </div>
+    </div>
+    
+    <div *ngIf="" class="model-loaded">
+        <i class="fas fa-check-circle"></i>
+        <span>3D MODEL READY</span>
+    </div>
 </div>

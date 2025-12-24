@@ -1,0 +1,12 @@
+<!-- model-viewer.component.html -->
+<div class="model-viewer-container">
+  <canvas #canvas class="model-canvas"></canvas>
+  <div *ngIf="" class="loading-overlay">
+    <div class="loading-spinner"></div>
+    <span class="loading-text">LOADING 3D MODEL...</span>
+  </div>
+  <div *ngIf="" class="debug-info">
+    <span class="debug-text">✅ MODEL LOADED</span>
+    <span class="debug-scale" *ngIf="">(AUTO-SCALED FOR VISIBILITY)</span>
+  </div>
+</div>

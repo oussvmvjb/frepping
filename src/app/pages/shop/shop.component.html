@@ -100,9 +100,11 @@
           <!-- Product Image -->
           <div class="product-img-container">
             <!-- 3D Model Viewer for .obj files -->
-            <app-model-viewer *ngIf="product.images && product.images[0] && product.images[0].endsWith('.obj')"
-              [modelPath]="product.images[0]" class="product-3d-viewer">
-            </app-model-viewer>
+              <app-model-viewer 
+      [modelPath]="product.images[0]" 
+   
+      [autoRotate]="true">
+    </app-model-viewer>
 
             <!-- Regular Image for other products -->
             <img *ngIf="product.images && product.images[0] && !product.images[0].endsWith('.obj')"

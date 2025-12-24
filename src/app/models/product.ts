@@ -1,4 +1,5 @@
 export interface Product {
+  has3DModel: boolean;
   id: string;
   name: string;
   description: string;

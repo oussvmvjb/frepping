@@ -6,6 +6,8 @@ import { ProductDetailsComponent } from './pages/product-details/product-details
 import { TryOnComponent } from './pages/try-on/try-on.component';
 import { CartComponent } from './pages/cart/cart.component';
 import { ProfileComponent } from './pages/profile/profile.component';
+import { TestViewerComponent } from './test-viewer/test-viewer.component';
+import { ModelViewerComponent } from './components/model-viewer/model-viewer.component';
 
 const routes: Routes = [
   { path: '', component: HomeComponent },
@@ -14,6 +16,9 @@ const routes: Routes = [
   { path: 'try-on', component: TryOnComponent },
   { path: 'cart', component: CartComponent },
   { path: 'profile', component: ProfileComponent },
+   { path: 'test-3d', component: TestViewerComponent },
+      { path: 'mod', component: ModelViewerComponent },
+
   { path: '**', redirectTo: '' }
 ];
 

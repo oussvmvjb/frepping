@@ -1,9 +1,6 @@
 import { Product } from '../../app/models/product';
 
 export const MOCK_PRODUCTS: Product[] = [
-  // Update your mock products in shop.component.ts or mock-products.ts
-
-
   {
     id: '1',
     name: 'GREEN CAMO HOODIE',
@@ -22,7 +19,8 @@ export const MOCK_PRODUCTS: Product[] = [
     inStock: true,
     tags: ['streetwear', 'hoodie', 'camo'],
     material: '80% Cotton, 20% Polyester',
-    isFeatured: true
+    isFeatured: true,
+    has3DModel: false
   },
   {
     id: '2',
@@ -42,7 +40,8 @@ export const MOCK_PRODUCTS: Product[] = [
     inStock: true,
     tags: ['jeans', 'vintage', 'distressed'],
     material: '100% Cotton Denim',
-    isFeatured: true
+    isFeatured: true,
+    has3DModel: false
   },
   {
     id: '3',
@@ -62,7 +61,8 @@ export const MOCK_PRODUCTS: Product[] = [
     inStock: true,
     tags: ['sneakers', 'high-top', 'glow'],
     material: 'Leather/Synthetic',
-    isFeatured: true
+    isFeatured: true,
+    has3DModel: false
   },
   {
     id: '4',
@@ -72,7 +72,7 @@ export const MOCK_PRODUCTS: Product[] = [
     originalPrice: 60,
     category: 'TOPS',
     images: [
-      'assets/3dmodel/tshert_girl.obj'
+      'assets/images/products/tshirt1.png' // Changed to regular image
     ],
     sizes: ['XS', 'S', 'M', 'L'],
     colors: ['White', 'Pink', 'Black'],
@@ -82,11 +82,96 @@ export const MOCK_PRODUCTS: Product[] = [
     inStock: true,
     tags: ['tshirt', 'graphic', 'casual', 'girls'],
     material: '100% Cotton',
-    isFeatured: true
+    isFeatured: true,
+    has3DModel: false
+  },
+  {
+    id: '5',
+    name: 'STREETWEAR CARGO PANTS',
+    description: 'Urban cargo pants with multiple pockets and tactical design.',
+    price: 79,
+    originalPrice: 99,
+    category: 'BOTTOMS',
+    images: [
+      'assets/3dmodel/pant.obj', // 3D model
+      'assets/images/products/pants1.png' // Fallback image
+    ],
+    sizes: ['28', '30', '32', '34', '36'],
+    colors: ['Black', 'Olive Green', 'Gray'],
+    brand: 'FREPPING',
+    rating: 4.7,
+    reviewCount: 89,
+    inStock: true,
+    tags: ['pants', 'cargo', 'streetwear', 'tactical'],
+    material: '100% Cotton Twill',
+    isFeatured: true,
+    has3DModel: true
+  },
+  {
+    id: '6',
+    name: '3D HOODIE',
+    description: 'Modern hoodie with 3D model preview available.',
+    price: 75,
+    originalPrice: 95,
+    category: 'TOPS',
+    images: [
+      'assets/3dmodel/tshert_girl.obj', // 3D model (even though name says tshirt, using it as hoodie)
+      'assets/images/products/hoodie1.png'
+    ],
+    sizes: ['S', 'M', 'L', 'XL'],
+    colors: ['Black', 'Gray', 'Navy'],
+    brand: 'FREPPING',
+    rating: 4.9,
+    reviewCount: 63,
+    inStock: true,
+    tags: ['hoodie', '3d', 'modern', 'streetwear'],
+    material: '80% Cotton, 20% Polyester',
+    isFeatured: true,
+    has3DModel: true
+  },
+  {
+    id: '7',
+    name: 'DESIGNER JACKET',
+    description: 'Premium designer jacket with custom details.',
+    price: 145,
+    originalPrice: 180,
+    category: 'OUTERWEAR',
+    images: [
+      'assets/images/products/jacket1.png'
+    ],
+    sizes: ['S', 'M', 'L', 'XL'],
+    colors: ['Black', 'Brown', 'Green'],
+    brand: 'FREPPING',
+    rating: 4.8,
+    reviewCount: 47,
+    inStock: true,
+    tags: ['jacket', 'designer', 'premium'],
+    material: 'Leather/Cotton Blend',
+    isFeatured: true,
+    has3DModel: false
+  },
+  {
+    id: '8',
+    name: 'RUNNING SHOES',
+    description: 'High-performance running shoes with comfort technology.',
+    price: 110,
+    originalPrice: 140,
+    category: 'SHOES',
+    images: [
+      'assets/images/products/shoes1.png'
+    ],
+    sizes: ['7', '8', '9', '10', '11', '12'],
+    colors: ['Black/White', 'Blue/White', 'Red/Black'],
+    brand: 'FREPPING',
+    rating: 4.6,
+    reviewCount: 72,
+    inStock: true,
+    tags: ['shoes', 'running', 'sports'],
+    material: 'Mesh/Synthetic',
+    isFeatured: true,
+    has3DModel: false
   }
-  // ... add more products with image URLs
 ];
-
 
 export const CATEGORIES = [
   { id: '1', name: 'TOPS', icon: 'fas fa-tshirt' },
