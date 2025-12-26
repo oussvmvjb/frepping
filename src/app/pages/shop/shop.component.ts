@@ -2,6 +2,7 @@ import { Component, OnInit, HostListener } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { MOCK_PRODUCTS, CATEGORIES } from '../../services/mock-products.service';
 import { Product } from '../../models/product';
+import { CartService } from '../../services/cart.service';
 
 @Component({
   selector: 'app-shop',
@@ -9,9 +10,10 @@ import { Product } from '../../models/product';
   styleUrls: ['./shop.component.scss']
 })
 export class ShopComponent implements OnInit {
-onProductClick(_t72: Product) {
-throw new Error('Method not implemented.');
-}
+  onProductClick(product: Product): void {
+    if (!product) return;
+    this.goToProduct(product.id);
+  }
   allProducts: Product[] = MOCK_PRODUCTS;
   filteredProducts: Product[] = [];
   categories = CATEGORIES;
@@ -38,7 +40,8 @@ throw new Error('Method not implemented.');
 
   constructor(
     private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private cartService: CartService
   ) { }
 
   ngOnInit(): void {
@@ -242,6 +245,7 @@ throw new Error('Method not implemented.');
 
   // Product Actions
   addToCart(product: Product): void {
+    this.cartService.addToCart(product);
     console.log('Added to cart:', product.name);
     // Implement your cart logic here
     // Example: this.cartService.addToCart(product);

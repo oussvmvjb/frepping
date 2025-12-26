@@ -7,7 +7,10 @@
         <i [class]="item.icon"></i>
         <span class="nav-label">{{item.label}}</span>
         <span *ngIf="item.label === 'CART' && cartItemCount > 0" 
-              class="cart-badge">{{cartItemCount}}</span>
+              class="cart-badge"
+              [class]="badgeClass">
+          {{getBadgeText()}}
+        </span>
       </div>
     </div>
   </div>

@@ -3,6 +3,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { Product } from '../../models/product';
 import { MOCK_PRODUCTS } from '../../services/mock-products.service';
 import { ModelViewerComponent } from '../../components/model-viewer/model-viewer.component';
+import { CartService } from '../../services/cart.service';
 
 @Component({
   selector: 'app-product-details',
@@ -22,7 +23,8 @@ export class ProductDetailsComponent implements OnInit {
 
   constructor(
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private cartService: CartService
   ) { }
 
   ngOnInit(): void {
@@ -57,24 +59,7 @@ export class ProductDetailsComponent implements OnInit {
   }
 
   // 3D Controls
-  toggleRotation(): void {
-    this.isRotating = !this.isRotating;
-    if (this.modelViewer) {
-      this.modelViewer.toggleRotation();
-    }
-  }
 
-  changeColor(): void {
-    if (this.modelViewer) {
-      this.modelViewer.changeColor();
-    }
-  }
-
-  resetView(): void {
-    if (this.modelViewer) {
-      this.modelViewer.resetView();
-    }
-  }
 
   getCurrentImage(): string {
     if (!this.product?.images || this.product.images.length === 0) {
@@ -114,17 +99,7 @@ export class ProductDetailsComponent implements OnInit {
     this.selectedColor = color;
   }
 
-  addToCart(): void {
-    if (!this.product) return;
 
-    console.log('Adding to cart:', {
-      product: this.product,
-      size: this.selectedSize,
-      color: this.selectedColor
-    });
-    // TODO: Implement actual cart service
-    alert('Added to cart!');
-  }
 
   tryOn(): void {
     if (!this.product) return;
@@ -138,5 +113,11 @@ export class ProductDetailsComponent implements OnInit {
 
   goBack(): void {
     this.router.navigate(['/shop']);
+  }
+    addToCart(product: Product): void {
+    this.cartService.addToCart(product);
+    console.log('Added to cart:', product.name);
+    // Implement your cart logic here
+    // Example: this.cartService.addToCart(product);
   }
 }

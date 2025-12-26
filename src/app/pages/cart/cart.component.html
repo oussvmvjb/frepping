@@ -1,1 +1,262 @@
-<p>cart works!</p>
+<div class="cart page-container shop">
+  <!-- GTA Header -->
+  <header class="cart-header shop-header">
+    <h1 class="cart-title shop-title">CART</h1>
+    <div class="cart-header-subtitle">
+      <span class="street-tag">LOS SANTOS MERCH</span>
+      <span class="cart-count-badge" *ngIf="cartItems.length > 0">
+        {{getTotalItems()}} ITEMS
+      </span>
+    </div>
+  </header>
+  <div class="details-header">
+            <div class="back-button" (click)="goBack()">
+                <i class="fas fa-arrow-left"></i> BACK
+            </div>
+           
+        </div>
+  <section class="cart-section">
+    <div *ngIf="cartItems.length > 0; else emptyCart">
+      
+      <!-- Free Shipping Progress Bar -->
+      <div class="shipping-progress" *ngIf="!hasFreeShipping() && cartItems.length > 0">
+        <div class="progress-label">
+          <i class="fas fa-shipping-fast"></i>
+          <span>Spend {{formatCurrency(getRemainingForFreeShipping())}} more for FREE shipping!</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" 
+               [style.width]="(subtotal / SHIPPING_THRESHOLD * 100) + '%'">
+          </div>
+        </div>
+      </div>
+      
+      <!-- GTA Modern Grid for Cart Items -->
+      <div class="cart-modern-grid products-modern-grid grid-large">
+        <div class="modern-cart-item modern-product" *ngFor="let item of cartItems">
+          
+          <!-- Cart Item Image Panel -->
+          <div class="modern-cart-image modern-product-image">
+            <div class="gta-panels">
+              <div class="gta-panel panel-1"></div>
+              <div class="gta-panel panel-2"></div>
+              <div class="gta-panel panel-3"></div>
+            </div>
+            
+            <div class="product-img-container">
+              <img *ngIf="item.product.images && item.product.images.length > 0; else placeholder"
+                   [src]="item.product.images[0]" 
+                   [alt]="item.product.name" 
+                   class="cart-img product-img"
+                   onerror="this.onerror=null; this.src='assets/images/products/placeholder.png'">
+              <ng-template #placeholder>
+                <div class="cart-img-placeholder product-img-placeholder">
+                  <i class="fas fa-tshirt"></i>
+                  <span>NO IMAGE</span>
+                </div>
+              </ng-template>
+            </div>
+            
+            <!-- GTA Badges -->
+            <div class="modern-indicators">
+              <div class="modern-badge sale" *ngIf="isItemOnSale(item.product.id)">
+                -{{getItemDiscountPercentage(item.product.id)}}%
+              </div>
+              <div class="modern-badge new" *ngIf="getProductById(item.product.id)?.isFeatured">
+                NEW
+              </div>
+              <div class="modern-badge quantity" *ngIf="item.quantity > 1">
+                x{{item.quantity}}
+              </div>
+            </div>
+            
+            <!-- Quick Actions -->
+            <div class="modern-quick-actions">
+              <button class="modern-quick-btn" (click)="removeFromCart(item.product.id)" 
+                      title="Remove item">
+                <i class="fas fa-trash"></i>
+              </button>
+              <button class="modern-quick-btn" (click)="updateQuantity(item.product.id, item.quantity + 1)"
+                      title="Add one more">
+                <i class="fas fa-plus"></i>
+              </button>
+            </div>
+          </div>
+          
+          <!-- Cart Item Content -->
+          <div class="modern-cart-content modern-product-content">
+            <div class="modern-cart-info modern-product-info">
+              <div class="modern-brand">{{item.product.brand || 'FREPPING'}}</div>
+              <h3 class="modern-product-name">{{item.product.name}}</h3>
+              <div class="modern-category">{{item.product.category || 'TOPS'}}</div>
+              
+              <!-- Price Display with Savings -->
+              <div class="modern-price-section">
+                <div class="modern-price">
+                  <span class="modern-current">${{item.product.price}}</span>
+                  <span class="modern-original" *ngIf="isItemOnSale(item.product.id)">
+                    ${{getProductById(item.product.id)?.originalPrice}}
+                  </span>
+                </div>
+                <div class="savings-badge" *ngIf="getItemSavings(item) > 0">
+                  <i class="fas fa-tag"></i>
+                  Save ${{getItemSavings(item)}}
+                </div>
+                <div class="modern-material">{{getProductById(item.product.id)?.material || 'Premium Quality'}}</div>
+              </div>
+              
+              <!-- Size & Color Info -->
+              <div class="item-details" *ngIf="getProductById(item.product.id) as product">
+                <div class="detail-row" *ngIf="product.sizes?.length">
+                  <span class="detail-label">Size:</span>
+                  <span class="detail-value">{{product.sizes[0]}}</span>
+                </div>
+                <div class="detail-row" *ngIf="product.colors?.length">
+                  <span class="detail-label">Color:</span>
+                  <span class="detail-value">{{product.colors[0]}}</span>
+                </div>
+              </div>
+              
+              <!-- Quantity Controls - GTA Style -->
+              <div class="modern-qty">
+                <label class="street-label">QUANTITY:</label>
+                <div class="qty-controls">
+                  <button class="qty-btn minus" 
+                          (click)="updateQuantity(item.product.id, item.quantity - 1)"
+                          [disabled]="item.quantity <= 1">
+                    <i class="fas fa-minus"></i>
+                  </button>
+                  <input type="number" 
+                         class="street-input" 
+                         min="1" 
+                         [value]="item.quantity" 
+                         (change)="updateQuantity(item.product.id, $any($event.target).value)"
+                         (keyup.enter)="onInputEnter($event)"
+                         (blur)="updateQuantity(item.product.id, $any($event.target).value)" />
+                  <button class="qty-btn plus" 
+                          (click)="updateQuantity(item.product.id, item.quantity + 1)">
+                    <i class="fas fa-plus"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Item Total -->
+            <div class="item-total">
+              <span class="total-label">ITEM TOTAL:</span>
+              <span class="total-amount">${{getItemTotal(item)}}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Cart Summary - GTA Style -->
+      <div class="cart-summary-modern">
+        <div class="summary-panel">
+          <div class="summary-header">
+            <h3 class="street-title">ORDER SUMMARY</h3>
+            <div class="summary-icon">
+              <i class="fas fa-clipboard-list"></i>
+              <span class="item-count">{{getTotalItems()}}</span>
+            </div>
+          </div>
+          
+          <div class="summary-details">
+            <div class="summary-row">
+              <span>Subtotal ({{getTotalItems()}} items)</span>
+              <span>${{getSubtotal().toFixed(2)}}</span>
+            </div>
+            
+            <div class="summary-row discount" *ngIf="getTotalSavings() > 0">
+              <span>
+                <i class="fas fa-tag"></i>
+                Discounts Applied
+              </span>
+              <span class="discount-amount">-${{getTotalSavings().toFixed(2)}}</span>
+            </div>
+            
+            <div class="summary-row">
+              <span>
+                <i class="fas fa-shipping-fast"></i>
+                Shipping
+                <span class="free-badge" *ngIf="hasFreeShipping()">FREE</span>
+              </span>
+              <span [class.free-shipping]="hasFreeShipping()">
+                {{hasFreeShipping() ? 'FREE' : '$' + getShipping().toFixed(2)}}
+              </span>
+            </div>
+            
+            <div class="summary-row">
+              <span>Tax ({{TAX_RATE * 100}}%)</span>
+              <span>${{getTax().toFixed(2)}}</span>
+            </div>
+            
+            <div class="summary-divider"></div>
+            
+            <div class="summary-row total">
+              <span class="total-label">TOTAL</span>
+              <span class="total-amount">${{getTotal().toFixed(2)}}</span>
+            </div>
+            
+            <div class="summary-note" *ngIf="!hasFreeShipping()">
+              <i class="fas fa-info-circle"></i>
+              Add ${{getRemainingForFreeShipping().toFixed(2)}} more for free shipping!
+            </div>
+          </div>
+          
+          <!-- Action Buttons -->
+          <div class="cart-actions-modern">
+            <button class="btn-modern secondary-btn" (click)="continueShopping()">
+              <i class="fas fa-arrow-left"></i> CONTINUE SHOPPING
+            </button>
+            <button class="btn-modern danger-btn" (click)="clearCart()">
+              <i class="fas fa-trash-alt"></i> CLEAR CART
+            </button>
+            <button class="btn-modern checkout-btn" (click)="proceedToCheckout()">
+              <i class="fas fa-lock"></i> SECURE CHECKOUT - ${{getTotal().toFixed(2)}}
+            </button>
+          </div>
+          
+          <!-- Security Badges -->
+          <div class="security-badges">
+            <div class="security-badge">
+              <i class="fas fa-shield-alt"></i>
+              <span>Secure Payment</span>
+            </div>
+            <div class="security-badge">
+              <i class="fas fa-undo"></i>
+              <span>30-Day Returns</span>
+            </div>
+            <div class="security-badge">
+              <i class="fas fa-truck"></i>
+              <span>Fast Shipping</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <ng-template #emptyCart>
+      <!-- Empty Cart State - GTA Style -->
+      <div class="no-products-modern">
+        <div class="modern-empty-state cart-empty-state">
+          <div class="empty-cart-icon">
+            <i class="fas fa-shopping-cart"></i>
+            <div class="empty-cart-pulse"></div>
+          </div>
+          <h3>YOUR CART IS EMPTY</h3>
+          <p>Looks like you haven't added any items to your cart yet.</p>
+          <button class="btn-modern" (click)="continueShopping()">
+            <i class="fas fa-store"></i> BROWSE FREPPING PRODUCTS
+          </button>
+          <div class="empty-cart-tagline">
+            <span class="street-tag">LOS SANTOS</span>
+            <span class="street-tag">CUSTOMS</span>
+            <span class="street-tag">FREPPING</span>
+          </div>
+        </div>
+      </div>
+    </ng-template>
+  </section>
+</div>
+<app-bottom-nav></app-bottom-nav>

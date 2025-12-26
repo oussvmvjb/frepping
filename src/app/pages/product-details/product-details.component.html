@@ -22,19 +22,19 @@
                             [autoRotate]="isRotating"
                             [autoScale]="true"
                             [targetSize]="12"
-                            [showHelpers]="false">
+                            >
                         </app-model-viewer>
                         
                         <div class="model-controls">
-                            <button class="model-btn" (click)="toggleRotation()">
+                            <button class="model-btn" >
                                 <i class="fas" [class.fa-pause]="!isRotating" [class.fa-sync-alt]="isRotating"></i>
                                 {{isRotating ? 'PAUSE' : 'ROTATE'}}
                             </button>
-                            <button class="model-btn" (click)="changeColor()">
+                            <button class="model-btn" >
                                 <i class="fas fa-palette"></i>
                                 COLOR
                             </button>
-                            <button class="model-btn" (click)="resetView()">
+                            <button class="model-btn" >
                                 <i class="fas fa-undo"></i>
                                 RESET
                             </button>
@@ -138,7 +138,8 @@
                 </div>
 
                 <div class="action-buttons">
-                    <button class="gta-btn primary-btn" (click)="addToCart()" [disabled]="!product.inStock">
+                    <button class="gta-btn primary-btn" (click)="$event.stopPropagation(); addToCart(product)"
+              [disabled]="!product.inStock">
                         <i class="fas fa-shopping-cart"></i> 
                         {{product.inStock ? 'ADD TO CART' : 'OUT OF STOCK'}}
                     </button>
@@ -168,3 +169,4 @@
         </div>
     </ng-template>
 </div>
+<app-bottom-nav></app-bottom-nav>

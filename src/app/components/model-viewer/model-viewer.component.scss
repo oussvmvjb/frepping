@@ -7,7 +7,7 @@
     overflow: hidden;
     border-radius: 12px;
     min-height: 500px;
-    border: 3px solid #39ff14;
+    border: 3px solid #ffffff;
     box-shadow: 0 0 30px rgba(57, 255, 20, 0.3);
 }
 
@@ -43,10 +43,10 @@
     width: 70px;
     height: 70px;
     border: 5px solid rgba(57, 255, 20, 0.1);
-    border-top: 5px solid #39ff14;
+    border-top: 5px solid #ffffff;
     border-radius: 50%;
     animation: spin 1s linear infinite;
-    box-shadow: 0 0 20px rgba(57, 255, 20, 0.5);
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
 }
 
 .loading-text {
@@ -182,7 +182,7 @@
                     border-color: #ff00ff;
                 }
             }
-            
+            background-controls
             &.gradient {
                 &:hover, &.active {
                     border-color: #39ff14;
@@ -371,7 +371,7 @@
     transform: translateX(-50%);
     z-index: 5;
     background: rgba(0, 0, 0, 0.9);
-    border: 2px solid rgba(57, 255, 20, 0.4);
+    border: 2px solid rgba(255, 255, 255, 0.4);
     border-radius: 25px;
     padding: 10px 15px;
     backdrop-filter: blur(10px);
@@ -387,7 +387,7 @@
         border-bottom: 1px solid rgba(57, 255, 20, 0.3);
         
         i {
-            color: #39ff14;
+            color: #ffffff;
             font-size: 16px;
         }
         

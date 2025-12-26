@@ -1,77 +1,427 @@
+/* Bottom Navigation - GTA San Andreas Theme */
 .bottom-nav {
   position: fixed;
   bottom: 0;
   left: 0;
-  width: 100%;
-  background: rgba(15, 31, 20, 0.95);
-  backdrop-filter: blur(10px);
-  border-top: 2px solid #39ff14;
-  padding: 12px 0;
+  right: 0;
+  background: #000;
+  border-top: 3px solid #39ff14;
   z-index: 1000;
-  box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 -8px 20px rgba(0, 0, 0, 0.8);
+  padding: 8px 0 12px;
+  backdrop-filter: blur(10px);
+  
+  /* Graffiti background effect */
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 100%;
+    background: 
+      linear-gradient(45deg, transparent 49%, rgba(57, 255, 20, 0.1) 50%, transparent 51%),
+      linear-gradient(-45deg, transparent 49%, rgba(57, 255, 20, 0.1) 50%, transparent 51%);
+    background-size: 15px 15px;
+    opacity: 0.3;
+    pointer-events: none;
+  }
+  
+  /* Animated border effect */
+  &::after {
+    content: '';
+    position: absolute;
+    top: -3px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: repeating-linear-gradient(
+      90deg,
+      #39ff14,
+      #39ff14 10px,
+      transparent 10px,
+      transparent 20px
+    );
+    animation: borderSlide 2s linear infinite;
+  }
+}
+
+@keyframes borderSlide {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 40px 0;
+  }
 }
 
 .nav-list {
   display: flex;
   justify-content: space-around;
   align-items: center;
-  list-style: none;
-  padding: 0;
-  margin: 0;
+  padding: 0 10px;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 .nav-item {
-  text-align: center;
   flex: 1;
+  display: flex;
+  justify-content: center;
+  position: relative;
+  cursor: pointer;
+  transform: skew(-3deg);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  &:hover {
+    transform: skew(-3deg) translateY(-5px);
+    
+    .nav-link {
+      background: rgba(57, 255, 20, 0.1);
+      border-color: #ff9900;
+      
+      i {
+        color: #ff9900;
+        transform: scale(1.2);
+      }
+      
+      .nav-label {
+        color: #ff9900;
+        text-shadow: 0 0 10px rgba(255, 153, 0, 0.5);
+      }
+    }
+  }
+  
+  &:active {
+    transform: skew(-3deg) translateY(-2px);
+    
+    .nav-link {
+      background: rgba(57, 255, 20, 0.2);
+      box-shadow: 0 3px 0 #000;
+    }
+  }
 }
 
 .nav-link {
-  color: #777;
-  text-decoration: none;
   display: flex;
   flex-direction: column;
   align-items: center;
-  transition: all 0.3s ease;
+  gap: 4px;
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.7);
+  border: 2px solid #39ff14;
+  border-radius: 0;
+  width: 80%;
   position: relative;
-  cursor: pointer;
-  padding: 5px 0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: skew(3deg);
+  box-shadow: 4px 4px 0 #000;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      135deg,
+      transparent 0%,
+      rgba(57, 255, 20, 0.1) 50%,
+      transparent 100%
+    );
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  
+  &:hover::before {
+    opacity: 1;
+  }
+  
+  &.active {
+    background: #39ff14;
+    border-color: #000;
+    box-shadow: 6px 6px 0 #000;
+    
+    i {
+      color: #000;
+      animation: iconPulse 2s infinite;
+    }
+    
+    .nav-label {
+      color: #000;
+      font-weight: 900;
+      text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.3);
+    }
+    
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 60%;
+      height: 3px;
+      background: #ff9900;
+      border-radius: 2px;
+      animation: activePulse 2s infinite;
+    }
+  }
 }
 
-.nav-link.active {
-  color: #39ff14;
+@keyframes iconPulse {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 0 rgba(255, 153, 0, 0));
+  }
+  50% {
+    transform: scale(1.1);
+    filter: drop-shadow(0 0 8px rgba(255, 153, 0, 0.5));
+  }
 }
 
-.nav-link.active i {
-  transform: translateY(-3px);
+@keyframes activePulse {
+  0%, 100% {
+    opacity: 1;
+    width: 60%;
+  }
+  50% {
+    opacity: 0.7;
+    width: 80%;
+  }
 }
 
 .nav-link i {
-  font-size: 22px;
-  margin-bottom: 5px;
-  transition: transform 0.3s ease;
+  font-size: 20px;
+  color: #39ff14;
+  transition: all 0.3s ease;
+  transform-origin: center;
 }
 
 .nav-label {
+  font-family: 'Street', 'Pricedown', sans-serif;
   font-size: 10px;
-  letter-spacing: 1px;
-  font-weight: 600;
+  letter-spacing: 1.5px;
+  color: #39ff14;
   text-transform: uppercase;
-  font-family: 'Oswald', sans-serif;
+  text-shadow: 1px 1px 0 #000;
+  transition: all 0.3s ease;
+  font-weight: 700;
+  line-height: 1;
 }
 
+/* Cart Badge with Advanced Animation */
 .cart-badge {
   position: absolute;
-  top: -2px;
-  right: 15px;
-  background: #ff9900;
-  color: #000;
+  top: 5px;
+  right: 5px;
+  background: linear-gradient(135deg, #ff3333, #ff6600);
+  color: #fff;
+  font-family: 'Street', 'Pricedown', sans-serif;
   font-size: 10px;
-  font-weight: bold;
-  width: 18px;
+  font-weight: 900;
+  min-width: 18px;
   height: 18px;
-  border-radius: 50%;
+  border-radius: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid #0f1f14;
+  padding: 0 4px;
+  border: 2px solid #000;
+  box-shadow: 2px 2px 0 #000;
+  transform: skew(-5deg);
+  z-index: 10;
+  
+  /* Default animation for cart with items */
+  animation: badgeGlow 2s infinite alternate;
+  
+  /* Special animation for more than 5 items */
+  &.many-items {
+    animation: badgeDanger 1s infinite alternate;
+    background: linear-gradient(135deg, #ff0000, #ff3300);
+    text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+  }
+  
+  /* Special animation for more than 9 items (99+ situation) */
+  &.many-items.many-many {
+    animation: badgeCritical 0.5s infinite alternate;
+    background: linear-gradient(135deg, #ff0000, #990000);
+    font-size: 8px;
+  }
+}
+
+@keyframes badgeGlow {
+  0% {
+    box-shadow: 2px 2px 0 #000, 0 0 0 rgba(255, 51, 51, 0);
+    transform: skew(-5deg) scale(1);
+  }
+  100% {
+    box-shadow: 2px 2px 0 #000, 0 0 15px rgba(255, 51, 51, 0.8);
+    transform: skew(-5deg) scale(1.1);
+  }
+}
+
+@keyframes badgeDanger {
+  0% {
+    box-shadow: 2px 2px 0 #000, 0 0 0 rgba(255, 51, 51, 0);
+    transform: skew(-5deg) scale(1);
+  }
+  100% {
+    box-shadow: 2px 2px 0 #000, 0 0 20px rgba(255, 0, 0, 1);
+    transform: skew(-5deg) scale(1.2);
+  }
+}
+
+@keyframes badgeCritical {
+  0% {
+    box-shadow: 2px 2px 0 #000, 0 0 0 rgba(255, 0, 0, 0);
+    transform: skew(-5deg) scale(1);
+    background: linear-gradient(135deg, #ff0000, #990000);
+  }
+  100% {
+    box-shadow: 2px 2px 0 #000, 0 0 25px rgba(255, 0, 0, 1), 0 0 15px rgba(255, 153, 0, 0.8);
+    transform: skew(-5deg) scale(1.3);
+    background: linear-gradient(135deg, #ff3300, #cc0000);
+  }
+}
+
+/* Special effect for when badge number changes */
+.cart-badge.changing {
+  animation: numberChange 0.3s ease-in-out;
+}
+
+@keyframes numberChange {
+  0% {
+    transform: skew(-5deg) scale(1) rotate(0deg);
+  }
+  25% {
+    transform: skew(-5deg) scale(1.2) rotate(-10deg);
+  }
+  50% {
+    transform: skew(-5deg) scale(1.3) rotate(10deg);
+  }
+  75% {
+    transform: skew(-5deg) scale(1.2) rotate(-5deg);
+  }
+  100% {
+    transform: skew(-5deg) scale(1) rotate(0deg);
+  }
+}
+
+/* Add floating particles around cart when it has items */
+.nav-item:has(.cart-badge) .nav-link {
+  position: relative;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    inset: -5px;
+    border-radius: inherit;
+    background: radial-gradient(circle at 30% 30%, rgba(255, 51, 51, 0.2) 0%, transparent 50%);
+    z-index: -1;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  
+  &:hover::before {
+    opacity: 0.5;
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .bottom-nav {
+    padding: 6px 0 10px;
+  }
+  
+  .nav-link {
+    padding: 8px 6px;
+    width: 85%;
+  }
+  
+  .nav-link i {
+    font-size: 18px;
+  }
+  
+  .nav-label {
+    font-size: 9px;
+    letter-spacing: 1px;
+  }
+  
+  .cart-badge {
+    min-width: 16px;
+    height: 16px;
+    font-size: 9px;
+    top: 3px;
+    right: 3px;
+  }
+}
+
+@media (max-width: 480px) {
+  .bottom-nav {
+    padding: 4px 0 8px;
+  }
+  
+  .nav-list {
+    padding: 0 5px;
+  }
+  
+  .nav-link {
+    padding: 6px 4px;
+  }
+  
+  .nav-link i {
+    font-size: 16px;
+  }
+  
+  .nav-label {
+    font-size: 8px;
+    letter-spacing: 0.5px;
+  }
+  
+  .cart-badge {
+    min-width: 14px;
+    height: 14px;
+    font-size: 8px;
+    top: 2px;
+    right: 2px;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .bottom-nav {
+    background: rgba(0, 0, 0, 0.95);
+    border-top: 3px solid #39ff14;
+  }
+  
+  .nav-link {
+    background: rgba(20, 20, 20, 0.9);
+  }
+  
+  .nav-link.active {
+    background: #39ff14;
+  }
+}
+
+/* Accessibility improvements */
+.nav-link:focus-visible {
+  outline: 2px solid #ff9900;
+  outline-offset: 2px;
+}
+
+.nav-item:focus-visible {
+  outline: none;
+}
+
+/* Remove default button styles for touch devices */
+@media (hover: none) and (pointer: coarse) {
+  .nav-item:hover {
+    transform: skew(-3deg);
+    
+    .nav-link {
+      transform: skew(3deg);
+    }
+  }
+  
+  .nav-link.active {
+    background: #39ff14;
+  }
 }

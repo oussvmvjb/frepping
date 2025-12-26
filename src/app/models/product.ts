@@ -1,4 +1,6 @@
 export interface Product {
+discount: any;
+isNew: any;
   has3DModel: boolean;
   id: string;
   name: string;

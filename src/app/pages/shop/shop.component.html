@@ -100,7 +100,7 @@
             <div class="gta-panel panel-3"></div>
           </div>
           
-          <div class="product-img-container">
+          <div class="product-img-container"  (click)="goToProduct(product.id)">
             <ng-container *ngIf="has3DModel(product); else imageView">
               <!-- 3D Model Viewer -->
               <div class="model-container">
@@ -110,7 +110,7 @@
                     [autoRotate]="true"
                     [autoScale]="true"
                     [targetSize]="16"
-                    [showHelpers]="false">
+                    >
                   </app-model-viewer>
                 </div>
                 <div class="model-controls">

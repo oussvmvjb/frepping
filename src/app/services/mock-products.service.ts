@@ -20,7 +20,9 @@ export const MOCK_PRODUCTS: Product[] = [
     tags: ['streetwear', 'hoodie', 'camo'],
     material: '80% Cotton, 20% Polyester',
     isFeatured: true,
-    has3DModel: false
+    has3DModel: false,
+    discount: 0.24,
+    isNew: true
   },
   {
     id: '2',
@@ -41,7 +43,9 @@ export const MOCK_PRODUCTS: Product[] = [
     tags: ['jeans', 'vintage', 'distressed'],
     material: '100% Cotton Denim',
     isFeatured: true,
-    has3DModel: false
+    has3DModel: false,
+    discount: 0.26,
+    isNew: false
   },
   {
     id: '3',
@@ -62,7 +66,9 @@ export const MOCK_PRODUCTS: Product[] = [
     tags: ['sneakers', 'high-top', 'glow'],
     material: 'Leather/Synthetic',
     isFeatured: true,
-    has3DModel: false
+    has3DModel: false,
+    discount: 0.20,
+    isNew: true
   },
   {
     id: '4',
@@ -83,7 +89,9 @@ export const MOCK_PRODUCTS: Product[] = [
     tags: ['tshirt', 'graphic', 'casual', 'girls'],
     material: '100% Cotton',
     isFeatured: true,
-    has3DModel: false
+    has3DModel: false,
+    discount: 0.25,
+    isNew: false
   },
   {
     id: '5',
@@ -105,7 +113,9 @@ export const MOCK_PRODUCTS: Product[] = [
     tags: ['pants', 'cargo', 'streetwear', 'tactical'],
     material: '100% Cotton Twill',
     isFeatured: true,
-    has3DModel: true
+    has3DModel: true,
+    discount: 0.20,
+    isNew: true
   },
   {
     id: '6',
@@ -115,7 +125,7 @@ export const MOCK_PRODUCTS: Product[] = [
     originalPrice: 95,
     category: 'TOPS',
     images: [
-      'assets/3dmodel/tshert_girl.obj', // 3D model (even though name says tshirt, using it as hoodie)
+      'assets/3dmodel/tshert_girl.obj', 
       'assets/images/products/hoodie1.png'
     ],
     sizes: ['S', 'M', 'L', 'XL'],
@@ -127,7 +137,9 @@ export const MOCK_PRODUCTS: Product[] = [
     tags: ['hoodie', '3d', 'modern', 'streetwear'],
     material: '80% Cotton, 20% Polyester',
     isFeatured: true,
-    has3DModel: true
+    has3DModel: true,
+    discount: 0.21,
+    isNew: false
   },
   {
     id: '7',
@@ -148,7 +160,9 @@ export const MOCK_PRODUCTS: Product[] = [
     tags: ['jacket', 'designer', 'premium'],
     material: 'Leather/Cotton Blend',
     isFeatured: true,
-    has3DModel: false
+    has3DModel: false,
+    discount: 0.19,
+    isNew: false
   },
   {
     id: '8',
@@ -169,7 +183,9 @@ export const MOCK_PRODUCTS: Product[] = [
     tags: ['shoes', 'running', 'sports'],
     material: 'Mesh/Synthetic',
     isFeatured: true,
-    has3DModel: false
+    has3DModel: false,
+    discount: 0.21,
+    isNew: true
   }
 ];
 
