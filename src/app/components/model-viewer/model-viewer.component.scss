@@ -582,3 +582,182 @@
         }
     }
 }
+/* 3D MODEL VIEWER STYLES */
+.model-view-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  background: #000;
+  z-index: 2;
+  
+  app-model-viewer {
+    display: block;
+    width: 100%;
+    height: 100%;
+    
+    canvas {
+      width: 100% !important;
+      height: 100% !important;
+      display: block;
+      background: #000 !important;
+    }
+  }
+}
+
+.product-media-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.image-view {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  
+  .gta-panels {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    left: 0;
+    top: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    overflow: hidden;
+    z-index: 0;
+    padding: 20px;
+  }
+  
+  .product-image {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    max-width: 80%;
+    max-height: 80%;
+    object-fit: contain;
+    z-index: 2;
+    filter: drop-shadow(5px 5px 0 rgba(0, 0, 0, 0.5)) contrast(1.1);
+    mix-blend-mode: multiply;
+  }
+  
+  .product-img-placeholder {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    color: #39ff14;
+    z-index: 2;
+    
+    i {
+      font-size: 64px;
+      opacity: 0.5;
+      margin-bottom: 15px;
+      display: block;
+    }
+    
+    span {
+      font-family: 'Street', 'Pricedown', sans-serif;
+      font-size: 32px;
+      letter-spacing: 3px;
+      text-shadow: 2px 2px 0 #000;
+    }
+  }
+}
+
+/* 3D Badge Style */
+.modern-badge.model-3d {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  
+  i {
+    font-size: 10px;
+  }
+}
+
+/* 3D View Button Active State */
+.modern-quick-btn.view-toggle-btn.active {
+  background: #39ff14;
+  color: #000;
+  border-color: #000;
+  box-shadow: 3px 3px 0 #000;
+}
+
+.modern-quick-btn.view-toggle-btn.active:hover {
+  background: #ff9900;
+}
+
+/* Rotation Button Style */
+.modern-quick-btn i.fa-sync-alt {
+  animation: spin 2s linear infinite;
+}
+
+.modern-quick-btn i.fa-pause {
+  animation: none;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Adjust panels for 3D view */
+.model-view-container ~ .gta-panels {
+  display: none !important;
+}
+
+/* Ensure proper stacking */
+.modern-product-image {
+  background: #000;
+  height: 500px;
+  border-bottom: 4px solid #000;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  /* This will contain both 2D and 3D views */
+  > div {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+}
+
+/* Make sure the 3D canvas has proper dimensions */
+canvas {
+  image-rendering: -moz-crisp-edges;
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+/* Responsive adjustments for 3D view */
+@media (max-width: 768px) {
+  .modern-product-image {
+    height: 350px;
+  }
+  
+  .model-view-container {
+    app-model-viewer {
+      canvas {
+        image-rendering: auto; /* Better quality on mobile */
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .modern-product-image {
+    height: 250px;
+  }
+}

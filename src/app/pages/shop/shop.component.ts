@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, HostListener } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { MOCK_PRODUCTS, CATEGORIES } from '../../services/mock-products.service';
 import { Product } from '../../models/product';
@@ -9,6 +9,9 @@ import { Product } from '../../models/product';
   styleUrls: ['./shop.component.scss']
 })
 export class ShopComponent implements OnInit {
+onProductClick(_t72: Product) {
+throw new Error('Method not implemented.');
+}
   allProducts: Product[] = MOCK_PRODUCTS;
   filteredProducts: Product[] = [];
   categories = CATEGORIES;
@@ -17,6 +20,21 @@ export class ShopComponent implements OnInit {
   selectedSort = 'NEWEST';
   searchQuery = '';
   isLoading = false;
+  viewMode: 'grid' | 'list' = 'grid';
+  gridSize: 'small' | 'medium' | 'large' = 'medium';
+
+  // 3D View State Management
+  product3DView: { [productId: string]: boolean } = {};
+  productIsRotating: { [productId: string]: boolean } = {};
+  favorites: { [productId: string]: boolean } = {};
+
+  // Product details sidebar state
+  selectedProduct: Product | null = null;
+  selectedSize: string = '';
+  selectedColor: string = '';
+  isRotating: boolean = true;
+  show3DView: boolean = true;
+  selectedImageIndex: number = 0;
 
   constructor(
     private router: Router,
@@ -28,8 +46,83 @@ export class ShopComponent implements OnInit {
       if (params['category']) {
         this.selectedCategory = params['category'];
       }
+      // Check if product is selected from URL
+      if (params['productId']) {
+        const productId = params['productId'];
+        this.selectedProduct = this.allProducts.find(p => p.id === productId) || null;
+      }
       this.filterProducts();
     });
+  }
+
+  // Method to select product for details view
+  selectProduct(product: Product): void {
+    this.selectedProduct = product;
+    this.selectedSize = '';
+    this.selectedColor = '';
+    this.isRotating = true;
+    this.show3DView = this.has3DModel(product);
+    this.selectedImageIndex = 0;
+    // Update URL without reloading
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { productId: product.id },
+      queryParamsHandling: 'merge'
+    });
+  }
+
+  // Method to close product details
+  closeProductDetails(): void {
+    this.selectedProduct = null;
+    // Update URL without reloading
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { productId: null },
+      queryParamsHandling: 'merge'
+    });
+  }
+
+  // Check if selected product has 3D model
+  get selectedProductHas3DModel(): boolean {
+    return this.selectedProduct ? this.has3DModel(this.selectedProduct) : false;
+  }
+
+  // Get current image for selected product
+  getCurrentImage(): string {
+    if (!this.selectedProduct || !this.selectedProduct.images) return '';
+    return this.selectedProduct.images[this.selectedImageIndex];
+  }
+
+  // Select image from thumbnails
+  selectImage(index: number): void {
+    this.selectedImageIndex = index;
+  }
+
+  // Toggle 3D rotation
+  toggleRotation(): void {
+    this.isRotating = !this.isRotating;
+  }
+
+  // Change color (to be implemented in ModelViewerComponent)
+  changeColor(): void {
+    console.log('Change color for selected product');
+    // This should trigger a method in ModelViewerComponent
+    // You can use ViewChild or Service for communication
+  }
+
+  // Reset 3D view
+  resetView(): void {
+    this.isRotating = true;
+    this.selectedImageIndex = 0;
+    // This should trigger a method in ModelViewerComponent
+  }
+  // Handle window resize for responsive layout
+  @HostListener('window:resize')
+  onResize(): void {
+    // Close sidebar on mobile when screen gets too small
+    if (window.innerWidth < 768 && this.selectedProduct) {
+      this.closeProductDetails();
+    }
   }
 
   filterProducts(): void {
@@ -50,7 +143,7 @@ export class ShopComponent implements OnInit {
         filtered = filtered.filter(p => 
           p.name.toLowerCase().includes(query) || 
           p.description.toLowerCase().includes(query) ||
-          p.tags.some(tag => tag.toLowerCase().includes(query))
+          (p.tags && p.tags.some((tag: string) => tag.toLowerCase().includes(query)))
         );
       }
       
@@ -97,47 +190,76 @@ export class ShopComponent implements OnInit {
   goToProduct(id: string): void {
     this.router.navigate(['/product', id]);
   }
-  // Add these to your component
-viewMode: 'grid' | 'list' = 'grid';
-gridSize: 'small' | 'medium' | 'large' = 'medium';
 
-// Helper methods
-getCategoryIcon(category: string): string {
-  const icons: {[key: string]: string} = {
-    'TOPS': 'fas fa-tshirt',
-    'BOTTOMS': 'fas fa-vest',
-    'SHOES': 'fas fa-shoe-prints',
-    'ACCESSORIES': 'fas fa-gem',
-    'OUTERWEAR': 'fas fa-jacket'
-  };
-  return icons[category] || 'fas fa-store';
-}
+  // Helper methods
+  getCategoryIcon(category: string): string {
+    const icons: {[key: string]: string} = {
+      'TOPS': 'fas fa-tshirt',
+      'BOTTOMS': 'fas fa-vest',
+      'SHOES': 'fas fa-shoe-prints',
+      'ACCESSORIES': 'fas fa-gem',
+      'OUTERWEAR': 'fas fa-jacket'
+    };
+    return icons[category] || 'fas fa-store';
+  }
 
-getDiscountPercent(product: any): number {
-  if (!product.originalPrice) return 0;
-  return Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100);
-}
+  getDiscountPercent(product: Product): number {
+    if (!product.originalPrice) return 0;
+    return Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100);
+  }
 
-setViewMode(mode: 'grid' | 'list'): void {
-  this.viewMode = mode;
-}
+  // Check if product has 3D model
+  has3DModel(product: Product): boolean {
+    if (!product || !product.images || !product.images[0]) return false;
+    const src = product.images[0].toLowerCase();
+    return src.endsWith('.obj') || src.endsWith('.glb') || src.endsWith('.fbx') || 
+           !!(product as any).has3DModel; // Using type assertion for has3DModel
+  }
 
-addToCart(product: any): void {
-  // Implement add to cart logic
-  console.log('Added to cart:', product);
-  // You can add a toast notification here
-}
+  // 3D Model Controls
+  toggleProduct3DView(productId: string): void {
+    this.product3DView[productId] = !this.product3DView[productId];
+    // Enable rotation by default when switching to 3D view
+    if (this.product3DView[productId]) {
+      this.productIsRotating[productId] = true;
+    }
+  }
 
-tryOnProduct(product: any): void {
-  // Navigate to try-on page with product
-  this.router.navigate(['/try-on'], { 
-    queryParams: { productId: product.id } 
-  });
-}
+  toggleProductRotation(productId: string): void {
+    this.productIsRotating[productId] = !this.productIsRotating[productId];
+  }
 
-toggleFavorite(productId: string): void {
-  // Toggle favorite status
-  console.log('Toggled favorite for:', productId);
-}
+  changeProductColor(productId: string): void {
+    console.log('Change color for product:', productId);
+    // This would call a method in ModelViewerComponent
+    // We'll implement this via ViewChild if needed
+  }
 
+  resetProductView(productId: string): void {
+    this.product3DView[productId] = false;
+    this.productIsRotating[productId] = false;
+  }
+
+  // Product Actions
+  addToCart(product: Product): void {
+    console.log('Added to cart:', product.name);
+    // Implement your cart logic here
+    // Example: this.cartService.addToCart(product);
+  }
+
+  tryOnProduct(product: Product): void {
+    console.log('Try on:', product.name);
+    this.router.navigate(['/try-on'], { 
+      queryParams: { productId: product.id } 
+    });
+  }
+
+  toggleFavorite(productId: string): void {
+    this.favorites[productId] = !this.favorites[productId];
+    console.log('Toggled favorite for:', productId, 'Status:', this.favorites[productId]);
+  }
+
+  isFavorite(productId: string): boolean {
+    return !!this.favorites[productId];
+  }
 }

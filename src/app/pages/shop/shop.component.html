@@ -86,35 +86,61 @@
 
     <!-- MAIN PRODUCT GRID -->
     <div *ngIf="!isLoading && filteredProducts.length > 0" class="products-modern-grid" [ngClass]="'grid-' + gridSize">
-
-      <div *ngFor="let product of filteredProducts" class="modern-product" (click)="goToProduct(product.id)">
-
+      
+      <div *ngFor="let product of filteredProducts" class="modern-product" 
+           [class.has-3d]="has3DModel(product)"
+           (click)="onProductClick(product)">
+        
+        <!-- Product Image/3D Viewer Section -->
         <div class="modern-product-image">
-          <!-- GTA Background Panels -->
+          <!-- GTA Intro Panels -->
           <div class="gta-panels">
             <div class="gta-panel panel-1"></div>
             <div class="gta-panel panel-2"></div>
             <div class="gta-panel panel-3"></div>
           </div>
-
-          <!-- Product Image -->
+          
           <div class="product-img-container">
-            <!-- 3D Model Viewer for .obj files -->
-              <app-model-viewer 
-      [modelPath]="product.images[0]" 
-   
-      [autoRotate]="true">
-    </app-model-viewer>
-
-            <!-- Regular Image for other products -->
-            <img *ngIf="product.images && product.images[0] && !product.images[0].endsWith('.obj')"
-              [src]="product.images[0]" [alt]="product.name" class="product-img">
-
-            <!-- Placeholder -->
-            <div *ngIf="!product.images || !product.images[0]" class="product-img-placeholder">
-              <i class="fas fa-tshirt"></i>
-              <span>FREPPING</span>
-            </div>
+            <ng-container *ngIf="has3DModel(product); else imageView">
+              <!-- 3D Model Viewer -->
+              <div class="model-container">
+                <div class="model-viewer-wrapper">
+                  <app-model-viewer 
+                    [modelPath]="product.images[0]"
+                    [autoRotate]="true"
+                    [autoScale]="true"
+                    [targetSize]="16"
+                    [showHelpers]="false">
+                  </app-model-viewer>
+                </div>
+                <div class="model-controls">
+                  <button class="model-btn" (click)="$event.stopPropagation(); toggleProductRotation(product.id)">
+                    <i class="fas" [class.fa-pause]="!productIsRotating[product.id]" [class.fa-sync-alt]="productIsRotating[product.id]"></i>
+                    {{productIsRotating[product.id] ? 'PAUSE' : 'ROTATE'}}
+                  </button>
+                  <button class="model-btn" (click)="$event.stopPropagation(); changeProductColor(product.id)">
+                    <i class="fas fa-palette"></i>
+                    COLOR
+                  </button>
+                  <button class="model-btn" (click)="$event.stopPropagation(); resetProductView(product.id)">
+                    <i class="fas fa-undo"></i>
+                    RESET
+                  </button>
+                </div>
+              </div>
+            </ng-container>
+            
+            <ng-template #imageView>
+              <!-- Regular Image -->
+              <img *ngIf="product.images && product.images.length > 0; else placeholder"
+                   [src]="product.images[0]" [alt]="product.name" class="product-img">
+              <ng-template #placeholder>
+                <div class="product-img-placeholder">
+                  <i class="fas fa-tshirt"></i>
+                  <span>NO IMAGE</span>
+                </div>
+              </ng-template>
+            </ng-template>
           </div>
 
           <!-- Status Indicators -->
@@ -127,6 +153,9 @@
             </span>
             <span class="modern-badge out" *ngIf="!product.inStock">
               OUT
+            </span>
+            <span class="modern-badge model-3d" *ngIf="has3DModel(product)">
+              3D
             </span>
           </div>
 
@@ -141,19 +170,28 @@
           </div>
         </div>
 
+        <!-- Product Content -->
         <div class="modern-product-content">
-          <!-- Product Info -->
           <div class="modern-product-info">
             <div class="modern-brand">{{product.brand}}</div>
             <h3 class="modern-product-name">{{product.name}}</h3>
             <div class="modern-category">{{product.category}}</div>
-
+            
             <div class="modern-rating">
               <div class="stars">
                 <i *ngFor="let star of [1,2,3,4,5]"
-                  [class]="star <= product.rating ? 'fas fa-star' : 'far fa-star'"></i>
+                   [class]="star <= product.rating ? 'fas fa-star' : 'far fa-star'"></i>
               </div>
               <span class="rating-count">({{product.reviewCount}})</span>
+            </div>
+            
+            <p class="product-description">{{product.description | slice:0:80}}...</p>
+            
+            <div class="product-specs" *ngIf="product.material">
+              <div class="spec-item">
+                <span class="spec-label">MATERIAL:</span>
+                <span class="spec-value">{{product.material}}</span>
+              </div>
             </div>
           </div>
 
