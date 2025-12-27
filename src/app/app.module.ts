@@ -6,7 +6,7 @@ import { AppComponent } from './app.component';
 import { HomeComponent } from './pages/home/home.component';
 import { ShopComponent } from './pages/shop/shop.component';
 import { BottomNavComponent } from './pages/bottom-nav/bottom-nav.component';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { IntroComponent } from './components/intro/intro.component';
 import { ProductDetailsComponent } from './pages/product-details/product-details.component';
 import { TryOnComponent } from './pages/try-on/try-on.component';
@@ -27,12 +27,14 @@ import { TestViewerComponent } from './test-viewer/test-viewer.component';
     CartComponent,
     ProfileComponent,
     ModelViewerComponent,
-    TestViewerComponent
+    TestViewerComponent,
+    
   ],
   imports: [
     BrowserModule,
     AppRoutingModule,
-    FormsModule
+    FormsModule,
+    ReactiveFormsModule
   ],
   providers: [],
   bootstrap: [AppComponent]

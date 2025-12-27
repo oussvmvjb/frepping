@@ -32,7 +32,7 @@ export const MOCK_PRODUCTS: Product[] = [
     originalPrice: 120,
     category: 'BOTTOMS',
     images: [
-      'assets/images/products/pants1.png'
+      'assets/images/products/pant1.png'
     ],
     sizes: ['28', '30', '32', '34'],
     colors: ['Blue', 'Black'],
@@ -55,7 +55,7 @@ export const MOCK_PRODUCTS: Product[] = [
     originalPrice: 150,
     category: 'SHOES',
     images: [
-      'assets/images/products/hoody1.png'
+      'assets/images/products/hoodie2.png'
     ],
     sizes: ['8', '9', '10', '11', '12'],
     colors: ['Black/Green', 'White/Orange'],
@@ -78,7 +78,7 @@ export const MOCK_PRODUCTS: Product[] = [
     originalPrice: 60,
     category: 'TOPS',
     images: [
-      'assets/images/products/tshirt1.png' // Changed to regular image
+      'assets/images/products/tshert1.png' // Changed to regular image
     ],
     sizes: ['XS', 'S', 'M', 'L'],
     colors: ['White', 'Pink', 'Black'],
@@ -149,7 +149,7 @@ export const MOCK_PRODUCTS: Product[] = [
     originalPrice: 180,
     category: 'OUTERWEAR',
     images: [
-      'assets/images/products/jacket1.png'
+      'assets/images/products/hoodie1.png'
     ],
     sizes: ['S', 'M', 'L', 'XL'],
     colors: ['Black', 'Brown', 'Green'],
@@ -172,7 +172,7 @@ export const MOCK_PRODUCTS: Product[] = [
     originalPrice: 140,
     category: 'SHOES',
     images: [
-      'assets/images/products/shoes1.png'
+      'assets/images/products/shumis1.png'
     ],
     sizes: ['7', '8', '9', '10', '11', '12'],
     colors: ['Black/White', 'Blue/White', 'Red/Black'],

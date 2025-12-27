@@ -151,89 +151,438 @@
       </div>
       
       <!-- Cart Summary - GTA Style -->
-      <div class="cart-summary-modern">
-        <div class="summary-panel">
-          <div class="summary-header">
-            <h3 class="street-title">ORDER SUMMARY</h3>
-            <div class="summary-icon">
-              <i class="fas fa-clipboard-list"></i>
-              <span class="item-count">{{getTotalItems()}}</span>
-            </div>
+      <!-- Cart Summary - GTA Style -->
+<div class="cart-summary-modern">
+  <div class="summary-panel">
+    <div class="summary-header">
+      <h3 class="street-title">ORDER SUMMARY</h3>
+      <div class="summary-icon">
+        <i class="fas fa-clipboard-list"></i>
+        <span class="item-count">{{getTotalItems()}}</span>
+      </div>
+    </div>
+    
+    <div class="summary-details">
+      <div class="summary-row">
+        <span>Subtotal ({{getTotalItems()}} items)</span>
+        <span>${{getSubtotal().toFixed(2)}}</span>
+      </div>
+      
+      <div class="summary-row discount" *ngIf="getTotalSavings() > 0">
+        <span>
+          <i class="fas fa-tag"></i>
+          Discounts Applied
+        </span>
+        <span class="discount-amount">-${{getTotalSavings().toFixed(2)}}</span>
+      </div>
+      
+      <div class="summary-row">
+        <span>
+          <i class="fas fa-shipping-fast"></i>
+          Shipping
+          <span class="free-badge" *ngIf="hasFreeShipping()">FREE</span>
+        </span>
+        <span [class.free-shipping]="hasFreeShipping()">
+          {{hasFreeShipping() ? 'FREE' : '$' + getShipping().toFixed(2)}}
+        </span>
+      </div>
+      
+      <div class="summary-row">
+        <span>Tax ({{TAX_RATE * 100}}%)</span>
+        <span>${{getTax().toFixed(2)}}</span>
+      </div>
+      
+      <div class="summary-divider"></div>
+      
+      <div class="summary-row total">
+        <span class="total-label">TOTAL</span>
+        <span class="total-amount">${{getTotal().toFixed(2)}}</span>
+      </div>
+      
+      <div class="summary-note" *ngIf="!hasFreeShipping()">
+        <i class="fas fa-info-circle"></i>
+        Add ${{getRemainingForFreeShipping().toFixed(2)}} more for free shipping!
+      </div>
+    </div>
+    
+    <!-- Checkout Form (Hidden by default) -->
+    <div class="checkout-form-modern" *ngIf="showCheckoutForm">
+      <div class="form-header">
+        <h3 class="street-title">
+          <i class="fas fa-user-check"></i>
+          CHECKOUT INFORMATION
+        </h3>
+        <button class="close-form-btn" (click)="showCheckoutForm = false">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      
+      <form [formGroup]="checkoutForm" (ngSubmit)="submitCheckout()">
+        <!-- Personal Information Section -->
+        <div class="form-section">
+          <div class="section-title">
+            <i class="fas fa-id-card"></i>
+            <span>1. PERSONAL INFORMATION</span>
           </div>
           
-          <div class="summary-details">
-            <div class="summary-row">
-              <span>Subtotal ({{getTotalItems()}} items)</span>
-              <span>${{getSubtotal().toFixed(2)}}</span>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="firstName">
+                <i class="fas fa-user"></i>
+                First Name *
+              </label>
+              <input 
+                type="text" 
+                id="firstName" 
+                formControlName="firstName" 
+                class="street-input"
+                placeholder="Enter your first name"
+                [class.error]="checkoutForm.get('firstName')?.invalid && checkoutForm.get('firstName')?.touched">
+              <div class="error-message" *ngIf="checkoutForm.get('firstName')?.invalid && checkoutForm.get('firstName')?.touched">
+                Please enter your first name
+              </div>
             </div>
             
-            <div class="summary-row discount" *ngIf="getTotalSavings() > 0">
-              <span>
-                <i class="fas fa-tag"></i>
-                Discounts Applied
-              </span>
-              <span class="discount-amount">-${{getTotalSavings().toFixed(2)}}</span>
+            <div class="form-group">
+              <label for="lastName">
+                <i class="fas fa-user"></i>
+                Last Name *
+              </label>
+              <input 
+                type="text" 
+                id="lastName" 
+                formControlName="lastName" 
+                class="street-input"
+                placeholder="Enter your last name"
+                [class.error]="checkoutForm.get('lastName')?.invalid && checkoutForm.get('lastName')?.touched">
+              <div class="error-message" *ngIf="checkoutForm.get('lastName')?.invalid && checkoutForm.get('lastName')?.touched">
+                Please enter your last name
+              </div>
             </div>
             
-            <div class="summary-row">
-              <span>
-                <i class="fas fa-shipping-fast"></i>
-                Shipping
-                <span class="free-badge" *ngIf="hasFreeShipping()">FREE</span>
-              </span>
-              <span [class.free-shipping]="hasFreeShipping()">
-                {{hasFreeShipping() ? 'FREE' : '$' + getShipping().toFixed(2)}}
-              </span>
+            <div class="form-group">
+              <label for="email">
+                <i class="fas fa-envelope"></i>
+                Email Address *
+              </label>
+              <input 
+                type="email" 
+                id="email" 
+                formControlName="email" 
+                class="street-input"
+                placeholder="your.email@example.com"
+                [class.error]="checkoutForm.get('email')?.invalid && checkoutForm.get('email')?.touched">
+              <div class="error-message" *ngIf="checkoutForm.get('email')?.invalid && checkoutForm.get('email')?.touched">
+                Please enter a valid email address
+              </div>
             </div>
             
-            <div class="summary-row">
-              <span>Tax ({{TAX_RATE * 100}}%)</span>
-              <span>${{getTax().toFixed(2)}}</span>
-            </div>
-            
-            <div class="summary-divider"></div>
-            
-            <div class="summary-row total">
-              <span class="total-label">TOTAL</span>
-              <span class="total-amount">${{getTotal().toFixed(2)}}</span>
-            </div>
-            
-            <div class="summary-note" *ngIf="!hasFreeShipping()">
-              <i class="fas fa-info-circle"></i>
-              Add ${{getRemainingForFreeShipping().toFixed(2)}} more for free shipping!
-            </div>
-          </div>
-          
-          <!-- Action Buttons -->
-          <div class="cart-actions-modern">
-            <button class="btn-modern secondary-btn" (click)="continueShopping()">
-              <i class="fas fa-arrow-left"></i> CONTINUE SHOPPING
-            </button>
-            <button class="btn-modern danger-btn" (click)="clearCart()">
-              <i class="fas fa-trash-alt"></i> CLEAR CART
-            </button>
-            <button class="btn-modern checkout-btn" (click)="proceedToCheckout()">
-              <i class="fas fa-lock"></i> SECURE CHECKOUT - ${{getTotal().toFixed(2)}}
-            </button>
-          </div>
-          
-          <!-- Security Badges -->
-          <div class="security-badges">
-            <div class="security-badge">
-              <i class="fas fa-shield-alt"></i>
-              <span>Secure Payment</span>
-            </div>
-            <div class="security-badge">
-              <i class="fas fa-undo"></i>
-              <span>30-Day Returns</span>
-            </div>
-            <div class="security-badge">
-              <i class="fas fa-truck"></i>
-              <span>Fast Shipping</span>
+            <div class="form-group">
+              <label for="phone">
+                <i class="fas fa-phone"></i>
+                Phone Number *
+              </label>
+              <input 
+                type="tel" 
+                id="phone" 
+                formControlName="phone" 
+                class="street-input"
+                placeholder="+216 XX XXX XXX"
+                [class.error]="checkoutForm.get('phone')?.invalid && checkoutForm.get('phone')?.touched">
+              <div class="error-message" *ngIf="checkoutForm.get('phone')?.invalid && checkoutForm.get('phone')?.touched">
+                Please enter a valid phone number
+              </div>
             </div>
           </div>
         </div>
+        
+        <!-- Address Information Section -->
+        <div class="form-section">
+          <div class="section-title">
+            <i class="fas fa-map-marker-alt"></i>
+            <span>2. ADDRESS INFORMATION</span>
+          </div>
+          
+          <div class="form-grid">
+            <div class="form-group full-width">
+              <label for="address">
+                <i class="fas fa-home"></i>
+                Address *
+              </label>
+              <input 
+                type="text" 
+                id="address" 
+                formControlName="address" 
+                class="street-input"
+                placeholder="Street address, building, apartment"
+                [class.error]="checkoutForm.get('address')?.invalid && checkoutForm.get('address')?.touched">
+              <div class="error-message" *ngIf="checkoutForm.get('address')?.invalid && checkoutForm.get('address')?.touched">
+                Please enter your address
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label for="city">
+                <i class="fas fa-city"></i>
+                City *
+              </label>
+              <input 
+                type="text" 
+                id="city" 
+                formControlName="city" 
+                class="street-input"
+                placeholder="Enter your city"
+                [class.error]="checkoutForm.get('city')?.invalid && checkoutForm.get('city')?.touched">
+              <div class="error-message" *ngIf="checkoutForm.get('city')?.invalid && checkoutForm.get('city')?.touched">
+                Please enter your city
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label for="governorate">
+                <i class="fas fa-landmark"></i>
+                Governorate *
+              </label>
+              <select 
+                id="governorate" 
+                formControlName="governorate" 
+                class="street-select"
+                [class.error]="checkoutForm.get('governorate')?.invalid && checkoutForm.get('governorate')?.touched">
+                <option value="">Select Governorate</option>
+                <option value="tunis">Tunis</option>
+                <option value="ariana">Ariana</option>
+                <option value="benarous">Ben Arous</option>
+                <option value="manouba">Manouba</option>
+                <option value="nabeul">Nabeul</option>
+                <option value="zaghouan">Zaghouan</option>
+                <option value="bizerte">Bizerte</option>
+                <option value="beja">Béja</option>
+                <option value="jendouba">Jendouba</option>
+                <option value="kef">Le Kef</option>
+                <option value="siliana">Siliana</option>
+                <option value="sousse">Sousse</option>
+                <option value="monastir">Monastir</option>
+                <option value="mahdia">Mahdia</option>
+                <option value="sfax">Sfax</option>
+                <option value="kairouan">Kairouan</option>
+                <option value="kasserine">Kasserine</option>
+                <option value="sidi_bouzid">Sidi Bouzid</option>
+                <option value="gabes">Gabès</option>
+                <option value="medenine">Médenine</option>
+                <option value="tataouine">Tataouine</option>
+                <option value="gafsa">Gafsa</option>
+                <option value="tozeur">Tozeur</option>
+                <option value="kebili">Kébili</option>
+              </select>
+              <div class="error-message" *ngIf="checkoutForm.get('governorate')?.invalid && checkoutForm.get('governorate')?.touched">
+                Please select your governorate
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label for="postalCode">
+                <i class="fas fa-mail-bulk"></i>
+                Postal Code *
+              </label>
+              <input 
+                type="text" 
+                id="postalCode" 
+                formControlName="postalCode" 
+                class="street-input"
+                placeholder="XXXX"
+                maxlength="4"
+                [class.error]="checkoutForm.get('postalCode')?.invalid && checkoutForm.get('postalCode')?.touched">
+              <div class="error-message" *ngIf="checkoutForm.get('postalCode')?.invalid && checkoutForm.get('postalCode')?.touched">
+                Please enter a valid postal code (4 digits)
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Payment Method Section -->
+        <div class="form-section">
+          <div class="section-title">
+            <i class="fas fa-credit-card"></i>
+            <span>3. PAYMENT METHOD</span>
+          </div>
+          
+          <div class="payment-methods">
+            <label class="payment-option" [class.selected]="checkoutForm.get('paymentMethod')?.value === 'cash'">
+              <input 
+                type="radio" 
+                formControlName="paymentMethod" 
+                value="cash"
+                hidden>
+              <div class="payment-content">
+                <div class="payment-icon">
+                  <i class="fas fa-money-bill-wave"></i>
+                </div>
+                <div class="payment-info">
+                  <h4>Cash on Delivery</h4>
+                  <p>Pay when you receive your order</p>
+                </div>
+                <div class="payment-check">
+                  <i class="fas fa-check"></i>
+                </div>
+              </div>
+            </label>
+            
+            <label class="payment-option" [class.selected]="checkoutForm.get('paymentMethod')?.value === 'card'">
+              <input 
+                type="radio" 
+                formControlName="paymentMethod" 
+                value="card"
+                hidden>
+              <div class="payment-content">
+                <div class="payment-icon">
+                  <i class="fas fa-credit-card"></i>
+                </div>
+                <div class="payment-info">
+                  <h4>Credit/Debit Card</h4>
+                  <p>Pay securely with your card</p>
+                </div>
+                <div class="payment-check">
+                  <i class="fas fa-check"></i>
+                </div>
+              </div>
+            </label>
+            
+            <label class="payment-option" [class.selected]="checkoutForm.get('paymentMethod')?.value === 'flouci'">
+              <input 
+                type="radio" 
+                formControlName="paymentMethod" 
+                value="flouci"
+                hidden>
+              <div class="payment-content">
+                <div class="payment-icon">
+                  <i class="fas fa-mobile-alt"></i>
+                </div>
+                <div class="payment-info">
+                  <h4>Flouci</h4>
+                  <p>Pay with Flouci wallet</p>
+                </div>
+                <div class="payment-check">
+                  <i class="fas fa-check"></i>
+                </div>
+              </div>
+            </label>
+          </div>
+          
+          <!-- Card Details (Conditional) -->
+          <div class="card-details" *ngIf="checkoutForm.get('paymentMethod')?.value === 'card'">
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="cardNumber">
+                  <i class="fas fa-credit-card"></i>
+                  Card Number *
+                </label>
+                <input 
+                  type="text" 
+                  id="cardNumber" 
+                  formControlName="cardNumber" 
+                  class="street-input"
+                  placeholder="XXXX XXXX XXXX XXXX"
+                  maxlength="19">
+              </div>
+              
+              <div class="form-group">
+                <label for="expiryDate">
+                  <i class="fas fa-calendar-alt"></i>
+                  Expiry Date *
+                </label>
+                <input 
+                  type="text" 
+                  id="expiryDate" 
+                  formControlName="expiryDate" 
+                  class="street-input"
+                  placeholder="MM/YY">
+              </div>
+              
+              <div class="form-group">
+                <label for="cvv">
+                  <i class="fas fa-lock"></i>
+                  CVV *
+                </label>
+                <input 
+                  type="text" 
+                  id="cvv" 
+                  formControlName="cvv" 
+                  class="street-input"
+                  placeholder="123"
+                  maxlength="3">
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Terms and Conditions -->
+        <div class="terms-section">
+          <label class="terms-checkbox">
+            <input 
+              type="checkbox" 
+              formControlName="acceptTerms"
+              hidden>
+            <div class="custom-checkbox" [class.checked]="checkoutForm.get('acceptTerms')?.value">
+              <i class="fas fa-check"></i>
+            </div>
+            <span class="terms-text">
+              I agree to the <a href="#" class="terms-link">Terms and Conditions</a> and 
+              <a href="#" class="terms-link">Privacy Policy</a>
+            </span>
+          </label>
+          <div class="error-message" *ngIf="checkoutForm.get('acceptTerms')?.invalid && checkoutForm.get('acceptTerms')?.touched">
+            You must accept the terms and conditions
+          </div>
+        </div>
+        
+        <!-- Form Actions -->
+        <div class="form-actions">
+          <button type="button" class="btn-modern secondary-btn" (click)="showCheckoutForm = false">
+            <i class="fas fa-arrow-left"></i> CANCEL
+          </button>
+          <button type="submit" 
+          class="btn-modern checkout-btn" 
+          [disabled]="checkoutForm.invalid || isSubmitting">
+    <i class="fas fa-lock"></i> 
+    <span *ngIf="!isSubmitting">CONFIRM ORDER - ${{getTotal().toFixed(2)}}</span>
+    <span *ngIf="isSubmitting">
+      <i class="fas fa-spinner fa-spin"></i> PROCESSING...
+    </span>
+  </button>
+        </div>
+      </form>
+    </div>
+    
+    <!-- Action Buttons (When form is hidden) -->
+    <div class="cart-actions-modern" *ngIf="!showCheckoutForm">
+      <button class="btn-modern secondary-btn" (click)="continueShopping()">
+        <i class="fas fa-arrow-left"></i> CONTINUE SHOPPING
+      </button>
+      <button class="btn-modern danger-btn" (click)="clearCart()">
+        <i class="fas fa-trash-alt"></i> CLEAR CART
+      </button>
+      <button class="btn-modern checkout-btn" (click)="showCheckoutForm = true">
+        <i class="fas fa-lock"></i> SECURE CHECKOUT - ${{getTotal().toFixed(2)}}
+      </button>
+    </div>
+    
+    <!-- Security Badges -->
+    <div class="security-badges" *ngIf="!showCheckoutForm">
+      <div class="security-badge">
+        <i class="fas fa-shield-alt"></i>
+        <span>Secure Payment</span>
       </div>
+      <div class="security-badge">
+        <i class="fas fa-undo"></i>
+        <span>30-Day Returns</span>
+      </div>
+      <div class="security-badge">
+        <i class="fas fa-truck"></i>
+        <span>Fast Shipping</span>
+      </div>
+    </div>
+  </div>
+</div>
     </div>
     
     <ng-template #emptyCart>
@@ -259,4 +608,5 @@
     </ng-template>
   </section>
 </div>
+
 <app-bottom-nav></app-bottom-nav>
