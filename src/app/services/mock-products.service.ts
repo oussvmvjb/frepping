@@ -101,7 +101,7 @@ export const MOCK_PRODUCTS: Product[] = [
     originalPrice: 99,
     category: 'BOTTOMS',
     images: [
-      'assets/3dmodel/pant.obj', // 3D model
+      'assets/3dmodel/uploads_files_4988185_黑色拼接宽松卫衣_obj/黑色拼接宽松卫衣_obj.obj', // 3D model
       'assets/images/products/pants1.png' // Fallback image
     ],
     sizes: ['28', '30', '32', '34', '36'],
@@ -149,7 +149,7 @@ export const MOCK_PRODUCTS: Product[] = [
     originalPrice: 180,
     category: 'OUTERWEAR',
     images: [
-      'assets/images/products/hoodie1.png'
+      'assets/3dmodel/uploads_files_5109932_米白印花卫衣/米白印花卫衣.obj',
     ],
     sizes: ['S', 'M', 'L', 'XL'],
     colors: ['Black', 'Brown', 'Green'],

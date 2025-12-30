@@ -18,13 +18,7 @@ import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader';
   templateUrl: './model-viewer.component.html',
   styleUrls: ['./model-viewer.component.scss']
 })
-export class ModelViewerComponent
-  implements OnInit, AfterViewInit, OnDestroy {
-backgroundType: any;
-changeBackground(arg0: string) {
-throw new Error('Method not implemented.');
-}
-
+export class ModelViewerComponent implements OnInit, AfterViewInit, OnDestroy {
   @Input() modelPath: string = '';
   @Input() autoRotate: boolean = true;
   @Input() autoScale: boolean = true;
@@ -38,9 +32,8 @@ throw new Error('Method not implemented.');
   private renderer!: THREE.WebGLRenderer;
   private model: THREE.Group | THREE.Mesh | null = null;
   private animationId = 0;
-  private isLoaded = false;
+  isLoaded = false;
   private currentRotationEnabled = true;
-  private backgroundGroup: THREE.Group | null = null;
 
   ngOnInit(): void {
     this.currentRotationEnabled = this.autoRotate;
@@ -72,14 +65,15 @@ throw new Error('Method not implemented.');
     this.renderer.setSize(width, height);
   }
 
-  // ================= THREE INIT =================
-
   private initThreeJS(): void {
     const canvas = this.canvasRef.nativeElement;
     const width = canvas.clientWidth || 400;
     const height = canvas.clientHeight || 400;
 
     this.scene = new THREE.Scene();
+    
+    // Black background
+    this.scene.background = new THREE.Color(0x000000);
 
     this.camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
     this.camera.position.set(0, 2, 10);
@@ -87,48 +81,28 @@ throw new Error('Method not implemented.');
     this.renderer = new THREE.WebGLRenderer({
       canvas,
       antialias: true,
-      alpha: true
+      alpha: false // Changed to false for solid black background
     });
 
     this.renderer.setSize(width, height);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
-    this.renderer.shadowMap.enabled = true;
 
     this.setupLighting();
   }
 
-  // ================= LIGHT =================
-
   private setupLighting(): void {
-
+    // Basic lighting for the model
     this.scene.add(new THREE.AmbientLight(0xffffff, 0.6));
 
     const main = new THREE.DirectionalLight(0xffffff, 1);
     main.position.set(5, 10, 7);
-    main.castShadow = true;
     this.scene.add(main);
 
     const fill = new THREE.DirectionalLight(0xffffff, 0.4);
     fill.position.set(-5, 5, -5);
     this.scene.add(fill);
   }
-
-  // ================= BACKGROUND =================
-
-  private setupBackground(): void {
-    if (this.backgroundGroup) {
-      this.scene.remove(this.backgroundGroup);
-    }
-
-    this.backgroundGroup = new THREE.Group();
-    const grid = new THREE.GridHelper(30, 30, 0x39ff14, 0x0a0a0a);
-    grid.position.y = -5;
-    this.backgroundGroup.add(grid);
-    this.scene.add(this.backgroundGroup);
-  }
-
-  // ================= LOAD MODEL =================
 
   private loadModel(): void {
     if (!this.modelPath) {
@@ -157,7 +131,6 @@ throw new Error('Method not implemented.');
         this.model = object;
         this.isLoaded = true;
 
-          this.setupBackground();
         this.centerAndScale(object);
         this.scene.add(object);
         this.adjustCamera();
@@ -190,8 +163,6 @@ throw new Error('Method not implemented.');
     this.camera.lookAt(center);
   }
 
-  // ================= COLOR CHANGE =================
-
   public changeColor(hex: number): void {
     if (!this.model) return;
 
@@ -206,17 +177,14 @@ throw new Error('Method not implemented.');
     });
   }
 
-  // ================= PLACEHOLDER =================
-
   private createPlaceholder(): void {
     const geo = new THREE.BoxGeometry(3, 4, 0.2);
     const mat = new THREE.MeshStandardMaterial({ color: 0xff0000 });
     const mesh = new THREE.Mesh(geo, mat);
     this.scene.add(mesh);
     this.model = mesh;
+    this.isLoaded = true;
   }
-
-  // ================= ANIMATION =================
 
   private animate(): void {
     this.animationId = requestAnimationFrame(() => this.animate());
