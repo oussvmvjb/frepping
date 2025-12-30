@@ -18,6 +18,7 @@ export class ProductDetailsComponent implements OnInit {
   isRotating: boolean = true;
   has3DModel: boolean = false;
   show3DView: boolean = true;
+  addStreetBackground: boolean = true; // Propriété pour le fond
   
   @ViewChild(ModelViewerComponent) modelViewer!: ModelViewerComponent;
 
@@ -51,6 +52,8 @@ export class ProductDetailsComponent implements OnInit {
     // Check if first image is a 3D model
     const firstImage = this.product.images[0];
     this.has3DModel = firstImage?.endsWith('.obj') || 
+                     firstImage?.endsWith('.glb') ||
+                     firstImage?.endsWith('.gltf') ||
                      this.product.has3DModel || 
                      false;
     
@@ -59,7 +62,28 @@ export class ProductDetailsComponent implements OnInit {
   }
 
   // 3D Controls
+  toggleRotation(): void {
+    this.isRotating = !this.isRotating;
+  }
 
+  toggleBackground(): void {
+    this.addStreetBackground = !this.addStreetBackground;
+    // Optionnel: vous pouvez forcer un rechargement si nécessaire
+  }
+
+  changeModelColor(): void {
+    if (this.modelViewer) {
+      // Changer la couleur du modèle
+      const colors = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00, 0xff00ff, 0x00ffff];
+      const randomColor = colors[Math.floor(Math.random() * colors.length)];
+      this.modelViewer.changeColor(randomColor);
+    }
+  }
+
+  resetModel(): void {
+    this.isRotating = true;
+    // Réinitialiser d'autres propriétés si nécessaire
+  }
 
   getCurrentImage(): string {
     if (!this.product?.images || this.product.images.length === 0) {
@@ -83,7 +107,8 @@ export class ProductDetailsComponent implements OnInit {
     return this.product.images.filter(img => 
       !img.endsWith('.obj') && 
       !img.endsWith('.fbx') && 
-      !img.endsWith('.glb')
+      !img.endsWith('.glb') &&
+      !img.endsWith('.gltf')
     );
   }
 
@@ -99,14 +124,13 @@ export class ProductDetailsComponent implements OnInit {
     this.selectedColor = color;
   }
 
-
-
   tryOn(): void {
     if (!this.product) return;
     this.router.navigate(['/try-on'], { 
       queryParams: { 
         productId: this.product.id,
-        modelUrl: this.has3DModel ? this.product.images[0] : null
+        modelUrl: this.has3DModel ? this.product.images[0] : null,
+        backgroundMode: this.addStreetBackground ? 'street' : 'studio'
       } 
     });
   }
@@ -114,10 +138,9 @@ export class ProductDetailsComponent implements OnInit {
   goBack(): void {
     this.router.navigate(['/shop']);
   }
-    addToCart(product: Product): void {
+  
+  addToCart(product: Product): void {
     this.cartService.addToCart(product);
     console.log('Added to cart:', product.name);
-    // Implement your cart logic here
-    // Example: this.cartService.addToCart(product);
   }
 }

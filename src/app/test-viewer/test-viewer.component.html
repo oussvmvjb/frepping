@@ -1,12 +1,76 @@
-<!-- model-viewer.component.html -->
-<div class="model-viewer-container">
+<div class="test-viewer-container">
   <canvas #canvas class="model-canvas"></canvas>
-  <div *ngIf="" class="loading-overlay">
+  
+  <div *ngIf="isLoading" class="loading-overlay">
     <div class="loading-spinner"></div>
-    <span class="loading-text">LOADING 3D MODEL...</span>
+    <span class="loading-text">RECHERCHE DU FOND DE RUE...</span>
+    <div class="loading-subtext">
+      Test des chemins: assets/shoot_background__graffiti_street.glb
+    </div>
   </div>
-  <div *ngIf="" class="debug-info">
-    <span class="debug-text">✅ MODEL LOADED</span>
-    <span class="debug-scale" *ngIf="">(AUTO-SCALED FOR VISIBILITY)</span>
+  
+  <div *ngIf="isLoaded && showDebugPanel" class="debug-panel">
+    <div class="debug-header">
+      <h3>🔍 DEBUG PANEL</h3>
+      <button class="close-btn" (click)="showDebugPanel = false">×</button>
+    </div>
+    
+    <div class="debug-section">
+      <h4>🎯 FOND DE RUE</h4>
+      <div class="debug-status" [class.success]="debugInfo.backgroundLoaded">
+        <span class="status-icon">{{ debugInfo.backgroundLoaded ? '✅' : '❌' }}</span>
+        <span class="status-text">
+          {{ debugInfo.backgroundLoaded ? 'CHARGÉ' : 'NON TROUVÉ' }}
+        </span>
+      </div>
+      
+      <div *ngIf="debugInfo.foundPath" class="debug-path">
+        📍 Chemin: <code>{{ debugInfo.foundPath }}</code>
+      </div>
+      
+      <div *ngIf="debugInfo.backgroundError" class="debug-error">
+        ⚠️ Erreur: {{ debugInfo.backgroundError }}
+      </div>
+    </div>
+    
+    <div class="debug-section">
+      <h4>🧪 TEST MANUEL</h4>
+      <div class="path-input">
+        <input 
+          type="text" 
+          [(ngModel)]="manualPath" 
+          placeholder="Chemin du fichier .glb"
+          class="path-field"
+        >
+        <button class="test-btn" (click)="testManualPath()">
+          Tester ce chemin
+        </button>
+      </div>
+      
+      <div class="suggested-paths">
+        <h5>Chemins suggérés:</h5>
+        <ul>
+          <li *ngFor="let path of backgroundPaths">
+            <code (click)="manualPath = path">{{ path }}</code>
+          </li>
+        </ul>
+      </div>
+    </div>
+    
+    <div class="debug-section">
+      <h4>📁 ASSETS</h4>
+      <button class="asset-btn" (click)="checkAssetStructure()">
+        Vérifier la structure des fichiers
+      </button>
+    </div>
+    
+    <div class="debug-info">
+      <span class="info-text">👁️ Objets: {{ children?.length || 0 }}</span>
+      <span class="info-text">🎯 Rotation: {{ autoRotate ? 'ON' : 'OFF' }}</span>
+    </div>
   </div>
+  
+  <button *ngIf="!showDebugPanel" class="toggle-debug-btn" (click)="showDebugPanel = true">
+    🔍 DEBUG
+  </button>
 </div>

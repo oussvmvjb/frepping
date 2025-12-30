@@ -26,8 +26,9 @@ import { TestViewerComponent } from './test-viewer/test-viewer.component';
     TryOnComponent,
     CartComponent,
     ProfileComponent,
-    ModelViewerComponent,
-    TestViewerComponent,
+    ModelViewerComponent
+    
+    
     
   ],
   imports: [
