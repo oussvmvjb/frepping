@@ -19,7 +19,7 @@ export class BottomNavComponent implements OnInit, OnDestroy {
     { path: '/shop', icon: 'fas fa-store', label: 'SHOP', active: false },
     { path: '/try-on', icon: 'fas fa-user', label: 'TRY-ON', active: false },
     { path: '/cart', icon: 'fas fa-shopping-cart', label: 'CART', active: false },
-    { path: '/profile', icon: 'fas fa-user-circle', label: 'PROFILE', active: false }
+    { path: '/mod', icon: 'fas fa-user-circle', label: 'PROFILE', active: false }
   ];
 
   constructor(
