@@ -76,7 +76,7 @@ export class ProductDetailsComponent implements OnInit {
       // Changer la couleur du modèle
       const colors = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00, 0xff00ff, 0x00ffff];
       const randomColor = colors[Math.floor(Math.random() * colors.length)];
-      this.modelViewer.changeColor(randomColor);
+     
     }
   }
 

@@ -408,4 +408,4 @@ export class ModelViewerComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.renderer.render(this.scene, this.camera);
   }
-}
+} 
