@@ -15,42 +15,28 @@
             <!-- Left: Product Gallery -->
             <div class="product-gallery">
                 <!-- 3D Model Section - WITH BACKGROUND -->
-                <div *ngIf="has3DModel && show3DView" class="model-container">
-                    <div class="model-viewer-wrapper">
-                        <app-model-viewer 
-                            [modelPath]="product.images[0]"
-                            [autoRotate]="isRotating"
-                            [autoScale]="true"
-                            [targetSize]="12"
-                          > <!-- IMPORTANT: Ajouté ici -->
-                        </app-model-viewer>
-                        
-                        <!-- Background Toggle Button -->
-                        <div class="background-toggle">
-                            <button class="bg-toggle-btn" (click)="toggleBackground()" 
-                                    [class.active]="addStreetBackground">
-                                <i class="fas" [class.fa-city]="addStreetBackground" 
-                                           [class.fa-mountain]="!addStreetBackground"></i>
-                                <span>{{ addStreetBackground ? 'STREET VIEW' : 'STUDIO VIEW' }}</span>
-                            </button>
-                        </div>
-
-                        <div class="model-controls">
-                            <button class="model-btn" >
-                                <i class="fas" [class.fa-pause]="!isRotating" [class.fa-sync-alt]="isRotating"></i>
-                                {{isRotating ? 'PAUSE' : 'ROTATE'}}
-                            </button>
-                            <button class="model-btn" >
-                                <i class="fas fa-palette"></i>
-                                COLOR
-                            </button>
-                            <button class="model-btn">
-                                <i class="fas fa-undo"></i>
-                                RESET
-                            </button>
-                        </div>
-                    </div>
-                </div>
+  <!-- 3D Model Section - WITH BACKGROUND -->
+<div *ngIf="has3DModel && show3DView" class="model-container">
+    <div class="model-viewer-wrapper">
+        <app-model-viewer 
+            [modelPath]="product.images[0]"
+            [autoRotate]="isRotating"
+            [autoScale]="true"
+            [targetSize]="12"
+            [addStreetBackground]="addStreetBackground"> <!-- AJOUTEZ CETTE LIGNE ! -->
+        </app-model-viewer>
+        
+        <!-- Background Toggle Button -->
+        <div class="background-toggle">
+            <button class="bg-toggle-btn" (click)="toggleBackground()" 
+                    [class.active]="addStreetBackground">
+                <i class="fas" [class.fa-city]="addStreetBackground" 
+                           [class.fa-mountain]="!addStreetBackground"></i>
+                <span>{{ addStreetBackground ? 'STREET VIEW' : 'STUDIO VIEW' }}</span>
+            </button>
+        </div>
+    </div>
+</div>
 
                 <!-- Regular Image Section -->
                 <div *ngIf="!has3DModel || !show3DView" class="main-image-container">

@@ -102,7 +102,7 @@ export const MOCK_PRODUCTS: Product[] = [
     category: 'BOTTOMS',
     images: [
       'assets/3dmodel/uploads_files_4988185_黑色拼接宽松卫衣_obj/黑色拼接宽松卫衣_obj.obj', // 3D model
-      'assets/images/products/pants1.png' // Fallback image
+      'assets/images/products/hoody1.png'
     ],
     sizes: ['28', '30', '32', '34', '36'],
     colors: ['Black', 'Olive Green', 'Gray'],
@@ -126,7 +126,7 @@ export const MOCK_PRODUCTS: Product[] = [
     category: 'TOPS',
     images: [
       'assets/3dmodel/tshert_girl.obj', 
-      'assets/images/products/hoodie1.png'
+      'assets/images/products/tshert_girl.png'
     ],
     sizes: ['S', 'M', 'L', 'XL'],
     colors: ['Black', 'Gray', 'Navy'],
@@ -150,6 +150,7 @@ export const MOCK_PRODUCTS: Product[] = [
     category: 'OUTERWEAR',
     images: [
       'assets/3dmodel/uploads_files_5109932_米白印花卫衣/米白印花卫衣.obj',
+      'assets/images/products/shert1.png'
     ],
     sizes: ['S', 'M', 'L', 'XL'],
     colors: ['Black', 'Brown', 'Green'],

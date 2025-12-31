@@ -212,12 +212,7 @@ export class ShopComponent implements OnInit {
   }
 
   // Check if product has 3D model
-  has3DModel(product: Product): boolean {
-    if (!product || !product.images || !product.images[0]) return false;
-    const src = product.images[0].toLowerCase();
-    return src.endsWith('.obj') || src.endsWith('.glb') || src.endsWith('.fbx') || 
-           !!(product as any).has3DModel; // Using type assertion for has3DModel
-  }
+
 
   // 3D Model Controls
   toggleProduct3DView(productId: string): void {
@@ -266,4 +261,67 @@ export class ShopComponent implements OnInit {
   isFavorite(productId: string): boolean {
     return !!this.favorites[productId];
   }
+  // Dans votre composant shop.component.ts
+
+// Méthode pour obtenir l'image du produit (sauter les fichiers 3D)
+getProductImage(product: Product): string {
+  if (!product.images || product.images.length === 0) {
+    return 'assets/images/placeholder.jpg';
+  }
+  
+  // Chercher une image (pas un fichier 3D)
+  for (const image of product.images) {
+    if (!this.is3DFile(image)) {
+      return image;
+    }
+  }
+  
+  // Si toutes les images sont des fichiers 3D, prendre la première
+  return product.images[0];
+}
+
+// Méthode pour vérifier si un fichier est un modèle 3D
+is3DFile(filename: string): boolean {
+  if (!filename) return false;
+  
+  const lowerFilename = filename.toLowerCase();
+  return lowerFilename.endsWith('.obj') || 
+         lowerFilename.endsWith('.glb') || 
+         lowerFilename.endsWith('.gltf') ||
+         lowerFilename.endsWith('.fbx');
+}
+
+// Méthode pour gérer les erreurs d'image
+handleImageError(product: Product, event: any): void {
+  console.log('❌ Erreur de chargement d\'image pour:', product.name);
+  
+  // Si c'est un fichier 3D, afficher un placeholder spécial
+  if (this.is3DFile(event.target.src)) {
+    event.target.style.display = 'none';
+    const parent = event.target.parentElement;
+    
+    // Créer un placeholder pour les modèles 3D
+    const placeholder = document.createElement('div');
+    placeholder.className = 'product-3d-placeholder';
+    placeholder.innerHTML = `
+      <i class="fas fa-cube"></i>
+      <span>3D MODEL</span>
+      <small>Cliquez pour voir</small>
+    `;
+    
+    parent.appendChild(placeholder);
+  } else {
+    // Pour les images normales, utiliser le placeholder par défaut
+    event.target.src = 'assets/images/placeholder.jpg';
+  }
+}
+
+// Méthode pour vérifier si le produit a un modèle 3D (pour le badge)
+has3DModel(product: Product): boolean {
+  if (!product.images) return false;
+  
+  return product.images.some(image => this.is3DFile(image)) || 
+         product.has3DModel || 
+         false;
+}
 }

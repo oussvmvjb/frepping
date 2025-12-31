@@ -91,7 +91,7 @@
            [class.has-3d]="has3DModel(product)"
            (click)="onProductClick(product)">
         
-        <!-- Product Image/3D Viewer Section -->
+        <!-- Product Image Section (JUST IMAGE - NO 3D) -->
         <div class="modern-product-image">
           <!-- GTA Intro Panels -->
           <div class="gta-panels">
@@ -100,46 +100,21 @@
             <div class="gta-panel panel-3"></div>
           </div>
           
-          <div class="product-img-container"  (click)="goToProduct(product.id)">
-            <ng-container *ngIf="has3DModel(product); else imageView">
-              <!-- 3D Model Viewer -->
-              <div class="model-container">
-                <div class="model-viewer-wrapper">
-                  <app-model-viewer 
-                    [modelPath]="product.images[0]"
-                    [autoRotate]="true"
-                    [autoScale]="true"
-                    [targetSize]="16"
-                    >
-                  </app-model-viewer>
-                </div>
-                <div class="model-controls">
-                  <button class="model-btn" (click)="$event.stopPropagation(); toggleProductRotation(product.id)">
-                    <i class="fas" [class.fa-pause]="!productIsRotating[product.id]" [class.fa-sync-alt]="productIsRotating[product.id]"></i>
-                    {{productIsRotating[product.id] ? 'PAUSE' : 'ROTATE'}}
-                  </button>
-                  <button class="model-btn" (click)="$event.stopPropagation(); changeProductColor(product.id)">
-                    <i class="fas fa-palette"></i>
-                    COLOR
-                  </button>
-                  <button class="model-btn" (click)="$event.stopPropagation(); resetProductView(product.id)">
-                    <i class="fas fa-undo"></i>
-                    RESET
-                  </button>
-                </div>
-              </div>
+          <div class="product-img-container" (click)="goToProduct(product.id)">
+            <!-- TOUJOURS l'image, même si le produit a un modèle 3D -->
+            <ng-container *ngIf="product.images && product.images.length > 0; else placeholder">
+              <!-- Utiliser la première image disponible (sauter les fichiers 3D si nécessaire) -->
+              <img [src]="getProductImage(product)" 
+                   [alt]="product.name" 
+                   class="product-img"
+                   (error)="handleImageError(product, $event)">
             </ng-container>
             
-            <ng-template #imageView>
-              <!-- Regular Image -->
-              <img *ngIf="product.images && product.images.length > 0; else placeholder"
-                   [src]="product.images[0]" [alt]="product.name" class="product-img">
-              <ng-template #placeholder>
-                <div class="product-img-placeholder">
-                  <i class="fas fa-tshirt"></i>
-                  <span>NO IMAGE</span>
-                </div>
-              </ng-template>
+            <ng-template #placeholder>
+              <div class="product-img-placeholder">
+                <i class="fas fa-tshirt"></i>
+                <span>NO IMAGE</span>
+              </div>
             </ng-template>
           </div>
 
@@ -154,7 +129,9 @@
             <span class="modern-badge out" *ngIf="!product.inStock">
               OUT
             </span>
+            <!-- Indicateur 3D toujours visible si le produit a un modèle -->
             <span class="modern-badge model-3d" *ngIf="has3DModel(product)">
+              <i class="fas fa-cube"></i>
               3D
             </span>
           </div>
