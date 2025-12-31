@@ -382,4 +382,9 @@ export class AppComponent implements OnInit, OnDestroy {
       }
     }, 1000);
   }
+   
+
+  onLoadingFinished() {
+    this.showIntro = false;
+  }
 }

@@ -1,16 +1,41 @@
-<div class="intro-container">
-    <div class="intro-background">
-        <div class="sky"></div>
-        <div class="grid"></div>
-        <div class="horizon"></div>
+<div class="home-intro" @fadeInOut>
+  <!-- Background Matching Home Page -->
+  <div class="intro-background">
+    <div class="intro-grid-overlay"></div>
+    <div class="intro-glow"></div>
+  </div>
+  
+  <!-- Main Content -->
+  <div class="intro-content">
+    <!-- App Name - SAME STYLE AS HOME PAGE -->
+    <div class="intro-title-container">
+      <h1 class="intro-main-title">
+        <span class="title-line-1">FREEPPING</span>
+      </h1>
+      <div class="intro-subtitle">
+        LOADING STORY MODE...
+      </div>
     </div>
-    <div class="intro-text">
-        <h1 class="gta-title">FREEPPING</h1>
-        <div class="intro-subtitle">LOADING STORY MODEe...</div>
-    </div>
-
-    <div class="loading-container">
+    
+    <!-- Simple Loading -->
+    <div class="intro-loading">
+      <div class="loading-spinner">
         <i class="fas fa-compact-disc spinning-icon"></i>
-        <span class="loading-text">LOADING</span>
+      </div>
+      <div class="loading-text">
+        LOADING<span class="loading-dots">...</span>
+      </div>
+      <div class="loading-percent">{{ progressPercentage }}</div>
     </div>
+    
+    <!-- Team Name -->
+    <div class="intro-team">
+      <span>TEAM FREEPPING STUDIOS</span>
+    </div>
+    
+    <!-- Skip Hint -->
+    <div class="intro-skip" *ngIf="canSkip">
+      PRESS ANY KEY TO SKIP
+    </div>
+  </div>
 </div>

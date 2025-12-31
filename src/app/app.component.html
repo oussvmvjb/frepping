@@ -1,5 +1,8 @@
 <!-- Intro Component -->
-<app-intro *ngIf="showIntro" (introFinished)="showIntro = false"></app-intro>
+<app-intro
+  *ngIf="showIntro"
+  (loadingFinished)="onLoadingFinished()">
+</app-intro>
 
 <!-- Main App Content -->
 <ng-container *ngIf="!showIntro">
