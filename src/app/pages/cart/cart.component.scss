@@ -49,7 +49,7 @@
 
 .cart-title {
   font-family: 'Street', 'Pricedown', sans-serif;
-  font-size: 62px;
+  font-size: clamp(32px, 10vw, 62px); /* Responsive title font */
   color: #39ff14;
   text-align: center;
   letter-spacing: 4px;
@@ -221,9 +221,15 @@
 .cart-modern-grid {
   display: grid;
   gap: 35px;
-  padding: 40px 20px;
+  padding: clamp(20px, 4vw, 40px) 20px;
   max-width: 1400px;
   margin: 0 auto;
+  /* Responsive grid behavior */
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Modern Cart Item */
@@ -261,7 +267,9 @@
 /* Cart Image Container */
 .modern-cart-image {
   background: #000;
-  height: 320px;
+  width: 100%;
+  aspect-ratio: 1 / 1; /* Fixed 1:1 Aspect Ratio */
+  height: auto;
   border-bottom: 4px solid #000;
   position: relative;
   overflow: hidden;

@@ -61,7 +61,17 @@ body {
   box-sizing: border-box;
 }
 
+html {
+  scroll-behavior: smooth; /* Global smooth scrolling */
+}
+
 :root {
+  /* Breakpoints variables for consistency */
+  --bp-mobile: 480px;
+  --bp-tablet: 768px;
+  --bp-desktop: 1024px;
+  
+  /* Color Palette */
   --dark-green: #0f1f14;
   --black: #0b0f0c;
   --beige: #d4b483;
@@ -79,6 +89,46 @@ body {
   color: var(--white);
   min-height: 100vh;
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Global Transitions for smooth UX */
+a, button, .card, .product-card, img {
+  transition: all 0.3s ease;
+}
+
+/* Global Image Container rules to ensure no stretching */
+.image-container, .img-wrapper {
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    image-rendering: -webkit-optimize-contrast; /* For crisp images */
+  }
+}
+
+/* Section Fade-in Animation */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+section {
+  animation: fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 
 /* Custom Scrollbar */

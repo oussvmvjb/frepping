@@ -305,7 +305,7 @@
 
 .shop-title {
   font-family: 'Street', 'Pricedown', sans-serif;
-  font-size: 52px;
+  font-size: clamp(32px, 8vw, 52px); /* Responsive title */
   color: #39ff14;
   text-align: center;
   letter-spacing: 4px;
@@ -740,6 +740,19 @@
   grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
 }
 
+/* Better Grid Logic for Tablet/Mobile */
+@media (max-width: var(--bp-desktop, 1024px)) {
+  .grid-small, .grid-medium, .grid-large {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+@media (max-width: var(--bp-tablet, 768px)) {
+  .grid-small, .grid-medium, .grid-large {
+    grid-template-columns: 1fr !important;
+  }
+}
+
 /* Mobile responsive - single column on small screens */
 @media (max-width: 768px) {
 
@@ -758,8 +771,10 @@
 /* 3️⃣ صورة المنتج – Vector Look */
 .modern-product-image {
   background: #000;
-  height: 500px;
-  /* Increased from 280px */
+  width: 100%;
+  aspect-ratio: 1 / 1; /* Fixed 1:1 Aspect Ratio */
+  height: auto;
+  min-height: 280px;
   border-bottom: 4px solid #000;
   position: relative;
   overflow: hidden;
