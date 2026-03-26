@@ -149,7 +149,7 @@ export const MOCK_PRODUCTS: Product[] = [
     originalPrice: 180,
     category: 'OUTERWEAR',
     images: [
-      'assets/3dmodel/uploads_files_5109932_米白印花卫衣/米白印花卫衣.obj',
+      'assets/3dmodel/t2.glb',
       'assets/images/products/shert1.png'
     ],
     sizes: ['S', 'M', 'L', 'XL'],

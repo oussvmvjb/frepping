@@ -18,8 +18,6 @@ export class ProductDetailsComponent implements OnInit {
   isRotating: boolean = true;
   has3DModel: boolean = false;
   show3DView: boolean = true;
-  addStreetBackground: boolean = true; // Propriété pour le fond
-  
   @ViewChild(ModelViewerComponent) modelViewer!: ModelViewerComponent;
 
   constructor(
@@ -42,7 +40,6 @@ export class ProductDetailsComponent implements OnInit {
     }
     
     console.log('🎯 Produit chargé:', this.product?.name);
-    console.log('🏙️ addStreetBackground initial:', this.addStreetBackground);
   }
 
   checkFor3DModel(): void {
@@ -74,14 +71,6 @@ export class ProductDetailsComponent implements OnInit {
   toggleRotation(): void {
     this.isRotating = !this.isRotating;
     console.log('🔄 Rotation:', this.isRotating ? 'ON' : 'OFF');
-  }
-
-  toggleBackground(): void {
-    this.addStreetBackground = !this.addStreetBackground;
-    console.log('🏙️ Fond changé:', this.addStreetBackground ? 'STREET' : 'STUDIO');
-    
-    // Mettre à jour le ModelViewer si nécessaire
-    // Note: Vous devrez peut-être recréer le ModelViewerComponent
   }
 
   changeModelColor(): void {
@@ -155,8 +144,7 @@ export class ProductDetailsComponent implements OnInit {
     this.router.navigate(['/try-on'], { 
       queryParams: { 
         productId: this.product.id,
-        modelUrl: this.has3DModel ? this.product.images[0] : null,
-        backgroundMode: this.addStreetBackground ? 'street' : 'studio'
+        modelUrl: this.has3DModel ? this.product.images[0] : null
       } 
     });
   }

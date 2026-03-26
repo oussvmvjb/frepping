@@ -22,19 +22,8 @@
             [modelPath]="product.images[0]"
             [autoRotate]="isRotating"
             [autoScale]="true"
-            [targetSize]="12"
-            [addStreetBackground]="addStreetBackground"> <!-- AJOUTEZ CETTE LIGNE ! -->
+            [targetSize]="12">
         </app-model-viewer>
-        
-        <!-- Background Toggle Button -->
-        <div class="background-toggle">
-            <button class="bg-toggle-btn" (click)="toggleBackground()" 
-                    [class.active]="addStreetBackground">
-                <i class="fas" [class.fa-city]="addStreetBackground" 
-                           [class.fa-mountain]="!addStreetBackground"></i>
-                <span>{{ addStreetBackground ? 'STREET VIEW' : 'STUDIO VIEW' }}</span>
-            </button>
-        </div>
     </div>
 </div>
 
@@ -107,15 +96,11 @@
                         <span class="spec-label">VIEW:</span>
                         <span class="spec-value">3D Model Available</span>
                     </div>
-                    <div class="spec-item" *ngIf="has3DModel">
-                        <span class="spec-label">BACKGROUND:</span>
-                        <span class="spec-value">{{ addStreetBackground ? 'Street View' : 'Studio View' }}</span>
-                    </div>
                 </div>
 
                 <div class="options-container">
                     <!-- Size Selector -->
-                    <div class="option-group" *ngIf="product.sizes?.length">
+                    <div class="option-group" *ngIf="product.sizes.length">
                         <h3>SELECT SIZE</h3>
                         <div class="option-chips">
                             <div class="chip" *ngFor="let size of product.sizes"
@@ -126,25 +111,12 @@
                     </div>
 
                     <!-- Color Selector -->
-                    <div class="option-group" *ngIf="product.colors?.length">
+                    <div class="option-group" *ngIf="product.colors.length">
                         <h3>SELECT COLOR</h3>
                         <div class="option-chips">
                             <div class="chip" *ngFor="let color of product.colors"
                                 [class.selected]="selectedColor === color" (click)="selectColor(color)">
                                 {{color}}
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Background Selector -->
-                    <div class="option-group" *ngIf="has3DModel">
-                        <h3>3D BACKGROUND</h3>
-                        <div class="option-chips">
-                            <div class="chip" [class.selected]="addStreetBackground" (click)="addStreetBackground = true">
-                                STREET
-                            </div>
-                            <div class="chip" [class.selected]="!addStreetBackground" (click)="addStreetBackground = false">
-                                STUDIO
                             </div>
                         </div>
                     </div>
@@ -169,10 +141,6 @@
                     <div class="info-text">
                         <h4>3D INTERACTIVE VIEW</h4>
                         <p>Rotate, zoom, and change colors of this product in 3D. Click and drag to explore.</p>
-                        <p class="bg-info" *ngIf="addStreetBackground">
-                            <i class="fas fa-map-marker-alt"></i>
-                            Viewing in Street Mode with graffiti background
-                        </p>
                     </div>
                 </div>
             </div>
