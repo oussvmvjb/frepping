@@ -1,0 +1,261 @@
+<div class="admin-container">
+  <!-- ──────────────── Header ──────────────── -->
+  <div class="admin-page-header">
+    <div class="header-left">
+      <h1 class="header-title">
+        <span class="header-icon">🛍️</span>
+        Product Inventory
+      </h1>
+      <span class="count-badge" *ngIf="!isLoading">{{ filteredProducts.length }} products</span>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn--outline" (click)="loadData()" [disabled]="isLoading" title="Refresh">
+        ↻ Refresh
+      </button>
+      <a routerLink="/admin/products/new" class="btn btn--primary">
+        + Add Product
+      </a>
+    </div>
+  </div>
+
+  <!-- ──────────────── Alerts ──────────────── -->
+  <div class="admin-alerts" *ngIf="successMessage || errorMessage">
+    <div class="alert alert--success" *ngIf="successMessage">
+      {{ successMessage }}
+      <button class="alert-close" (click)="successMessage = null">✕</button>
+    </div>
+    <div class="alert alert--error" *ngIf="errorMessage">
+      {{ errorMessage }}
+      <button class="alert-close" (click)="errorMessage = null">✕</button>
+    </div>
+  </div>
+
+  <!-- ──────────────── Filter Toolbar ──────────────── -->
+  <div class="filter-toolbar">
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input
+        type="text"
+        class="form-input"
+        placeholder="Search by name, slug, material..."
+        [(ngModel)]="searchTerm"
+        (input)="applyFilter()"
+      />
+    </div>
+
+    <div class="filter-box">
+      <select
+        class="form-input form-input--select"
+        [(ngModel)]="selectedCategoryFilter"
+        (change)="applyFilter()"
+      >
+        <option value="">All Categories</option>
+        <option *ngFor="let cat of categories" [value]="cat.id">
+          {{ cat.name }}
+        </option>
+      </select>
+    </div>
+  </div>
+
+  <!-- ──────────────── Loading State ──────────────── -->
+  <div class="loading-state" *ngIf="isLoading">
+    <div class="spinner"></div>
+    <p>Loading inventory...</p>
+  </div>
+
+  <!-- ──────────────── Table ──────────────── -->
+  <div class="table-card" *ngIf="!isLoading">
+    <div class="table-responsive" *ngIf="filteredProducts.length > 0; else noProducts">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Product</th>
+            <th>Category</th>
+            <th>Price</th>
+            <th>Status</th>
+            <th>Variants</th>
+            <th class="text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let p of filteredProducts">
+            <!-- Product Info -->
+            <td class="product-cell">
+              <div class="product-thumb">
+                <img
+                  *ngIf="getProductThumbnail(p)"
+                  [src]="getProductThumbnail(p)"
+                  [alt]="p.name"
+                  onerror="this.style.display='none'"
+                />
+                <span *ngIf="!getProductThumbnail(p)" class="no-img">📦</span>
+              </div>
+              <div class="product-meta">
+                <span class="product-name">{{ p.name }}</span>
+                <span class="product-slug">/{{ p.slug }}</span>
+                <span class="product-material" *ngIf="p.material">Mat: {{ p.material }}</span>
+              </div>
+            </td>
+
+            <!-- Category -->
+            <td>
+              <span class="badge badge--category">{{ getCategoryName(p.category_id) }}</span>
+            </td>
+
+            <!-- Price -->
+            <td class="price-cell">
+              <div class="price-val">${{ p.price | number:'1.2-2' }}</div>
+              <div class="compare-val" *ngIf="p.compare_price">
+                <del>${{ p.compare_price | number:'1.2-2' }}</del>
+              </div>
+            </td>
+
+            <!-- Status -->
+            <td>
+              <div class="status-tags">
+                <span class="status-tag" [class.status-tag--active]="p.is_active">
+                  {{ p.is_active ? 'Active' : 'Draft' }}
+                </span>
+                <span class="status-tag status-tag--featured" *ngIf="p.is_featured">
+                  ★ Featured
+                </span>
+              </div>
+            </td>
+
+            <!-- Variants -->
+            <td>
+              <span class="variant-count" [title]="(p.variants?.length || 0) + ' configured variants'">
+                {{ p.variants?.length || 0 }} var
+              </span>
+            </td>
+
+            <!-- Actions -->
+            <td class="text-right actions-cell">
+              <button
+                class="btn-action btn-action--edit"
+                (click)="openEditModal(p)"
+                title="Modify product"
+              >
+                ✏️ Edit
+              </button>
+              <button
+                class="btn-action btn-action--delete"
+                (click)="openDeleteConfirm(p)"
+                title="Delete product"
+              >
+                🗑️ Delete
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <ng-template #noProducts>
+      <div class="empty-box">
+        <div class="empty-icon">📦</div>
+        <h3>No Products Found</h3>
+        <p *ngIf="searchTerm || selectedCategoryFilter">Try changing your search terms or filter.</p>
+        <p *ngIf="!searchTerm && !selectedCategoryFilter">You haven't created any products yet.</p>
+        <a routerLink="/admin/products/new" class="btn btn--primary mt-12">+ Create First Product</a>
+      </div>
+    </ng-template>
+  </div>
+
+  <!-- ──────────────── Edit Modal ──────────────── -->
+  <div class="modal-backdrop" *ngIf="productToEdit" (click)="closeEditModal()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2 class="modal-title">Edit Product</h2>
+        <button class="modal-close" (click)="closeEditModal()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="alert alert--error" *ngIf="editError">{{ editError }}</div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Product Name *</label>
+            <input type="text" class="form-input" [(ngModel)]="editForm.name" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">URL Slug *</label>
+            <input type="text" class="form-input" [(ngModel)]="editForm.slug" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Category *</label>
+          <select class="form-input form-input--select" [(ngModel)]="editForm.category_id">
+            <option *ngFor="let cat of categories" [value]="cat.id">{{ cat.name }}</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Price ($) *</label>
+            <input type="number" class="form-input" [(ngModel)]="editForm.price" min="0" step="0.01" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Compare-at Price ($)</label>
+            <input type="number" class="form-input" [(ngModel)]="editForm.compare_price" min="0" step="0.01" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Material</label>
+          <input type="text" class="form-input" [(ngModel)]="editForm.material" placeholder="e.g. 100% Cotton" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea class="form-input form-input--textarea" rows="3" [(ngModel)]="editForm.description"></textarea>
+        </div>
+
+        <div class="form-row form-row--toggles">
+          <label class="toggle-control">
+            <input type="checkbox" [(ngModel)]="editForm.is_active" />
+            <span>Active in store</span>
+          </label>
+          <label class="toggle-control">
+            <input type="checkbox" [(ngModel)]="editForm.is_featured" />
+            <span>Featured product</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn--outline" (click)="closeEditModal()" [disabled]="isUpdating">Cancel</button>
+        <button class="btn btn--primary" (click)="submitEdit()" [disabled]="isUpdating">
+          <span *ngIf="!isUpdating">Save Changes</span>
+          <span *ngIf="isUpdating">Updating...</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ──────────────── Delete Confirmation Modal ──────────────── -->
+  <div class="modal-backdrop" *ngIf="productToDelete" (click)="closeDeleteConfirm()">
+    <div class="modal-card modal-card--sm" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2 class="modal-title modal-title--danger">Delete Product?</h2>
+        <button class="modal-close" (click)="closeDeleteConfirm()">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="delete-warning">
+          Are you sure you want to permanently delete:
+          <br>
+          <strong class="highlight-title">"{{ productToDelete.name }}"</strong>?
+        </p>
+        <p class="delete-sub">This action will remove the product, images, and variants. It cannot be undone.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn--outline" (click)="closeDeleteConfirm()" [disabled]="isDeleting">Cancel</button>
+        <button class="btn btn--danger" (click)="confirmDelete()" [disabled]="isDeleting">
+          <span *ngIf="!isDeleting">Yes, Delete</span>
+          <span *ngIf="isDeleting">Deleting...</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

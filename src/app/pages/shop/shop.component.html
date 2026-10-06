@@ -5,8 +5,14 @@
     <div class="search-container">
       <div class="search-bar">
         <i class="fas fa-search"></i>
-        <input type="text" [(ngModel)]="searchQuery" (keyup.enter)="onSearch()" placeholder="SEARCH STREETWEAR..."
-          class="search-input">
+        <input
+          type="text"
+          [(ngModel)]="searchQuery"
+          (input)="onSearchInput()"
+          (keyup.enter)="onSearch()"
+          placeholder="SEARCH STREETWEAR..."
+          class="search-input"
+        />
         <button class="search-btn" (click)="onSearch()">GO</button>
       </div>
     </div>
@@ -18,10 +24,20 @@
       <div class="filter-section">
         <h3 class="filter-title">CATEGORIES</h3>
         <div class="category-filters">
-          <button *ngFor="let category of categories" [class.active]="selectedCategory === category.name"
-            (click)="onCategorySelect(category.name)" class="category-filter-btn">
-            <i [class]="category.icon"></i>
-            {{category.name}}
+          <button
+            [class.active]="selectedCategoryId === null"
+            (click)="onCategorySelect(null)"
+            class="category-filter-btn"
+          >
+            <i class="fas fa-th-large"></i> ALL
+          </button>
+          <button
+            *ngFor="let category of categories"
+            [class.active]="selectedCategoryId === category.id"
+            (click)="onCategorySelect(category.id)"
+            class="category-filter-btn"
+          >
+            <i class="fas fa-tag"></i> {{ category.name }}
           </button>
         </div>
       </div>
@@ -32,7 +48,7 @@
         <h3 class="filter-title">SORT BY</h3>
         <div class="sort-options">
           <select [(ngModel)]="selectedSort" (change)="onSortChange()" class="sort-select">
-            <option *ngFor="let option of sortOptions" [value]="option">{{option}}</option>
+            <option *ngFor="let option of sortOptions" [value]="option">{{ option }}</option>
           </select>
         </div>
       </div>
@@ -49,49 +65,75 @@
   <section class="products-section">
     <div class="products-header-modern">
       <div class="modern-header-left">
-        <h2 class="modern-title">{{selectedCategory}}</h2>
+        <h2 class="modern-title">{{ selectedCategoryName() }}</h2>
         <span class="modern-subtitle">LOS SANTOS STREETWEAR</span>
       </div>
       <div class="modern-header-right">
-        <span class="modern-count">{{filteredProducts.length}} ITEMS</span>
+        <span class="modern-count">{{ totalProducts }} ITEMS</span>
         <div class="modern-view-controls">
-          <button class="modern-view-btn" [class.active]="gridSize === 'small'" (click)="gridSize = 'small'">
+          <button
+            class="modern-view-btn"
+            [class.active]="gridSize === 'small'"
+            (click)="gridSize = 'small'"
+          >
             <i class="fas fa-th"></i>
           </button>
-          <button class="modern-view-btn" [class.active]="gridSize === 'medium'" (click)="gridSize = 'medium'">
+          <button
+            class="modern-view-btn"
+            [class.active]="gridSize === 'medium'"
+            (click)="gridSize = 'medium'"
+          >
             <i class="fas fa-th-large"></i>
           </button>
-          <button class="modern-view-btn" [class.active]="gridSize === 'large'" (click)="gridSize = 'large'">
+          <button
+            class="modern-view-btn"
+            [class.active]="gridSize === 'large'"
+            (click)="gridSize = 'large'"
+          >
             <i class="fas fa-square"></i>
           </button>
         </div>
       </div>
     </div>
 
+    <!-- LOADING STATE -->
     <div *ngIf="isLoading" class="loading-modern">
       <div class="modern-spinner"></div>
       <span class="modern-loading-text">LOADING DROPS...</span>
     </div>
 
-    <div *ngIf="!isLoading && filteredProducts.length === 0" class="no-products-modern">
+    <!-- ERROR STATE -->
+    <div *ngIf="!isLoading && errorMessage" class="no-products-modern">
+      <div class="modern-empty-state">
+        <i class="fas fa-exclamation-triangle"></i>
+        <h3>FAILED TO LOAD PRODUCTS</h3>
+        <p>{{ errorMessage }}</p>
+        <button class="btn-modern" (click)="fetchProducts()">RETRY</button>
+      </div>
+    </div>
+
+    <!-- NO PRODUCTS EMPTY STATE -->
+    <div *ngIf="!isLoading && !errorMessage && filteredProducts.length === 0" class="no-products-modern">
       <div class="modern-empty-state">
         <i class="fas fa-search"></i>
         <h3>NO MATCHES FOUND</h3>
         <p>Your search didn't return any results</p>
-        <button class="btn-modern" (click)="clearFilters()">
-          RESET FILTERS
-        </button>
+        <button class="btn-modern" (click)="clearFilters()">RESET FILTERS</button>
       </div>
     </div>
 
     <!-- MAIN PRODUCT GRID -->
-    <div *ngIf="!isLoading && filteredProducts.length > 0" class="products-modern-grid" [ngClass]="'grid-' + gridSize">
-      
-      <div *ngFor="let product of filteredProducts" class="modern-product" 
-           [class.has-3d]="has3DModel(product)"
-           (click)="onProductClick(product)">
-        
-        <!-- Product Image Section (JUST IMAGE - NO 3D) -->
+    <div
+      *ngIf="!isLoading && !errorMessage && filteredProducts.length > 0"
+      class="products-modern-grid"
+      [ngClass]="'grid-' + gridSize"
+    >
+      <div
+        *ngFor="let product of filteredProducts"
+        class="modern-product"
+        (click)="onProductClick(product)"
+      >
+        <!-- Product Image Section -->
         <div class="modern-product-image">
           <!-- GTA Intro Panels -->
           <div class="gta-panels">
@@ -99,17 +141,17 @@
             <div class="gta-panel panel-2"></div>
             <div class="gta-panel panel-3"></div>
           </div>
-          
+
           <div class="product-img-container" (click)="goToProduct(product.id)">
-            <!-- TOUJOURS l'image, même si le produit a un modèle 3D -->
             <ng-container *ngIf="product.images && product.images.length > 0; else placeholder">
-              <!-- Utiliser la première image disponible (sauter les fichiers 3D si nécessaire) -->
-              <img [src]="getProductImage(product)" 
-                   [alt]="product.name" 
-                   class="product-img"
-                   (error)="handleImageError(product, $event)">
+              <img
+                [src]="getProductImage(product)"
+                [alt]="product.name"
+                class="product-img"
+                (error)="handleImageError($event)"
+              />
             </ng-container>
-            
+
             <ng-template #placeholder>
               <div class="product-img-placeholder">
                 <i class="fas fa-tshirt"></i>
@@ -120,29 +162,32 @@
 
           <!-- Status Indicators -->
           <div class="modern-indicators">
-            <span class="modern-badge sale" *ngIf="product.originalPrice">
-              SALE
+            <span class="modern-badge sale" *ngIf="getDiscountPercent(product) > 0">
+              -{{ getDiscountPercent(product) }}%
             </span>
-            <span class="modern-badge new" *ngIf="product.isFeatured">
+            <span class="modern-badge new" *ngIf="product.is_featured">
               FEATURED
             </span>
-            <span class="modern-badge out" *ngIf="!product.inStock">
+            <span class="modern-badge out" *ngIf="!isInStock(product)">
               OUT
-            </span>
-            <!-- Indicateur 3D toujours visible si le produit a un modèle -->
-            <span class="modern-badge model-3d" *ngIf="has3DModel(product)">
-              <i class="fas fa-cube"></i>
-              3D
             </span>
           </div>
 
           <!-- Quick Actions -->
           <div class="modern-quick-actions">
-            <button class="modern-quick-btn" (click)="$event.stopPropagation(); tryOnProduct(product)">
+            <button
+              class="modern-quick-btn"
+              (click)="$event.stopPropagation(); tryOnProduct(product)"
+              title="Try On"
+            >
               <i class="fas fa-user"></i>
             </button>
-            <button class="modern-quick-btn" (click)="$event.stopPropagation(); toggleFavorite(product.id)">
-              <i class="fas fa-heart"></i>
+            <button
+              class="modern-quick-btn"
+              (click)="$event.stopPropagation(); toggleFavorite(product.id)"
+              title="Favorite"
+            >
+              <i [class]="isFavorite(product.id) ? 'fas fa-heart text-danger' : 'far fa-heart'"></i>
             </button>
           </div>
         </div>
@@ -150,24 +195,17 @@
         <!-- Product Content -->
         <div class="modern-product-content">
           <div class="modern-product-info">
-            <div class="modern-brand">{{product.brand}}</div>
-            <h3 class="modern-product-name">{{product.name}}</h3>
-            <div class="modern-category">{{product.category}}</div>
-            
-            <div class="modern-rating">
-              <div class="stars">
-                <i *ngFor="let star of [1,2,3,4,5]"
-                   [class]="star <= product.rating ? 'fas fa-star' : 'far fa-star'"></i>
-              </div>
-              <span class="rating-count">({{product.reviewCount}})</span>
-            </div>
-            
-            <p class="product-description">{{product.description | slice:0:80}}...</p>
-            
+            <div class="modern-category">{{ getCategoryName(product) }}</div>
+            <h3 class="modern-product-name">{{ product.name }}</h3>
+
+            <p class="product-description" *ngIf="product.description">
+              {{ product.description | slice : 0 : 80 }}...
+            </p>
+
             <div class="product-specs" *ngIf="product.material">
               <div class="spec-item">
                 <span class="spec-label">MATERIAL:</span>
-                <span class="spec-value">{{product.material}}</span>
+                <span class="spec-value">{{ product.material }}</span>
               </div>
             </div>
           </div>
@@ -176,23 +214,57 @@
           <div class="modern-product-footer">
             <div class="modern-price-section">
               <div class="modern-price">
-                <span class="modern-current">${{product.price}}</span>
-                <span class="modern-original" *ngIf="product.originalPrice">
-                  ${{product.originalPrice}}
+                <span class="modern-current">${{ product.price | number : '1.2-2' }}</span>
+                <span
+                  class="modern-original"
+                  *ngIf="product.compare_price && product.compare_price > product.price"
+                >
+                  ${{ product.compare_price | number : '1.2-2' }}
                 </span>
-              </div>
-              <div class="modern-material">
-                {{product.material}}
               </div>
             </div>
 
-            <button class="modern-add-btn" (click)="$event.stopPropagation(); addToCart(product)"
-              [disabled]="!product.inStock">
+            <button
+              class="modern-add-btn"
+              (click)="$event.stopPropagation(); addToCart(product)"
+              [disabled]="!isInStock(product)"
+              [title]="isInStock(product) ? 'Add to Cart' : 'Out of Stock'"
+            >
               <i class="fas fa-plus"></i>
             </button>
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- PAGINATION -->
+    <div *ngIf="!isLoading && totalPages > 1" class="shop-pagination">
+      <button
+        class="pagination-nav-btn"
+        [disabled]="currentPage === 1"
+        (click)="goToPage(currentPage - 1)"
+      >
+        <i class="fas fa-chevron-left"></i> PREV
+      </button>
+
+      <div class="pagination-numbers">
+        <button
+          *ngFor="let p of pages"
+          class="pagination-num-btn"
+          [class.active]="currentPage === p"
+          (click)="goToPage(p)"
+        >
+          {{ p }}
+        </button>
+      </div>
+
+      <button
+        class="pagination-nav-btn"
+        [disabled]="currentPage === totalPages"
+        (click)="goToPage(currentPage + 1)"
+      >
+        NEXT <i class="fas fa-chevron-right"></i>
+      </button>
     </div>
   </section>
 </div>

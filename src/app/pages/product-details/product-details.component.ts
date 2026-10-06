@@ -1,45 +1,103 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Product } from '../../models/product';
-import { MOCK_PRODUCTS } from '../../services/mock-products.service';
-import { ModelViewerComponent } from '../../components/model-viewer/model-viewer.component';
+import { ProductService } from '../../services/product.service';
 import { CartService } from '../../services/cart.service';
+import { ModelViewerComponent } from '../../components/model-viewer/model-viewer.component';
+import {
+  ApiProduct,
+  getEffectivePrice,
+  getPrimaryImage,
+  getDiscountPercent,
+  isProductInStock,
+  getTotalStock,
+} from '../../models/api-product.model';
+import { ProductVariant } from '../../models/product-variant.model';
+import { ProductImage } from '../../models/product-image.model';
 
 @Component({
   selector: 'app-product-details',
   templateUrl: './product-details.component.html',
-  styleUrls: ['./product-details.component.scss']
+  styleUrls: ['./product-details.component.scss'],
 })
 export class ProductDetailsComponent implements OnInit {
-  product: Product | undefined;
+  product: ApiProduct | null = null;
+  selectedVariant: ProductVariant | null = null;
   selectedSize: string = '';
   selectedColor: string = '';
   selectedImageIndex: number = 0;
+
+  isLoading = true;
+  notFound = false;
+  errorMessage: string | null = null;
+
   isRotating: boolean = true;
   has3DModel: boolean = false;
-  show3DView: boolean = true;
+  show3DView: boolean = false;
+  model3DUrl: string | null = null;
+
   @ViewChild(ModelViewerComponent) modelViewer!: ModelViewerComponent;
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
+    private productService: ProductService,
     private cartService: CartService
-  ) { }
+  ) {}
 
   ngOnInit(): void {
-    const id = this.route.snapshot.paramMap.get('id');
-    if (id) {
-      this.product = MOCK_PRODUCTS.find(p => p.id === id);
-      this.checkFor3DModel();
+    this.route.paramMap.subscribe((params) => {
+      const id = params.get('id');
+      if (id) {
+        this.loadProduct(id);
+      } else {
+        this.notFound = true;
+        this.isLoading = false;
+      }
+    });
+  }
+
+  loadProduct(id: string): void {
+    this.isLoading = true;
+    this.notFound = false;
+    this.errorMessage = null;
+
+    this.productService.getProductById(id).subscribe({
+      next: (product) => {
+        this.product = product;
+        this.isLoading = false;
+        this.initProductState();
+      },
+      error: (err: Error) => {
+        this.isLoading = false;
+        if (err.message.includes('404') || err.message.toLowerCase().includes('not found')) {
+          this.notFound = true;
+        } else {
+          this.errorMessage = err.message || 'Failed to load product details.';
+        }
+      },
+    });
+  }
+
+  private initProductState(): void {
+    if (!this.product) return;
+
+    this.checkFor3DModel();
+
+    // Auto-select first active variant with stock, or first variant
+    const activeVariants = this.product.variants.filter((v) => v.is_active && v.stock > 0);
+    const defaultVariant = activeVariants[0] || this.product.variants[0] || null;
+
+    if (defaultVariant) {
+      this.selectedVariant = defaultVariant;
+      if (defaultVariant.size) this.selectedSize = defaultVariant.size;
+      if (defaultVariant.color) this.selectedColor = defaultVariant.color;
     }
 
-    // Default selections
-    if (this.product) {
-      if (this.product.sizes?.length > 0) this.selectedSize = this.product.sizes[0];
-      if (this.product.colors?.length > 0) this.selectedColor = this.product.colors[0];
+    // Set primary image index
+    if (this.product.images?.length > 0) {
+      const primaryIdx = this.product.images.findIndex((img) => img.is_primary);
+      this.selectedImageIndex = primaryIdx >= 0 ? primaryIdx : 0;
     }
-    
-    console.log('🎯 Produit chargé:', this.product?.name);
   }
 
   checkFor3DModel(): void {
@@ -48,114 +106,166 @@ export class ProductDetailsComponent implements OnInit {
       this.show3DView = false;
       return;
     }
-    
-    // Check if first image is a 3D model
-    const firstImage = this.product.images[0];
-    this.has3DModel = firstImage?.endsWith('.obj') || 
-                     firstImage?.endsWith('.glb') ||
-                     firstImage?.endsWith('.gltf') ||
-                     this.product.has3DModel || 
-                     false;
-    
-    console.log('🔍 Vérification modèle 3D:', {
-      firstImage,
-      has3DModel: this.has3DModel,
-      productHas3DModel: this.product.has3DModel
-    });
-    
-    // Show 3D view by default if available
-    this.show3DView = this.has3DModel;
-  }
 
-  // 3D Controls
-  toggleRotation(): void {
-    this.isRotating = !this.isRotating;
-    console.log('🔄 Rotation:', this.isRotating ? 'ON' : 'OFF');
-  }
-
-  changeModelColor(): void {
-    if (this.modelViewer) {
-      console.log('🎨 Changement de couleur');
-      const colors = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00, 0xff00ff, 0x00ffff];
-      const randomColor = colors[Math.floor(Math.random() * colors.length)];
-      this.modelViewer.changeColor(randomColor);
-    } else {
-      console.log('❌ modelViewer non disponible');
-    }
-  }
-
-  resetModel(): void {
-    this.isRotating = true;
-    console.log('🔄 Réinitialisation modèle');
-    // Vous pouvez ajouter d'autres logiques de réinitialisation ici
-  }
-
-  getCurrentImage(): string {
-    if (!this.product?.images || this.product.images.length === 0) {
-      return 'assets/images/placeholder.jpg';
-    }
-    
-    // If showing 3D, return first image (might be 3D model)
-    if (this.show3DView && this.has3DModel) {
-      console.log('📷 Image 3D sélectionnée:', this.product.images[0]);
-      return this.product.images[0];
-    }
-    
-    // Otherwise, return the selected image from thumbnails
-    const images = this.getImageThumbnails();
-    return images[this.selectedImageIndex] || images[0] || 'assets/images/placeholder.jpg';
-  }
-
-  getImageThumbnails(): string[] {
-    if (!this.product?.images) return [];
-    
-    console.log('📸 Images disponibles:', this.product.images);
-    
-    // Filter out 3D models, only return regular images
-    const thumbnails = this.product.images.filter(img => 
-      !img.endsWith('.obj') && 
-      !img.endsWith('.fbx') && 
-      !img.endsWith('.glb') &&
-      !img.endsWith('.gltf')
+    const modelImg = this.product.images.find(
+      (img) =>
+        img.image_url?.endsWith('.glb') ||
+        img.image_url?.endsWith('.gltf') ||
+        img.image_url?.endsWith('.obj')
     );
-    
-    console.log('🖼️ Miniatures filtrées:', thumbnails);
-    return thumbnails;
+
+    if (modelImg) {
+      this.has3DModel = true;
+      this.model3DUrl = modelImg.image_url;
+      this.show3DView = true;
+    } else {
+      this.has3DModel = false;
+      this.show3DView = false;
+    }
   }
 
-  selectImage(index: number): void {
-    this.selectedImageIndex = index;
-    console.log('🖼️ Image sélectionnée:', index);
+  // ── Variant Helpers ────────────────────────────────────────────────────────
+
+  get availableSizes(): string[] {
+    if (!this.product?.variants) return [];
+    const sizes = this.product.variants
+      .map((v) => v.size)
+      .filter((s): s is string => !!s);
+    return Array.from(new Set(sizes));
+  }
+
+  get availableColors(): string[] {
+    if (!this.product?.variants) return [];
+    const colors = this.product.variants
+      .map((v) => v.color)
+      .filter((c): c is string => !!c);
+    return Array.from(new Set(colors));
   }
 
   selectSize(size: string): void {
     this.selectedSize = size;
-    console.log('📏 Taille sélectionnée:', size);
+    this.updateSelectedVariant();
   }
 
   selectColor(color: string): void {
     this.selectedColor = color;
-    console.log('🎨 Couleur sélectionnée:', color);
+    this.updateSelectedVariant();
+  }
+
+  private updateSelectedVariant(): void {
+    if (!this.product?.variants) return;
+
+    const match = this.product.variants.find((v) => {
+      const sizeMatch = !this.selectedSize || v.size === this.selectedSize;
+      const colorMatch = !this.selectedColor || v.color === this.selectedColor;
+      return sizeMatch && colorMatch;
+    });
+
+    this.selectedVariant = match || null;
+  }
+
+  isSizeAvailable(size: string): boolean {
+    if (!this.product?.variants) return false;
+    return this.product.variants.some(
+      (v) =>
+        v.size === size &&
+        v.is_active &&
+        v.stock > 0 &&
+        (!this.selectedColor || v.color === this.selectedColor)
+    );
+  }
+
+  isColorAvailable(color: string): boolean {
+    if (!this.product?.variants) return false;
+    return this.product.variants.some(
+      (v) =>
+        v.color === color &&
+        v.is_active &&
+        v.stock > 0 &&
+        (!this.selectedSize || v.size === this.selectedSize)
+    );
+  }
+
+  // ── Pricing & Stock ───────────────────────────────────────────────────────
+
+  get currentPrice(): number {
+    if (!this.product) return 0;
+    return getEffectivePrice(this.product, this.selectedVariant);
+  }
+
+  get discountPercent(): number {
+    if (!this.product) return 0;
+    return getDiscountPercent(this.product);
+  }
+
+  get isInStock(): boolean {
+    if (!this.product) return false;
+    if (this.selectedVariant) {
+      return this.selectedVariant.is_active && this.selectedVariant.stock > 0;
+    }
+    return isProductInStock(this.product);
+  }
+
+  get stockCount(): number {
+    if (this.selectedVariant) return this.selectedVariant.stock;
+    if (this.product) return getTotalStock(this.product) ?? 0;
+    return 0;
+  }
+
+  // ── Images & 3D ───────────────────────────────────────────────────────────
+
+  getCurrentImage(): string {
+    if (!this.product?.images || this.product.images.length === 0) {
+      return 'assets/placeholder.jpg';
+    }
+    const regularImages = this.getImageThumbnails();
+    if (regularImages.length === 0) return 'assets/placeholder.jpg';
+    const selected = regularImages[this.selectedImageIndex];
+    return selected ? selected.image_url : regularImages[0].image_url;
+  }
+
+  getImageThumbnails(): ProductImage[] {
+    if (!this.product?.images) return [];
+    return this.product.images.filter(
+      (img) =>
+        !img.image_url.endsWith('.obj') &&
+        !img.image_url.endsWith('.fbx') &&
+        !img.image_url.endsWith('.glb') &&
+        !img.image_url.endsWith('.gltf')
+    );
+  }
+
+  selectImage(index: number): void {
+    this.selectedImageIndex = index;
+    this.show3DView = false;
+  }
+
+  toggleRotation(): void {
+    this.isRotating = !this.isRotating;
+  }
+
+  resetModel(): void {
+    this.isRotating = true;
+  }
+
+  // ── Actions ───────────────────────────────────────────────────────────────
+
+  addToCart(): void {
+    if (!this.product || !this.isInStock) return;
+    this.cartService.addToCart(this.product, 1, this.selectedVariant);
   }
 
   tryOn(): void {
     if (!this.product) return;
-    console.log('📷 Essayage virtuel:', this.product.name);
-    this.router.navigate(['/try-on'], { 
-      queryParams: { 
+    this.router.navigate(['/try-on'], {
+      queryParams: {
         productId: this.product.id,
-        modelUrl: this.has3DModel ? this.product.images[0] : null
-      } 
+        modelUrl: this.model3DUrl,
+      },
     });
   }
 
   goBack(): void {
-    console.log('⬅️ Retour');
     this.router.navigate(['/shop']);
-  }
-  
-  addToCart(product: Product): void {
-    console.log('🛒 Ajout au panier:', product.name);
-    this.cartService.addToCart(product);
   }
 }

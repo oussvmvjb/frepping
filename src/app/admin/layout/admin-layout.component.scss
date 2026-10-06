@@ -1,0 +1,347 @@
+// ─── Variables ───────────────────────────────────────────────────
+$neon:      #39ff14;
+$neon-dim:  rgba(57, 255, 20, 0.08);
+$neon-glow: rgba(57, 255, 20, 0.3);
+$bg-body:   #0b0f0c;
+$bg-side:   #080d09;
+$bg-topbar: #080d09;
+$border:    rgba(57, 255, 20, 0.14);
+$white:     #f5f5f5;
+$muted:     #888;
+$sidebar-w: 220px;
+$topbar-h:  60px;
+$font-disp: 'Oswald', sans-serif;
+$font-body: 'Poppins', sans-serif;
+
+// ─── Shell layout ─────────────────────────────────────────────────
+.admin-shell {
+  display: flex;
+  min-height: 100vh;
+  background: $bg-body;
+  font-family: $font-body;
+  position: relative;
+  cursor: auto !important;
+
+  * {
+    cursor: auto !important;
+  }
+
+  button, a, select, input[type='checkbox'], .btn, .btn-action, .top-nav-link, .sidebar-nav__link, .modal-close {
+    cursor: pointer !important;
+  }
+
+  input[type='text'], input[type='number'], input[type='url'], textarea {
+    cursor: text !important;
+  }
+}
+
+// ─── Sidebar ──────────────────────────────────────────────────────
+.admin-sidebar {
+  width: $sidebar-w;
+  min-height: 100vh;
+  background: $bg-side;
+  border-right: 1px solid $border;
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 200;
+  transition: transform 0.3s ease;
+
+  @media (max-width: 860px) {
+    transform: translateX(-100%);
+    .nav-open & { transform: translateX(0); }
+  }
+}
+
+// Brand
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 18px;
+  border-bottom: 1px solid $border;
+
+  &__logo {
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    background: $neon;
+    color: $bg-body;
+    font-family: $font-disp;
+    font-weight: 900;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    letter-spacing: 1px;
+    box-shadow: 0 0 14px $neon-glow;
+    flex-shrink: 0;
+  }
+
+  &__meta {
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__text {
+    font-family: $font-disp;
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: $neon;
+    line-height: 1.1;
+  }
+
+  &__sub {
+    font-size: 0.65rem;
+    color: $muted;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+}
+
+// Nav links
+.sidebar-nav {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 12px 10px;
+  gap: 5px;
+
+  &__link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 6px;
+    text-decoration: none;
+    color: $muted;
+    font-size: 0.82rem;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+
+    &:hover {
+      background: $neon-dim;
+      color: $white;
+      border-color: rgba(57, 255, 20, 0.15);
+    }
+
+    &--active {
+      background: $neon-dim;
+      color: $neon;
+      border-color: rgba(57, 255, 20, 0.3);
+      box-shadow: 0 0 10px rgba(57, 255, 20, 0.08);
+    }
+  }
+
+  &__icon {
+    font-size: 1rem;
+    width: 20px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  &__label {
+    font-family: $font-disp;
+    font-size: 0.8rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+}
+
+// Sidebar Footer
+.sidebar-footer {
+  padding: 14px 16px;
+  border-top: 1px solid $border;
+}
+
+.sidebar-footer-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: $muted;
+  font-size: 0.78rem;
+  text-decoration: none;
+  letter-spacing: 0.5px;
+  transition: color 0.2s;
+
+  &:hover { color: $neon; }
+}
+
+// ─── Backdrop (mobile) ────────────────────────────────────────────
+.admin-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 199;
+
+  .nav-open & {
+    @media (max-width: 860px) { display: block; }
+  }
+}
+
+// ─── Main area ────────────────────────────────────────────────────
+.admin-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  margin-left: $sidebar-w;
+
+  @media (max-width: 860px) { margin-left: 0; }
+}
+
+// ─── Top Navbar ───────────────────────────────────────────────────
+.admin-top-navbar {
+  height: $topbar-h;
+  background: $bg-topbar;
+  border-bottom: 1px solid $border;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  position: sticky;
+  top: 0;
+  z-index: 150;
+  gap: 16px;
+}
+
+.top-nav-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.topbar-burger {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  flex-direction: column;
+  gap: 4px;
+
+  span {
+    display: block;
+    width: 20px;
+    height: 2px;
+    background: $neon;
+    border-radius: 2px;
+  }
+
+  @media (max-width: 860px) {
+    display: flex;
+  }
+}
+
+.top-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  .badge-panel {
+    background: $neon;
+    color: #0b0f0c;
+    font-size: 0.65rem;
+    font-weight: 800;
+    font-family: $font-disp;
+    letter-spacing: 1px;
+    padding: 2px 6px;
+    border-radius: 3px;
+  }
+
+  .top-title {
+    font-family: $font-disp;
+    font-size: 0.85rem;
+    letter-spacing: 1.5px;
+    color: $white;
+  }
+}
+
+// Top Nav Tabs
+.top-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  @media (max-width: 600px) {
+    display: none;
+  }
+}
+
+.top-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 5px;
+  text-decoration: none;
+  color: $muted;
+  font-family: $font-disp;
+  font-size: 0.78rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+
+  &:hover {
+    color: $white;
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  &--active {
+    background: $neon-dim;
+    color: $neon;
+    border-color: rgba(57, 255, 20, 0.25);
+  }
+
+  &--cta {
+    border-color: rgba(57, 255, 20, 0.35);
+    color: $neon;
+
+    &:hover {
+      background: $neon;
+      color: #0b0f0c;
+    }
+  }
+
+  .top-icon {
+    font-size: 0.9rem;
+  }
+}
+
+.top-nav-right {
+  display: flex;
+  align-items: center;
+}
+
+.btn-store-link {
+  color: $neon;
+  font-family: $font-disp;
+  font-size: 0.78rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  text-decoration: none;
+  padding: 5px 10px;
+  border-radius: 4px;
+  border: 1px solid rgba(57, 255, 20, 0.2);
+  transition: all 0.2s;
+
+  &:hover {
+    background: $neon-dim;
+    border-color: $neon;
+  }
+}
+
+// ─── Content area ─────────────────────────────────────────────────
+.admin-content {
+  flex: 1;
+  overflow-y: auto;
+}

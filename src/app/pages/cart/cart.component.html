@@ -44,26 +44,19 @@
             </div>
             
             <div class="product-img-container">
-              <img *ngIf="item.product.images && item.product.images.length > 0; else placeholder"
-                   [src]="item.product.images[0]" 
+              <img [src]="getItemImage(item.product)" 
                    [alt]="item.product.name" 
                    class="cart-img product-img"
-                   onerror="this.onerror=null; this.src='assets/images/products/placeholder.png'">
-              <ng-template #placeholder>
-                <div class="cart-img-placeholder product-img-placeholder">
-                  <i class="fas fa-tshirt"></i>
-                  <span>NO IMAGE</span>
-                </div>
-              </ng-template>
+                   onerror="this.onerror=null; this.src='assets/placeholder.jpg'">
             </div>
             
             <!-- GTA Badges -->
             <div class="modern-indicators">
-              <div class="modern-badge sale" *ngIf="isItemOnSale(item.product.id)">
-                -{{getItemDiscountPercentage(item.product.id)}}%
+              <div class="modern-badge sale" *ngIf="isItemOnSale(item)">
+                -{{getItemDiscountPercentage(item)}}%
               </div>
-              <div class="modern-badge new" *ngIf="getProductById(item.product.id)?.isFeatured">
-                NEW
+              <div class="modern-badge new" *ngIf="item.product.is_featured">
+                FEATURED
               </div>
               <div class="modern-badge quantity" *ngIf="item.quantity > 1">
                 x{{item.quantity}}
@@ -72,11 +65,11 @@
             
             <!-- Quick Actions -->
             <div class="modern-quick-actions">
-              <button class="modern-quick-btn" (click)="removeFromCart(item.product.id)" 
+              <button class="modern-quick-btn" (click)="removeFromCart(item)" 
                       title="Remove item">
                 <i class="fas fa-trash"></i>
               </button>
-              <button class="modern-quick-btn" (click)="updateQuantity(item.product.id, item.quantity + 1)"
+              <button class="modern-quick-btn" (click)="updateQuantity(item, item.quantity + 1)"
                       title="Add one more">
                 <i class="fas fa-plus"></i>
               </button>
@@ -86,34 +79,37 @@
           <!-- Cart Item Content -->
           <div class="modern-cart-content modern-product-content">
             <div class="modern-cart-info modern-product-info">
-              <div class="modern-brand">{{item.product.brand || 'FREPPING'}}</div>
+              <div class="modern-brand">{{item.product.category?.name || 'FREPPING'}}</div>
               <h3 class="modern-product-name">{{item.product.name}}</h3>
-              <div class="modern-category">{{item.product.category || 'TOPS'}}</div>
               
               <!-- Price Display with Savings -->
               <div class="modern-price-section">
                 <div class="modern-price">
-                  <span class="modern-current">${{item.product.price}}</span>
-                  <span class="modern-original" *ngIf="isItemOnSale(item.product.id)">
-                    ${{getProductById(item.product.id)?.originalPrice}}
+                  <span class="modern-current">${{item.unitPrice | number:'1.2-2'}}</span>
+                  <span class="modern-original" *ngIf="isItemOnSale(item)">
+                    ${{item.product.compare_price | number:'1.2-2'}}
                   </span>
                 </div>
                 <div class="savings-badge" *ngIf="getItemSavings(item) > 0">
                   <i class="fas fa-tag"></i>
-                  Save ${{getItemSavings(item)}}
+                  Save ${{getItemSavings(item) | number:'1.2-2'}}
                 </div>
-                <div class="modern-material">{{getProductById(item.product.id)?.material || 'Premium Quality'}}</div>
+                <div class="modern-material" *ngIf="item.product.material">{{item.product.material}}</div>
               </div>
               
-              <!-- Size & Color Info -->
-              <div class="item-details" *ngIf="getProductById(item.product.id) as product">
-                <div class="detail-row" *ngIf="product.sizes?.length">
+              <!-- Size & Color Info from Variant -->
+              <div class="item-details" *ngIf="item.variant">
+                <div class="detail-row" *ngIf="item.variant.size">
                   <span class="detail-label">Size:</span>
-                  <span class="detail-value">{{product.sizes[0]}}</span>
+                  <span class="detail-value">{{item.variant.size}}</span>
                 </div>
-                <div class="detail-row" *ngIf="product.colors?.length">
+                <div class="detail-row" *ngIf="item.variant.color">
                   <span class="detail-label">Color:</span>
-                  <span class="detail-value">{{product.colors[0]}}</span>
+                  <span class="detail-value">{{item.variant.color}}</span>
+                </div>
+                <div class="detail-row" *ngIf="item.variant.sku">
+                  <span class="detail-label">SKU:</span>
+                  <span class="detail-value">{{item.variant.sku}}</span>
                 </div>
               </div>
               
@@ -122,7 +118,7 @@
                 <label class="street-label">QUANTITY:</label>
                 <div class="qty-controls">
                   <button class="qty-btn minus" 
-                          (click)="updateQuantity(item.product.id, item.quantity - 1)"
+                          (click)="updateQuantity(item, item.quantity - 1)"
                           [disabled]="item.quantity <= 1">
                     <i class="fas fa-minus"></i>
                   </button>
@@ -130,11 +126,11 @@
                          class="street-input" 
                          min="1" 
                          [value]="item.quantity" 
-                         (change)="updateQuantity(item.product.id, $any($event.target).value)"
+                         (change)="updateQuantity(item, $any($event.target).value)"
                          (keyup.enter)="onInputEnter($event)"
-                         (blur)="updateQuantity(item.product.id, $any($event.target).value)" />
+                         (blur)="updateQuantity(item, $any($event.target).value)" />
                   <button class="qty-btn plus" 
-                          (click)="updateQuantity(item.product.id, item.quantity + 1)">
+                          (click)="updateQuantity(item, item.quantity + 1)">
                     <i class="fas fa-plus"></i>
                   </button>
                 </div>
@@ -144,7 +140,7 @@
             <!-- Item Total -->
             <div class="item-total">
               <span class="total-label">ITEM TOTAL:</span>
-              <span class="total-amount">${{getItemTotal(item)}}</span>
+              <span class="total-amount">${{getItemTotal(item) | number:'1.2-2'}}</span>
             </div>
           </div>
         </div>

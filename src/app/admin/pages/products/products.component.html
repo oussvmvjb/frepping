@@ -1,0 +1,485 @@
+<div class="admin-products-page">
+  <!-- ──────────────── Top Header Bar ──────────────── -->
+  <header class="products-header">
+    <div class="header-left">
+      <h1 class="page-title">
+        <span class="title-glyph">🛍️</span>
+        Products
+      </h1>
+      <span class="inventory-badge" *ngIf="!isLoading">
+        {{ totalProducts }} {{ totalProducts === 1 ? 'product' : 'products' }}
+      </span>
+    </div>
+
+    <div class="header-actions">
+      <button
+        type="button"
+        class="btn btn--refresh"
+        (click)="retryLoad()"
+        [disabled]="isLoading"
+        title="Refresh inventory"
+      >
+        <span class="btn-icon" [class.is-spinning]="isLoading">↻</span>
+        <span>Refresh</span>
+      </button>
+
+      <a routerLink="/admin/products/new" class="btn btn--primary">
+        <span class="btn-icon">+</span>
+        <span>Add Product</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- ──────────────── Notifications ──────────────── -->
+  <div class="system-alerts" *ngIf="successMessage || errorMessage">
+    <div class="alert alert--success" *ngIf="successMessage">
+      <div class="alert-content">
+        <span class="alert-icon">✓</span>
+        <span>{{ successMessage }}</span>
+      </div>
+      <button type="button" class="alert-dismiss" (click)="dismissSuccessMessage()" aria-label="Close">✕</button>
+    </div>
+
+    <div class="alert alert--error" *ngIf="errorMessage">
+      <div class="alert-content">
+        <span class="alert-icon">⚠</span>
+        <span>{{ errorMessage }}</span>
+      </div>
+      <button type="button" class="alert-dismiss" (click)="dismissErrorMessage()" aria-label="Close">✕</button>
+    </div>
+  </div>
+
+  <!-- ──────────────── Filter Toolbar ──────────────── -->
+  <section class="filter-panel" aria-label="Product Search and Filters">
+    <div class="search-field">
+      <span class="search-glyph">🔍</span>
+      <input
+        type="text"
+        class="form-control form-control--search"
+        placeholder="Search products..."
+        [value]="searchTerm"
+        (input)="onSearchInput($event)"
+        aria-label="Search products"
+      />
+      <button
+        *ngIf="searchTerm"
+        type="button"
+        class="clear-search-btn"
+        (click)="clearSearch()"
+        aria-label="Clear search"
+      >
+        ✕
+      </button>
+    </div>
+
+    <div class="filters-row">
+      <!-- Category Filter -->
+      <div class="filter-group">
+        <label for="categoryFilter" class="filter-label">Category:</label>
+        <div class="select-wrapper">
+          <select
+            id="categoryFilter"
+            class="form-control form-control--select"
+            [(ngModel)]="selectedCategoryId"
+            (ngModelChange)="onCategoryChange()"
+          >
+            <option value="">All Categories</option>
+            <option *ngFor="let cat of categories" [value]="cat.id">
+              {{ cat.name }}
+            </option>
+          </select>
+          <span class="select-caret">▼</span>
+        </div>
+      </div>
+
+      <!-- Featured Filter -->
+      <div class="filter-group">
+        <label for="featuredFilter" class="filter-label">Featured:</label>
+        <div class="select-wrapper">
+          <select
+            id="featuredFilter"
+            class="form-control form-control--select"
+            [(ngModel)]="selectedFeatured"
+            (ngModelChange)="onFeaturedChange()"
+          >
+            <option value="all">All</option>
+            <option value="featured">Featured</option>
+            <option value="not_featured">Not Featured</option>
+          </select>
+          <span class="select-caret">▼</span>
+        </div>
+      </div>
+
+      <!-- Reset Filters button -->
+      <button
+        *ngIf="isFiltered"
+        type="button"
+        class="btn btn--reset-filters"
+        (click)="resetAllFilters()"
+      >
+        Clear Filters
+      </button>
+    </div>
+  </section>
+
+  <!-- ──────────────── Error State ──────────────── -->
+  <div class="status-card status-card--error" *ngIf="errorMessage && !isLoading">
+    <div class="status-glyph">⚠️</div>
+    <h2 class="status-title">Unable to load products.</h2>
+    <p class="status-desc">{{ errorMessage }}</p>
+    <button type="button" class="btn btn--primary mt-16" (click)="retryLoad()">
+      Retry
+    </button>
+  </div>
+
+  <!-- ──────────────── Loading State / Skeletons ──────────────── -->
+  <div class="loading-state-card" *ngIf="isLoading">
+    <div class="loading-header">
+      <div class="loading-spinner"></div>
+      <p class="loading-text">Loading products...</p>
+    </div>
+
+    <div class="skeleton-table">
+      <div class="skeleton-row" *ngFor="let i of [1, 2, 3, 4, 5]">
+        <div class="skeleton-cell skeleton-thumb"></div>
+        <div class="skeleton-cell skeleton-meta">
+          <div class="skeleton-line w-60"></div>
+          <div class="skeleton-line w-30"></div>
+        </div>
+        <div class="skeleton-cell skeleton-pill"></div>
+        <div class="skeleton-cell skeleton-price"></div>
+        <div class="skeleton-cell skeleton-stock"></div>
+        <div class="skeleton-cell skeleton-actions"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ──────────────── Content Card (Table & Mobile Cards) ──────────────── -->
+  <div class="inventory-card" *ngIf="!isLoading && !errorMessage">
+    <!-- Desktop Table View -->
+    <div class="table-container" *ngIf="products.length > 0">
+      <table class="products-table">
+        <thead>
+          <tr>
+            <th scope="col" class="th-product">Product</th>
+            <th scope="col" class="th-category">Category</th>
+            <th scope="col" class="th-price">Price</th>
+            <th scope="col" class="th-stock">Stock</th>
+            <th scope="col" class="th-status">Status</th>
+            <th scope="col" class="th-actions text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let product of products" class="product-row">
+            <!-- Product Column (Image + Name + Slug + Material) -->
+            <td class="td-product">
+              <div class="product-profile">
+                <div class="product-media">
+                  <img
+                    *ngIf="getProductPrimaryImage(product)"
+                    [src]="getProductPrimaryImage(product)"
+                    [alt]="product.name"
+                    (error)="onImageError($event)"
+                    loading="lazy"
+                  />
+                  <div class="media-fallback" *ngIf="!getProductPrimaryImage(product)">
+                    <span class="fallback-icon">📦</span>
+                  </div>
+                </div>
+
+                <div class="product-info">
+                  <div class="product-title" [title]="product.name">{{ product.name }}</div>
+                  <div class="product-slug">/{{ product.slug }}</div>
+                  <div class="product-material" *ngIf="product.material">
+                    <span class="material-label">Material:</span> {{ product.material }}
+                  </div>
+                </div>
+              </div>
+            </td>
+
+            <!-- Category Column -->
+            <td class="td-category">
+              <span class="badge badge--category">
+                {{ getCategoryLabel(product) }}
+              </span>
+            </td>
+
+            <!-- Price Column -->
+            <td class="td-price">
+              <div class="price-stack">
+                <span class="price-current">${{ product.price | number:'1.2-2' }}</span>
+                <del class="price-compare" *ngIf="product.compare_price">
+                  ${{ product.compare_price | number:'1.2-2' }}
+                </del>
+              </div>
+            </td>
+
+            <!-- Stock Column -->
+            <td class="td-stock">
+              <span
+                class="stock-value"
+                [class.stock-value--zero]="isOutOfStock(product)"
+                [class.stock-value--none]="getTotalStock(product) === '—'"
+              >
+                {{ getTotalStock(product) }}
+              </span>
+            </td>
+
+            <!-- Status Column -->
+            <td class="td-status">
+              <div class="status-stack">
+                <span
+                  class="badge badge--status"
+                  [class.badge--active]="product.is_active"
+                  [class.badge--inactive]="!product.is_active"
+                >
+                  {{ product.is_active ? 'Active' : 'Inactive' }}
+                </span>
+                <span class="badge badge--featured" *ngIf="product.is_featured">
+                  ★ Featured
+                </span>
+              </div>
+            </td>
+
+            <!-- Actions Column -->
+            <td class="td-actions text-right">
+              <div class="action-buttons">
+                <button
+                  type="button"
+                  class="btn-link btn-link--edit"
+                  (click)="navigateToEdit(product.id)"
+                  title="Edit product"
+                >
+                  Edit
+                </button>
+                <span class="action-divider">|</span>
+                <button
+                  type="button"
+                  class="btn-link btn-link--delete"
+                  (click)="openDeleteConfirm(product)"
+                  title="Delete product"
+                >
+                  Delete
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Mobile Responsive Cards View (<= 768px) -->
+    <div class="mobile-products-grid" *ngIf="products.length > 0">
+      <article class="product-mobile-card" *ngFor="let product of products">
+        <div class="card-header-row">
+          <div class="product-media">
+            <img
+              *ngIf="getProductPrimaryImage(product)"
+              [src]="getProductPrimaryImage(product)"
+              [alt]="product.name"
+              (error)="onImageError($event)"
+              loading="lazy"
+            />
+            <div class="media-fallback" *ngIf="!getProductPrimaryImage(product)">
+              <span class="fallback-icon">📦</span>
+            </div>
+          </div>
+          <div class="card-meta">
+            <h3 class="product-title">{{ product.name }}</h3>
+            <span class="product-slug">/{{ product.slug }}</span>
+            <div class="status-stack flex-row mt-4">
+              <span
+                class="badge badge--status"
+                [class.badge--active]="product.is_active"
+                [class.badge--inactive]="!product.is_active"
+              >
+                {{ product.is_active ? 'Active' : 'Inactive' }}
+              </span>
+              <span class="badge badge--featured" *ngIf="product.is_featured">
+                ★ Featured
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-details-grid">
+          <div class="detail-item">
+            <span class="detail-label">Category</span>
+            <span class="badge badge--category">{{ getCategoryLabel(product) }}</span>
+          </div>
+
+          <div class="detail-item">
+            <span class="detail-label">Price</span>
+            <div class="price-stack">
+              <span class="price-current">${{ product.price | number:'1.2-2' }}</span>
+              <del class="price-compare" *ngIf="product.compare_price">
+                ${{ product.compare_price | number:'1.2-2' }}
+              </del>
+            </div>
+          </div>
+
+          <div class="detail-item">
+            <span class="detail-label">Stock</span>
+            <span
+              class="stock-value"
+              [class.stock-value--zero]="isOutOfStock(product)"
+              [class.stock-value--none]="getTotalStock(product) === '—'"
+            >
+              {{ getTotalStock(product) }}
+            </span>
+          </div>
+
+          <div class="detail-item" *ngIf="product.material">
+            <span class="detail-label">Material</span>
+            <span class="product-material-text">{{ product.material }}</span>
+          </div>
+        </div>
+
+        <div class="card-actions-row">
+          <button
+            type="button"
+            class="btn btn--outline-edit"
+            (click)="navigateToEdit(product.id)"
+          >
+            ✏️ Edit
+          </button>
+          <button
+            type="button"
+            class="btn btn--outline-delete"
+            (click)="openDeleteConfirm(product)"
+          >
+            🗑️ Delete
+          </button>
+        </div>
+      </article>
+    </div>
+
+    <!-- ──────────────── Empty State ──────────────── -->
+    <div class="empty-state-card" *ngIf="products.length === 0">
+      <div class="empty-glyph">📦</div>
+      <h2 class="empty-title">No products found.</h2>
+      <p class="empty-subtitle">Try changing your filters or create your first product.</p>
+      <div class="empty-actions">
+        <a routerLink="/admin/products/new" class="btn btn--primary">
+          + Add Product
+        </a>
+        <button
+          *ngIf="isFiltered"
+          type="button"
+          class="btn btn--outline ml-12"
+          (click)="resetAllFilters()"
+        >
+          Reset Filters
+        </button>
+      </div>
+    </div>
+
+    <!-- ──────────────── Pagination Bar ──────────────── -->
+    <footer class="pagination-footer" *ngIf="products.length > 0 && totalPages > 0">
+      <div class="pagination-summary">
+        Showing {{ rangeStart }}–{{ rangeEnd }} of {{ totalProducts }} products
+      </div>
+
+      <nav class="pagination-nav" aria-label="Product pagination" *ngIf="totalPages > 1">
+        <button
+          type="button"
+          class="pagination-btn pagination-prev"
+          [disabled]="currentPage === 1 || isLoading"
+          (click)="previousPage()"
+          aria-label="Previous page"
+        >
+          &lt; Previous
+        </button>
+
+        <div class="page-numbers">
+          <button
+            *ngFor="let pageNum of pagesArray"
+            type="button"
+            class="pagination-page-btn"
+            [class.is-active]="pageNum === currentPage"
+            [disabled]="isLoading"
+            (click)="changePage(pageNum)"
+          >
+            {{ pageNum }}
+          </button>
+        </div>
+
+        <button
+          type="button"
+          class="pagination-btn pagination-next"
+          [disabled]="currentPage === totalPages || isLoading"
+          (click)="nextPage()"
+          aria-label="Next page"
+        >
+          Next &gt;
+        </button>
+      </nav>
+    </footer>
+  </div>
+
+  <!-- ──────────────── Delete Confirmation Modal ──────────────── -->
+  <div
+    class="modal-overlay"
+    *ngIf="productToDelete"
+    (click)="closeDeleteConfirm()"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="deleteModalTitle"
+  >
+    <div class="modal-dialog" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <h2 id="deleteModalTitle" class="modal-title modal-title--danger">
+          Delete Product
+        </h2>
+        <button
+          type="button"
+          class="modal-close-btn"
+          (click)="closeDeleteConfirm()"
+          [disabled]="isDeleting"
+          aria-label="Close modal"
+        >
+          ✕
+        </button>
+      </header>
+
+      <div class="modal-body">
+        <div class="delete-icon-wrap">⚠️</div>
+        <p class="delete-confirm-text">
+          Are you sure you want to delete this product?
+        </p>
+        <p class="target-product-name">
+          "{{ productToDelete.name }}"
+        </p>
+        <p class="delete-disclaimer">
+          This operation will delete this product, all its variants, and gallery images. This action cannot be reversed.
+        </p>
+
+        <div class="alert alert--error mt-12" *ngIf="deleteError">
+          {{ deleteError }}
+        </div>
+      </div>
+
+      <footer class="modal-footer">
+        <button
+          type="button"
+          class="btn btn--outline"
+          (click)="closeDeleteConfirm()"
+          [disabled]="isDeleting"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          class="btn btn--danger"
+          (click)="confirmDelete()"
+          [disabled]="isDeleting"
+        >
+          <span *ngIf="!isDeleting">Yes, Delete</span>
+          <span *ngIf="isDeleting" class="is-loading-text">
+            <span class="btn-spinner"></span> Deleting...
+          </span>
+        </button>
+      </footer>
+    </div>
+  </div>
+</div>

@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
-
+import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
+import { AuthInterceptor } from './services/auth.interceptor';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { HomeComponent } from './pages/home/home.component';
@@ -14,6 +15,10 @@ import { CartComponent } from './pages/cart/cart.component';
 import { ProfileComponent } from './pages/profile/profile.component';
 import { ModelViewerComponent } from './components/model-viewer/model-viewer.component';
 import { TestViewerComponent } from './test-viewer/test-viewer.component';
+import { LoginComponent } from './pages/login/login.component';
+import { RegisterComponent } from './pages/register/register.component';
+import { StorePageComponent } from './pages/store-page/store-page.component';
+import { SellerDashboardComponent } from './pages/seller/seller-dashboard/seller-dashboard.component';
 
 @NgModule({
   declarations: [
@@ -26,18 +31,22 @@ import { TestViewerComponent } from './test-viewer/test-viewer.component';
     TryOnComponent,
     CartComponent,
     ProfileComponent,
-    ModelViewerComponent
-    
-    
-    
+    ModelViewerComponent,
+    LoginComponent,
+    RegisterComponent,
+    StorePageComponent,
+    SellerDashboardComponent
   ],
   imports: [
     BrowserModule,
     AppRoutingModule,
     FormsModule,
-    ReactiveFormsModule
+    ReactiveFormsModule,
+    HttpClientModule
   ],
-  providers: [],
+  providers: [
+    { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true }
+  ],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

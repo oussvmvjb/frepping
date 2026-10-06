@@ -1,0 +1,58 @@
+<div class="seller-dashboard-container">
+  <div class="dashboard-header">
+    <h1 class="dashboard-title">SELLER PORTAL</h1>
+    <p class="dashboard-subtitle">MANAGE YOUR STORE AND INVENTORY</p>
+  </div>
+
+  <div *ngIf="loading" class="state-loading">
+    <div class="spinner"></div>
+    <p>FETCHING SELLER ACCOUNT DATA...</p>
+  </div>
+
+  <div *ngIf="!loading && error" class="state-error">
+    <div class="error-box">
+      <h3>ERROR</h3>
+      <p>{{ error }}</p>
+      <button class="btn-retry" (click)="loadSellerData()">RETRY</button>
+    </div>
+  </div>
+
+  <div *ngIf="!loading && !error" class="dashboard-content">
+    <!-- NO STORE YET -->
+    <div *ngIf="!hasStore" class="no-store-card">
+      <div class="icon-wrap">🏪</div>
+      <h2>YOU DON'T HAVE A STORE YET</h2>
+      <p>Start selling on FREPPING by establishing your store identity and inventory.</p>
+      <button class="btn-action" disabled title="Store creation backend endpoint ready; seller UI form coming soon">
+        CREATE STORE
+      </button>
+    </div>
+
+    <!-- ACTIVE STORE -->
+    <div *ngIf="hasStore && store" class="store-overview-card">
+      <div class="card-header">
+        <div class="store-info">
+          <h2>{{ store.name }}</h2>
+          <span class="store-slug">@{{ store.slug }}</span>
+          <span class="status-badge" [class.active]="store.is_active">
+            {{ store.is_active ? 'ACTIVE' : 'INACTIVE' }}
+          </span>
+        </div>
+        <a [routerLink]="['/stores', store.slug]" class="btn-view-store">
+          VIEW PUBLIC STORE
+        </a>
+      </div>
+
+      <div class="store-stats">
+        <div class="stat-box">
+          <span class="stat-label">STORE STATUS</span>
+          <span class="stat-value">{{ store.is_active ? 'LIVE' : 'PAUSED' }}</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-label">CREATED</span>
+          <span class="stat-value">{{ store.created_at | date : 'mediumDate' }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,568 @@
+$neon: #39ff14;
+$neon-dim: rgba(57, 255, 20, 0.08);
+$neon-glow: rgba(57, 255, 20, 0.35);
+$bg-card: #0e1810;
+$bg-input: #0b1209;
+$border: rgba(57, 255, 20, 0.15);
+$red: #ff3b3b;
+$orange: #ff9900;
+$white: #f5f5f5;
+$muted: #aaa;
+$font-disp: 'Oswald', sans-serif;
+$font-body: 'Poppins', sans-serif;
+
+.admin-container {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+  font-family: $font-body;
+}
+
+// ─── Header ───────────────────────────────────────────
+.admin-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .header-title {
+    font-family: $font-disp;
+    font-size: clamp(1.4rem, 3vw, 1.9rem);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: $neon;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-shadow: 0 0 16px $neon-glow;
+  }
+
+  .count-badge {
+    background: $neon-dim;
+    border: 1px solid rgba(57, 255, 20, 0.3);
+    color: $neon;
+    font-size: 0.75rem;
+    font-family: $font-disp;
+    letter-spacing: 1px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    text-transform: uppercase;
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+}
+
+// ─── Filter Toolbar ──────────────────────────────────
+.filter-toolbar {
+  display: flex;
+  gap: 14px;
+  margin-bottom: 20px;
+
+  .search-box {
+    flex: 1;
+    max-width: 400px;
+    position: relative;
+
+    .search-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.85rem;
+      pointer-events: none;
+      opacity: 0.6;
+    }
+
+    input {
+      padding-left: 36px;
+    }
+  }
+}
+
+// ─── Table Card ──────────────────────────────────────
+.table-card {
+  background: $bg-card;
+  border: 1px solid $border;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.table-responsive {
+  overflow-x: auto;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.88rem;
+
+  thead tr {
+    background: #080d09;
+    border-bottom: 1px solid $border;
+  }
+
+  th {
+    padding: 14px 16px;
+    font-family: $font-disp;
+    font-size: 0.78rem;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: $muted;
+    font-weight: 600;
+  }
+
+  tbody tr {
+    border-bottom: 1px solid rgba(57, 255, 20, 0.08);
+    transition: background 0.2s;
+
+    &:hover {
+      background: rgba(57, 255, 20, 0.04);
+    }
+  }
+
+  td {
+    padding: 14px 16px;
+    vertical-align: middle;
+  }
+}
+
+// ─── Category Cell ───────────────────────────────────
+.category-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 200px;
+}
+
+.cat-thumb {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  background: #111;
+  border: 1px solid $border;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .no-img {
+    font-size: 1.1rem;
+    opacity: 0.6;
+  }
+}
+
+.cat-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cat-name {
+  font-weight: 600;
+  color: $white;
+}
+
+.cat-slug {
+  font-size: 0.72rem;
+  color: $muted;
+}
+
+// ─── Desc Cell ───────────────────────────────────────
+.desc-cell {
+  max-width: 320px;
+
+  .desc-text {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    color: #ccc;
+    font-size: 0.82rem;
+    line-height: 1.4;
+  }
+
+  .desc-empty {
+    color: #555;
+  }
+}
+
+.status-tag {
+  font-size: 0.7rem;
+  padding: 3px 8px;
+  border-radius: 4px;
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.08);
+  color: $muted;
+
+  &--active {
+    background: rgba(57, 255, 20, 0.12);
+    color: $neon;
+    border: 1px solid rgba(57, 255, 20, 0.3);
+  }
+}
+
+.date-cell {
+  color: $muted;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+// ─── Actions ─────────────────────────────────────────
+.actions-cell {
+  white-space: nowrap;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.btn-action {
+  background: none;
+  border: 1px solid transparent;
+  padding: 6px 10px;
+  border-radius: 5px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  margin-left: 6px;
+  transition: all 0.2s;
+  font-family: $font-disp;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+
+  &--edit {
+    background: rgba(57, 255, 20, 0.08);
+    border-color: rgba(57, 255, 20, 0.25);
+    color: $neon;
+
+    &:hover {
+      background: rgba(57, 255, 20, 0.18);
+      box-shadow: 0 0 8px rgba(57, 255, 20, 0.2);
+    }
+  }
+
+  &--delete {
+    background: rgba(255, 59, 59, 0.08);
+    border-color: rgba(255, 59, 59, 0.25);
+    color: $red;
+
+    &:hover {
+      background: rgba(255, 59, 59, 0.2);
+      box-shadow: 0 0 8px rgba(255, 59, 59, 0.2);
+    }
+  }
+}
+
+// ─── Forms / Inputs ──────────────────────────────────
+.form-group {
+  margin-bottom: 14px;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: $muted;
+  margin-bottom: 6px;
+}
+
+.form-input {
+  background: $bg-input;
+  border: 1px solid rgba(57, 255, 20, 0.2);
+  border-radius: 6px;
+  color: $white;
+  font-family: $font-body;
+  font-size: 0.88rem;
+  padding: 9px 12px;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+
+  &:focus {
+    border-color: $neon;
+    box-shadow: 0 0 8px rgba(57, 255, 20, 0.15);
+  }
+
+  &--textarea {
+    resize: vertical;
+  }
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+
+  &--toggles {
+    display: flex;
+    gap: 20px;
+    margin-top: 10px;
+  }
+}
+
+.toggle-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  color: $white;
+  cursor: pointer;
+
+  input[type='checkbox'] {
+    accent-color: $neon;
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+  }
+}
+
+// ─── Buttons ─────────────────────────────────────────
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-family: $font-disp;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  border: none;
+  text-decoration: none;
+  transition: all 0.2s;
+
+  &--primary {
+    background: $neon;
+    color: #0b0f0c;
+
+    &:hover:not(:disabled) {
+      background: #2ee000;
+      box-shadow: 0 0 14px $neon-glow;
+      transform: translateY(-1px);
+    }
+  }
+
+  &--outline {
+    background: transparent;
+    border: 1px solid rgba(57, 255, 20, 0.35);
+    color: $neon;
+
+    &:hover:not(:disabled) {
+      background: $neon-dim;
+      border-color: $neon;
+    }
+  }
+
+  &--danger {
+    background: $red;
+    color: $white;
+
+    &:hover:not(:disabled) {
+      background: #e62e2e;
+      box-shadow: 0 0 14px rgba(255, 59, 59, 0.4);
+    }
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.mt-12 {
+  margin-top: 12px;
+}
+
+// ─── Alerts ──────────────────────────────────────────
+.admin-alerts {
+  margin-bottom: 18px;
+}
+
+.alert {
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+
+  &--success {
+    background: rgba(57, 255, 20, 0.08);
+    border-left: 3px solid $neon;
+    color: $neon;
+  }
+
+  &--error {
+    background: rgba(255, 59, 59, 0.08);
+    border-left: 3px solid $red;
+    color: $red;
+  }
+
+  .alert-close {
+    background: none;
+    border: none;
+    color: inherit;
+    font-size: 0.9rem;
+    cursor: pointer;
+    opacity: 0.7;
+    &:hover { opacity: 1; }
+  }
+}
+
+// ─── Loading & Empty ─────────────────────────────────
+.loading-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: $muted;
+
+  .spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid rgba(57, 255, 20, 0.2);
+    border-top-color: $neon;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 14px;
+  }
+}
+
+.empty-box {
+  text-align: center;
+  padding: 50px 20px;
+
+  .empty-icon {
+    font-size: 2.5rem;
+    margin-bottom: 12px;
+  }
+
+  h3 {
+    font-family: $font-disp;
+    color: $white;
+    font-size: 1.2rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  p {
+    color: $muted;
+    font-size: 0.85rem;
+  }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+// ─── Modal ───────────────────────────────────────────
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.modal-card {
+  background: #0e1810;
+  border: 1px solid rgba(57, 255, 20, 0.3);
+  border-radius: 10px;
+  width: 100%;
+  max-width: 540px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8), 0 0 20px rgba(57, 255, 20, 0.1);
+
+  &--sm {
+    max-width: 440px;
+  }
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px;
+  border-bottom: 1px solid $border;
+
+  .modal-title {
+    font-family: $font-disp;
+    font-size: 1.2rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: $neon;
+
+    &--danger {
+      color: $red;
+    }
+  }
+
+  .modal-close {
+    background: none;
+    border: none;
+    color: $muted;
+    font-size: 1.1rem;
+    cursor: pointer;
+    &:hover { color: $white; }
+  }
+}
+
+.modal-body {
+  padding: 20px;
+
+  .delete-warning {
+    color: $white;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin-bottom: 8px;
+  }
+
+  .highlight-title {
+    color: $neon;
+  }
+
+  .delete-sub {
+    color: $muted;
+    font-size: 0.8rem;
+  }
+}
+
+.modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 20px;
+  border-top: 1px solid $border;
+  background: rgba(0, 0, 0, 0.2);
+}

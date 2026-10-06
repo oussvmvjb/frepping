@@ -5,44 +5,32 @@
       <div class="hero-grid-overlay"></div>
       <div class="hero-glow"></div>
     </div>
-    
+
     <div class="hero-content">
       <div class="hero-left">
         <div class="hero-badge">
           <span class="badge-text">LIMITED TIME</span>
           <i class="fas fa-bolt"></i>
         </div>
-        
+
         <h1 class="hero-title">
           <span class="title-line-1">FREEPPING</span>
           <span class="title-line-2">LOS SANTOS</span>
           <span class="title-line-3">STREETWEAR</span>
         </h1>
-        
+
         <p class="hero-subtitle">
           Experience urban fashion through cutting-edge 3D visualization.
           <span class="highlight">Try before you buy</span> in our virtual fitting room.
         </p>
-        
+
         <div class="hero-stats">
-          <div class="stat-item">
-            <div class="stat-number">500+</div>
-            <div class="stat-label">PREMIUM ITEMS</div>
-          </div>
-          <div class="stat-item">
-            <div class="stat-number">3D</div>
-            <div class="stat-label">VIRTUAL TRY-ON</div>
-          </div>
-          <div class="stat-item">
-            <div class="stat-number">24H</div>
-            <div class="stat-label">EXPRESS DELIVERY</div>
-          </div>
-          <div class="stat-item">
-            <div class="stat-number">4.8</div>
-            <div class="stat-label">RATING</div>
-          </div>
+          <div class="stat-item"><div class="stat-number">500+</div><div class="stat-label">PREMIUM ITEMS</div></div>
+          <div class="stat-item"><div class="stat-number">3D</div><div class="stat-label">VIRTUAL TRY-ON</div></div>
+          <div class="stat-item"><div class="stat-number">24H</div><div class="stat-label">EXPRESS DELIVERY</div></div>
+          <div class="stat-item"><div class="stat-number">4.8</div><div class="stat-label">RATING</div></div>
         </div>
-        
+
         <div class="hero-actions">
           <button class="btn-hero-primary" (click)="goToTryOn()">
             <i class="fas fa-vr-cardboard"></i>
@@ -54,91 +42,99 @@
             <span>EXPLORE COLLECTION</span>
           </button>
         </div>
-        
+
         <div class="hero-scroll-indicator">
           <span>SCROLL TO EXPLORE</span>
           <i class="fas fa-chevron-down"></i>
         </div>
       </div>
-      
+
       <div class="hero-right">
         <div class="hero-featured-product">
           <div class="featured-badge">FEATURED DROP</div>
-          
-          <div class="featured-product-card">
+
+          <!-- Loading state -->
+          <div *ngIf="isLoadingFeatured" class="featured-product-card">
             <div class="featured-product-image">
               <div class="image-container">
-                <ng-container *ngIf="featuredProduct && has3DModel(featuredProduct); else featuredImage">
-                  <div class="model-preview-large">
-                    <app-model-viewer 
-                      [modelPath]="featuredProduct.images[0]"
-                      [autoRotate]="true"
-                     >
-                    </app-model-viewer>
-                    <div class="model-hint-large">
-                      <i class="fas fa-arrows-alt"></i>
-                      <span>INTERACTIVE 3D MODEL</span>
-                    </div>
-                  </div>
-                </ng-container>
-                
-                <ng-template #featuredImage>
-                  <img *ngIf="featuredProduct" 
-                       [src]="featuredProduct.images[0]" 
-                       [alt]="featuredProduct.name"
-                       class="featured-img">
-                  <div class="image-placeholder-large" *ngIf="!featuredProduct">
-                    <i class="fas fa-tshirt"></i>
-                    <span>FEATURED PRODUCT</span>
-                  </div>
-                </ng-template>
-              </div>
-              
-              <div class="product-tags">
-                <span class="tag" *ngIf="featuredProduct?.isNew">NEW ARRIVAL</span>
-                <span class="tag" *ngIf="featuredProduct?.originalPrice">LIMITED SALE</span>
-                <span class="tag" *ngIf="featuredProduct?.has3DModel">3D MODEL</span>
+                <div class="image-placeholder-large">
+                  <i class="fas fa-spinner fa-spin"></i>
+                  <span>LOADING...</span>
+                </div>
               </div>
             </div>
-            
-            <div class="featured-product-info" *ngIf="featuredProduct">
+          </div>
+
+          <!-- Error state -->
+          <div *ngIf="!isLoadingFeatured && featuredError" class="featured-product-card">
+            <div class="featured-product-image">
+              <div class="image-container">
+                <div class="image-placeholder-large">
+                  <i class="fas fa-exclamation-circle"></i>
+                  <span>UNABLE TO LOAD</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Loaded state -->
+          <div *ngIf="!isLoadingFeatured && !featuredError && featuredProduct" class="featured-product-card">
+            <div class="featured-product-image">
+              <div class="image-container">
+                <img [src]="getProductImage(featuredProduct)"
+                     [alt]="featuredProduct.name"
+                     class="featured-img">
+                <div class="product-tags">
+                  <span class="tag" *ngIf="featuredProduct.compare_price">LIMITED SALE</span>
+                  <span class="tag" *ngIf="featuredProduct.is_featured">FEATURED</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="featured-product-info">
               <div class="featured-product-header">
-                <h3 class="featured-brand">{{featuredProduct.brand}}</h3>
-                <div class="featured-rating">
-                  <i class="fas fa-star"></i>
-                  <span>{{featuredProduct.rating.toFixed(1)}}</span>
-                  <span class="review-count">({{featuredProduct.reviewCount}})</span>
-                </div>
+                <h3 class="featured-brand">{{ getCategoryName(featuredProduct) }}</h3>
               </div>
-              
-              <h2 class="featured-name">{{featuredProduct.name}}</h2>
-              <p class="featured-description">{{featuredProduct.description | slice:0:120}}...</p>
-              
+              <h2 class="featured-name">{{ featuredProduct.name }}</h2>
+              <p class="featured-description">{{ (featuredProduct.description || '') | slice:0:120 }}...</p>
+
               <div class="featured-specs">
-                <div class="spec">
+                <div class="spec" *ngIf="featuredProduct.material">
                   <i class="fas fa-tag"></i>
-                  <span>{{featuredProduct.material || 'Premium Material'}}</span>
+                  <span>{{ featuredProduct.material }}</span>
                 </div>
-                <div class="spec">
+                <div class="spec" *ngIf="featuredProduct.category">
                   <i class="fas fa-layer-group"></i>
-                  <span>{{featuredProduct.category}}</span>
+                  <span>{{ featuredProduct.category.name }}</span>
                 </div>
               </div>
-              
+
               <div class="featured-price-section">
                 <div class="price">
-                  <span class="current">${{featuredProduct.price.toFixed(2)}}</span>
-                  <span class="original" *ngIf="featuredProduct.originalPrice">
-                    ${{featuredProduct.originalPrice.toFixed(2)}}
+                  <span class="current">${{ (+featuredProduct.price).toFixed(2) }}</span>
+                  <span class="original" *ngIf="featuredProduct.compare_price">
+                    ${{ (+featuredProduct.compare_price).toFixed(2) }}
                   </span>
-                  <span class="discount" *ngIf="featuredProduct.originalPrice">
-                    -{{getDiscountPercent(featuredProduct)}}%
+                  <span class="discount" *ngIf="getDiscountPercent(featuredProduct) > 0">
+                    -{{ getDiscountPercent(featuredProduct) }}%
                   </span>
                 </div>
                 <button class="btn-featured-view" (click)="goToProduct(featuredProduct.id)">
                   <i class="fas fa-eye"></i>
                   VIEW DETAILS
                 </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- No products state -->
+          <div *ngIf="!isLoadingFeatured && !featuredError && !featuredProduct" class="featured-product-card">
+            <div class="featured-product-image">
+              <div class="image-container">
+                <div class="image-placeholder-large">
+                  <i class="fas fa-tshirt"></i>
+                  <span>FEATURED PRODUCT</span>
+                </div>
               </div>
             </div>
           </div>
@@ -157,19 +153,24 @@
       </h2>
       <p class="section-subtitle">Browse our curated collections</p>
     </div>
-    
-    <div class="categories-grid">
-      <div *ngFor="let category of categories" 
-           class="category-card" 
+
+    <div *ngIf="isLoadingCategories" class="loading-state-inline">
+      <i class="fas fa-spinner fa-spin"></i> Loading categories...
+    </div>
+
+    <div class="categories-grid" *ngIf="!isLoadingCategories">
+      <div *ngFor="let category of categories"
+           class="category-card"
            (click)="goToCategory(category.id)">
         <div class="category-icon">
-          <i [class]="category.icon"></i>
+          <img *ngIf="category.image_url" [src]="category.image_url" [alt]="category.name" class="cat-img">
+          <i *ngIf="!category.image_url" class="fas fa-tags"></i>
         </div>
-        <h3 class="category-name">{{category.name}}</h3>
-        <p class="category-count">{{category.count}} items</p>
-        <div class="category-hover">
-          <span>EXPLORE →</span>
-        </div>
+        <h3 class="category-name">{{ category.name }}</h3>
+        <div class="category-hover"><span>EXPLORE →</span></div>
+      </div>
+      <div *ngIf="categories.length === 0" class="empty-categories">
+        <p>No categories available.</p>
       </div>
     </div>
   </section>
@@ -192,110 +193,104 @@
         </button>
       </div>
     </div>
-    
-    <div class="products-grid-home">
-      <div *ngFor="let product of featuredProducts; let i = index" 
+
+    <!-- Loading -->
+    <div *ngIf="isLoadingFeatured" class="loading-modern">
+      <div class="modern-spinner"></div>
+      <span class="modern-loading-text">LOADING DROPS...</span>
+    </div>
+
+    <!-- Error -->
+    <div *ngIf="!isLoadingFeatured && featuredError" class="error-state">
+      <i class="fas fa-exclamation-triangle"></i>
+      <p>{{ featuredError }}</p>
+      <button class="btn-retry" (click)="loadFeaturedProducts()">RETRY</button>
+    </div>
+
+    <!-- Empty -->
+    <div *ngIf="!isLoadingFeatured && !featuredError && featuredProducts.length === 0" class="empty-state">
+      <i class="fas fa-tshirt"></i>
+      <p>No featured products yet. Check back soon.</p>
+      <button class="btn-view-all" (click)="goToShop()">BROWSE ALL →</button>
+    </div>
+
+    <div class="products-grid-home" *ngIf="!isLoadingFeatured && !featuredError && featuredProducts.length > 0">
+      <div *ngFor="let product of featuredProducts; let i = index"
            class="product-card-home"
            [class.featured]="i === 0"
            (click)="goToProduct(product.id)">
-        
+
         <div class="product-rank" *ngIf="i < 3">
-          <span class="rank-number">#{{i + 1}}</span>
+          <span class="rank-number">#{{ i + 1 }}</span>
           <div class="rank-glow"></div>
         </div>
-        
+
         <div class="product-image-home">
-          <!-- Badges -->
           <div class="product-badges-home">
             <span class="badge hot" *ngIf="i < 3">TRENDING</span>
-            <span class="badge sale" *ngIf="product.originalPrice">-{{getDiscountPercent(product)}}%</span>
-            <span class="badge new" *ngIf="product.isNew">NEW</span>
-            <span class="badge model-3d" *ngIf="has3DModel(product)">3D</span>
+            <span class="badge sale" *ngIf="getDiscountPercent(product) > 0">-{{ getDiscountPercent(product) }}%</span>
           </div>
-          
-          <!-- Image/Model -->
+
           <div class="image-container-home">
-            <ng-container *ngIf="has3DModel(product); else regularImage">
-              <div class="model-preview-home">
-                <app-model-viewer 
-                  [modelPath]="product.images[0]"
-                  [autoRotate]="true"
-                 >
-                </app-model-viewer>
-                <div class="model-overlay">
-                  <i class="fas fa-cube"></i>
-                  <span>3D VIEW</span>
-                </div>
-              </div>
-            </ng-container>
-            
-            <ng-template #regularImage>
-              <img [src]="product.images[0]" 
-                   [alt]="product.name" 
-                   class="product-img-home">
-            </ng-template>
+            <img *ngIf="getProductImage(product)"
+                 [src]="getProductImage(product)"
+                 [alt]="product.name"
+                 class="product-img-home">
+            <div *ngIf="!getProductImage(product)" class="image-placeholder-home">
+              <i class="fas fa-tshirt"></i>
+            </div>
           </div>
-          
-          <!-- Quick Actions -->
+
           <div class="quick-actions-home">
-            <button class="quick-action-btn" 
+            <button class="quick-action-btn"
                     (click)="$event.stopPropagation(); addToCart(product)"
-                    [disabled]="!product.inStock">
+                    [disabled]="!isInStock(product)">
               <i class="fas fa-shopping-bag"></i>
             </button>
-            <button class="quick-action-btn" 
-                    (click)="$event.stopPropagation(); tryOnProduct(product)"
-                    [disabled]="!product.inStock">
+            <button class="quick-action-btn"
+                    (click)="$event.stopPropagation(); tryOnProduct(product)">
               <i class="fas fa-user-check"></i>
             </button>
-            <button class="quick-action-btn" 
+            <button class="quick-action-btn"
                     (click)="$event.stopPropagation(); toggleFavorite(product.id)">
               <i class="fas fa-heart" [class.active]="isFavorite(product.id)"></i>
             </button>
           </div>
-          
-          <!-- Stock Status -->
-          <div class="stock-status-home" [class.in-stock]="product.inStock">
-            <i class="fas" [class.fa-check-circle]="product.inStock" [class.fa-times-circle]="!product.inStock"></i>
-            <span>{{product.inStock ? 'IN STOCK' : 'OUT OF STOCK'}}</span>
+
+          <div class="stock-status-home" [class.in-stock]="isInStock(product)">
+            <i class="fas" [class.fa-check-circle]="isInStock(product)" [class.fa-times-circle]="!isInStock(product)"></i>
+            <span>{{ isInStock(product) ? 'IN STOCK' : 'OUT OF STOCK' }}</span>
           </div>
         </div>
-        
+
         <div class="product-info-home">
           <div class="product-meta-home">
-            <span class="brand">{{product.brand}}</span>
-            <span class="category">{{product.category}}</span>
+            <span class="category">{{ getCategoryName(product) }}</span>
           </div>
-          
-          <h3 class="product-name-home">{{product.name}}</h3>
-          
-          <p class="product-description-home">{{product.description | slice:0:80}}...</p>
-          
-          <div class="product-specs-home">
+          <h3 class="product-name-home">{{ product.name }}</h3>
+          <p class="product-description-home">{{ (product.description || '') | slice:0:80 }}...</p>
+
+          <div class="product-specs-home" *ngIf="product.material">
             <div class="spec-home">
               <i class="fas fa-tag"></i>
-              <span>{{product.material || 'Premium'}}</span>
-            </div>
-            <div class="spec-home">
-              <i class="fas fa-star"></i>
-              <span>{{product.rating.toFixed(1)}} ({{product.reviewCount}})</span>
+              <span>{{ product.material }}</span>
             </div>
           </div>
-          
+
           <div class="product-footer-home">
             <div class="price-home">
-              <span class="current">${{product.price.toFixed(2)}}</span>
-              <span class="original" *ngIf="product.originalPrice">
-                ${{product.originalPrice.toFixed(2)}}
+              <span class="current">${{ (+product.price).toFixed(2) }}</span>
+              <span class="original" *ngIf="product.compare_price">
+                ${{ (+product.compare_price).toFixed(2) }}
               </span>
             </div>
             <div class="actions-home">
               <button class="btn-quick-view" (click)="$event.stopPropagation(); goToProduct(product.id)">
                 <i class="fas fa-eye"></i>
               </button>
-              <button class="btn-quick-add" 
+              <button class="btn-quick-add"
                       (click)="$event.stopPropagation(); addToCart(product)"
-                      [disabled]="!product.inStock">
+                      [disabled]="!isInStock(product)">
                 <i class="fas fa-plus"></i>
               </button>
             </div>
@@ -313,35 +308,19 @@
           <i class="fas fa-vr-cardboard"></i>
           <span>EXCLUSIVE FEATURE</span>
         </div>
-        
         <h2 class="banner-title">
           VIRTUAL <span class="highlight">3D FITTING ROOM</span>
         </h2>
-        
         <p class="banner-description">
           Try on any item in our collection with our advanced 3D visualization technology.
           See how clothes fit, rotate 360°, and find your perfect style.
         </p>
-        
         <div class="banner-features">
-          <div class="feature">
-            <i class="fas fa-rotate"></i>
-            <span>360° Rotation</span>
-          </div>
-          <div class="feature">
-            <i class="fas fa-expand-alt"></i>
-            <span>Zoom & Detail View</span>
-          </div>
-          <div class="feature">
-            <i class="fas fa-palette"></i>
-            <span>Color Customization</span>
-          </div>
-          <div class="feature">
-            <i class="fas fa-user"></i>
-            <span>Avatar Support</span>
-          </div>
+          <div class="feature"><i class="fas fa-rotate"></i><span>360° Rotation</span></div>
+          <div class="feature"><i class="fas fa-expand-alt"></i><span>Zoom &amp; Detail View</span></div>
+          <div class="feature"><i class="fas fa-palette"></i><span>Color Customization</span></div>
+          <div class="feature"><i class="fas fa-user"></i><span>Avatar Support</span></div>
         </div>
-        
         <div class="banner-actions">
           <button class="btn-banner-primary" (click)="goToTryOn()">
             <i class="fas fa-play-circle"></i>
@@ -353,26 +332,18 @@
           </button>
         </div>
       </div>
-      
       <div class="banner-right">
         <div class="banner-preview">
           <div class="preview-container">
             <div class="preview-model">
-              <!-- 3D model preview placeholder -->
               <div class="model-placeholder">
                 <i class="fas fa-cube"></i>
                 <span>3D MODEL PREVIEW</span>
               </div>
               <div class="preview-controls">
-                <button class="control-btn">
-                  <i class="fas fa-rotate"></i>
-                </button>
-                <button class="control-btn">
-                  <i class="fas fa-expand-alt"></i>
-                </button>
-                <button class="control-btn">
-                  <i class="fas fa-palette"></i>
-                </button>
+                <button class="control-btn"><i class="fas fa-rotate"></i></button>
+                <button class="control-btn"><i class="fas fa-expand-alt"></i></button>
+                <button class="control-btn"><i class="fas fa-palette"></i></button>
               </div>
             </div>
           </div>
@@ -381,29 +352,40 @@
     </div>
   </section>
 
-  <!-- NEW ARRIVALS -->
+  <!-- NEW ARRIVALS (Recent products from backend, sorted by created_at) -->
   <section class="new-arrivals">
     <div class="section-header">
       <h2 class="section-title">
         <span class="title-accent"></span>
-        NEW ARRIVALS
+        RECENT ARRIVALS
         <span class="title-accent"></span>
       </h2>
       <p class="section-subtitle">Fresh from Los Santos</p>
     </div>
-    
-    <div class="arrivals-slider">
+
+    <div *ngIf="isLoadingArrivals" class="loading-modern">
+      <div class="modern-spinner"></div>
+      <span class="modern-loading-text">LOADING...</span>
+    </div>
+
+    <div *ngIf="!isLoadingArrivals && arrivalsError" class="error-state">
+      <i class="fas fa-exclamation-triangle"></i>
+      <p>{{ arrivalsError }}</p>
+      <button class="btn-retry" (click)="loadRecentProducts()">RETRY</button>
+    </div>
+
+    <div class="arrivals-slider" *ngIf="!isLoadingArrivals && !arrivalsError && newArrivals.length > 0">
       <button class="slider-nav prev" (click)="prevSlide()">
         <i class="fas fa-chevron-left"></i>
       </button>
-      
+
       <div class="slider-container">
-        <div class="slider-track" [style.transform]="'translateX(' + (-currentSlide * 100) + '%)'">
+        <div class="slider-track" [style.transform]="'translateX(' + (-currentSlide * 100) + '%)'" >
           <div *ngFor="let arrival of newArrivals" class="arrival-slide">
             <div class="arrival-card-home">
               <div class="arrival-image-home">
                 <div class="arrival-badge-home">NEW DROP</div>
-                <img [src]="arrival.images" [alt]="arrival.name">
+                <img [src]="getProductImage(arrival)" [alt]="arrival.name">
                 <div class="arrival-overlay">
                   <button class="btn-quick-view-arrival" (click)="goToProduct(arrival.id)">
                     <i class="fas fa-eye"></i>
@@ -411,18 +393,15 @@
                   </button>
                 </div>
               </div>
-              
               <div class="arrival-info-home">
-                <h3 class="arrival-name">{{arrival.name}}</h3>
-                <p class="arrival-description">{{arrival.description}}</p>
-                
+                <h3 class="arrival-name">{{ arrival.name }}</h3>
+                <p class="arrival-description">{{ arrival.description || '' }}</p>
                 <div class="arrival-meta">
-                  <span class="arrival-category">{{arrival.category}}</span>
-                  <span class="arrival-material">{{arrival.material}}</span>
+                  <span class="arrival-category">{{ getCategoryName(arrival) }}</span>
+                  <span class="arrival-material" *ngIf="arrival.material">{{ arrival.material }}</span>
                 </div>
-                
                 <div class="arrival-price-home">
-                  <span class="price">${{arrival.price.toFixed(2)}}</span>
+                  <span class="price">${{ (+arrival.price).toFixed(2) }}</span>
                   <span class="arrival-action" (click)="addToCart(arrival)">
                     ADD TO CART <i class="fas fa-plus"></i>
                   </span>
@@ -432,13 +411,13 @@
           </div>
         </div>
       </div>
-      
+
       <button class="slider-nav next" (click)="nextSlide()">
         <i class="fas fa-chevron-right"></i>
       </button>
-      
+
       <div class="slider-dots">
-        <span *ngFor="let dot of [0,1,2]; let i = index" 
+        <span *ngFor="let arrival of newArrivals; let i = index"
               [class.active]="i === currentSlide"
               (click)="goToSlide(i)"
               class="dot"></span>
@@ -446,7 +425,7 @@
     </div>
   </section>
 
-  <!-- COLLECTIONS -->
+  <!-- COLLECTIONS (static content, not connected to backend) -->
   <section class="collections-home">
     <div class="section-header">
       <h2 class="section-title">
@@ -456,23 +435,21 @@
       </h2>
       <p class="section-subtitle">Handpicked styles for every vibe</p>
     </div>
-    
     <div class="collections-grid-home">
-      <div *ngFor="let collection of collections" 
+      <div *ngFor="let collection of collections"
            class="collection-card-home"
            (click)="goToCollection(collection.id)">
         <div class="collection-image-home" [style.background-image]="'url(' + collection.image + ')'">
           <div class="collection-overlay-home">
             <div class="collection-content-home">
-              <h3 class="collection-name-home">{{collection.name}}</h3>
-              <p class="collection-description-home">{{collection.description}}</p>
+              <h3 class="collection-name-home">{{ collection.name }}</h3>
+              <p class="collection-description-home">{{ collection.description }}</p>
               <div class="collection-stats-home">
-                <span class="collection-count">{{collection.itemCount}} items</span>
-                <span class="collection-price">From ${{collection.startingPrice}}</span>
+                <span class="collection-count">{{ collection.itemCount }} items</span>
+                <span class="collection-price">From ${{ collection.startingPrice }}</span>
               </div>
               <button class="btn-collection-home">
-                EXPLORE COLLECTION
-                <i class="fas fa-arrow-right"></i>
+                EXPLORE COLLECTION <i class="fas fa-arrow-right"></i>
               </button>
             </div>
           </div>
@@ -486,13 +463,10 @@
   <section class="testimonials">
     <div class="section-header">
       <h2 class="section-title">
-        <span class="title-accent"></span>
-        FROM THE STREETS
-        <span class="title-accent"></span>
+        <span class="title-accent"></span>FROM THE STREETS<span class="title-accent"></span>
       </h2>
       <p class="section-subtitle">What Los Santos is saying</p>
     </div>
-    
     <div class="testimonials-grid">
       <div *ngFor="let testimonial of testimonials" class="testimonial-card">
         <div class="testimonial-header">
@@ -500,81 +474,48 @@
             <img [src]="testimonial.avatar" [alt]="testimonial.name">
           </div>
           <div class="testimonial-info">
-            <h4 class="testimonial-name">{{testimonial.name}}</h4>
-            <span class="testimonial-location">{{testimonial.location}}</span>
+            <h4 class="testimonial-name">{{ testimonial.name }}</h4>
+            <span class="testimonial-location">{{ testimonial.location }}</span>
           </div>
           <div class="testimonial-rating">
-            <i *ngFor="let star of [1,2,3,4,5]" 
-               class="fas fa-star" 
-               [class.active]="star <= testimonial.rating"></i>
+            <i *ngFor="let star of [1,2,3,4,5]" class="fas fa-star" [class.active]="star <= testimonial.rating"></i>
           </div>
         </div>
-        
-        <p class="testimonial-text">"{{testimonial.text}}"</p>
-        
+        <p class="testimonial-text">"{{ testimonial.text }}"</p>
         <div class="testimonial-product">
           <span class="product-bought">Bought:</span>
-          <span class="product-name">{{testimonial.product}}</span>
+          <span class="product-name">{{ testimonial.product }}</span>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- CTA SECTION -->
+  <!-- CTA -->
   <section class="cta-home">
-    <div class="cta-background">
-      <div class="cta-overlay"></div>
-    </div>
-    
+    <div class="cta-background"><div class="cta-overlay"></div></div>
     <div class="cta-content-home">
       <h2 class="cta-title-home">READY TO ELEVATE YOUR STREETWEAR?</h2>
       <p class="cta-description-home">
         Join thousands of trendsetters in Los Santos who trust Freepping for premium streetwear.
       </p>
-      
       <div class="cta-stats-home">
-        <div class="cta-stat">
-          <div class="stat-number">10K+</div>
-          <div class="stat-label">SATISFIED CUSTOMERS</div>
-        </div>
-        <div class="cta-stat">
-          <div class="stat-number">4.8</div>
-          <div class="stat-label">AVERAGE RATING</div>
-        </div>
-        <div class="cta-stat">
-          <div class="stat-number">24H</div>
-          <div class="stat-label">DELIVERY TIME</div>
-        </div>
+        <div class="cta-stat"><div class="stat-number">10K+</div><div class="stat-label">SATISFIED CUSTOMERS</div></div>
+        <div class="cta-stat"><div class="stat-number">4.8</div><div class="stat-label">AVERAGE RATING</div></div>
+        <div class="cta-stat"><div class="stat-number">24H</div><div class="stat-label">DELIVERY TIME</div></div>
       </div>
-      
       <div class="cta-actions-home">
         <button class="btn-cta-primary-home" (click)="goToShop()">
-          <i class="fas fa-store"></i>
-          START SHOPPING
+          <i class="fas fa-store"></i> START SHOPPING
         </button>
         <button class="btn-cta-secondary-home" (click)="goToTryOn()">
-          <i class="fas fa-vr-cardboard"></i>
-          TRY 3D FITTING
+          <i class="fas fa-vr-cardboard"></i> TRY 3D FITTING
         </button>
       </div>
-      
       <div class="trust-badges-home">
-        <div class="trust-badge">
-          <i class="fas fa-shield-alt"></i>
-          <span>Secure Payment</span>
-        </div>
-        <div class="trust-badge">
-          <i class="fas fa-truck"></i>
-          <span>Free Shipping $100+</span>
-        </div>
-        <div class="trust-badge">
-          <i class="fas fa-undo-alt"></i>
-          <span>30-Day Returns</span>
-        </div>
-        <div class="trust-badge">
-          <i class="fas fa-headset"></i>
-          <span>24/7 Support</span>
-        </div>
+        <div class="trust-badge"><i class="fas fa-shield-alt"></i><span>Secure Payment</span></div>
+        <div class="trust-badge"><i class="fas fa-truck"></i><span>Free Shipping $100+</span></div>
+        <div class="trust-badge"><i class="fas fa-undo-alt"></i><span>30-Day Returns</span></div>
+        <div class="trust-badge"><i class="fas fa-headset"></i><span>24/7 Support</span></div>
       </div>
     </div>
   </section>

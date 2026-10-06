@@ -1,0 +1,595 @@
+// ===================================================================
+// Create-Product Admin Page — GTA Neon Theme
+// ===================================================================
+
+// ─── Variables ───────────────────────────────────────────────────
+$bg-page: #0b0f0c;
+$bg-section: #0e1810;
+$bg-item: #111c14;
+$bg-input: #0b1209;
+$border: rgba(57, 255, 20, 0.15);
+$border-focus: #39ff14;
+$neon: #39ff14;
+$neon-dim: rgba(57, 255, 20, 0.08);
+$neon-glow: rgba(57, 255, 20, 0.35);
+$orange: #ff9900;
+$red: #ff3b3b;
+$white: #f5f5f5;
+$muted: #aaa;
+$radius: 8px;
+$font-main: 'Poppins', sans-serif;
+$font-display: 'Oswald', sans-serif;
+
+// ─── Page Layout ─────────────────────────────────────────────────
+.admin-page {
+  min-height: 100vh;
+  background: $bg-page;
+  padding: 0 0 80px;
+  font-family: $font-main;
+}
+
+// ─── Header ──────────────────────────────────────────────────────
+.admin-header {
+  background: linear-gradient(135deg, #0e1810 0%, #111c14 100%);
+  border-bottom: 1px solid $border;
+  padding: 32px 24px 28px;
+  position: relative;
+  overflow: hidden;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.18) 50%);
+    background-size: 100% 4px;
+    pointer-events: none;
+    opacity: 0.25;
+  }
+
+  &__inner {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  &__top-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 6px;
+  }
+
+  &__title {
+    font-family: $font-display;
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
+    font-weight: 700;
+    color: $neon;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    text-shadow: 0 0 18px $neon-glow, 0 0 40px rgba(57, 255, 20, 0.15);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 6px;
+  }
+
+  &__icon {
+    font-size: 1.4rem;
+    filter: drop-shadow(0 0 8px $neon-glow);
+  }
+
+  &__subtitle {
+    color: $muted;
+    font-size: 0.9rem;
+    letter-spacing: 0.5px;
+  }
+}
+
+// ─── Alerts ──────────────────────────────────────────────────────
+.admin-alerts {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 16px 24px 0;
+}
+
+.alert {
+  padding: 14px 18px;
+  border-radius: $radius;
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-bottom: 12px;
+  border-left: 4px solid;
+  animation: fadeInUp 0.4s ease;
+
+  &--success {
+    background: rgba(57, 255, 20, 0.06);
+    border-left-color: $neon;
+    color: $neon;
+    box-shadow: 0 0 12px rgba(57, 255, 20, 0.08);
+  }
+
+  &--error {
+    background: rgba(255, 59, 59, 0.06);
+    border-left-color: $red;
+    color: $red;
+    box-shadow: 0 0 12px rgba(255, 59, 59, 0.08);
+  }
+}
+
+// ─── Form Container ───────────────────────────────────────────────
+.admin-form {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px 24px 0;
+}
+
+// ─── Sections ────────────────────────────────────────────────────
+.form-section {
+  background: $bg-section;
+  border: 1px solid $border;
+  border-radius: 12px;
+  padding: 28px;
+  margin-bottom: 20px;
+  position: relative;
+  transition: border-color 0.3s;
+
+  &:hover {
+    border-color: rgba(57, 255, 20, 0.3);
+  }
+
+  &__title {
+    font-family: $font-display;
+    font-size: 0.85rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: $muted;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+
+  &__num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: $neon-dim;
+    border: 1px solid $border-focus;
+    color: $neon;
+    font-size: 0.7rem;
+    font-weight: 700;
+    box-shadow: 0 0 8px rgba(57, 255, 20, 0.18);
+  }
+}
+
+// ─── Form Rows ────────────────────────────────────────────────────
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 0;
+
+  &--toggles {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    margin-top: 8px;
+  }
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+
+  &--half     { /* already in grid — full */ }
+  &--two-thirds { grid-column: span 2; }
+  &--one-third  { /* single cell */ }
+
+  &--center {
+    justify-content: center;
+    align-items: flex-start;
+  }
+
+  @media (max-width: 640px) {
+    &--two-thirds { grid-column: span 1; }
+  }
+}
+
+// ─── Labels ───────────────────────────────────────────────────────
+.form-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: $muted;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.required {
+  color: $neon;
+  margin-left: 2px;
+}
+
+// ─── Inputs ───────────────────────────────────────────────────────
+.form-input {
+  background: $bg-input;
+  border: 1px solid rgba(57, 255, 20, 0.2);
+  border-radius: $radius;
+  color: $white;
+  font-family: $font-main;
+  font-size: 0.92rem;
+  padding: 11px 14px;
+  transition: border-color 0.25s, box-shadow 0.25s;
+  width: 100%;
+  outline: none;
+  appearance: none;
+
+  &::placeholder { color: #555; }
+
+  &:focus {
+    border-color: $border-focus;
+    box-shadow: 0 0 0 3px rgba(57, 255, 20, 0.12), 0 0 12px rgba(57, 255, 20, 0.08);
+    outline: none;
+  }
+
+  &--error {
+    border-color: $red !important;
+    box-shadow: 0 0 0 3px rgba(255, 59, 59, 0.12) !important;
+  }
+
+  &--textarea {
+    resize: vertical;
+    min-height: 100px;
+    line-height: 1.6;
+  }
+
+  &--select {
+    cursor: pointer;
+
+    option {
+      background: #111;
+      color: $white;
+    }
+  }
+}
+
+// Number input arrows
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+  opacity: 0.5;
+  filter: invert(1);
+}
+
+// Select wrapper for custom arrow
+.select-wrapper {
+  position: relative;
+
+  &::after {
+    content: '▾';
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: $neon;
+    pointer-events: none;
+    font-size: 0.85rem;
+  }
+
+  .form-input--select {
+    padding-right: 36px;
+  }
+}
+
+// ─── Error Messages ───────────────────────────────────────────────
+.form-error {
+  font-size: 0.76rem;
+  color: $red;
+  margin-top: -2px;
+}
+
+// ─── Toggle Switch ────────────────────────────────────────────────
+.toggle-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: $bg-item;
+  border: 1px solid $border;
+  border-radius: $radius;
+  padding: 12px 14px;
+  cursor: pointer;
+  user-select: none;
+  gap: 12px;
+  transition: border-color 0.25s;
+
+  &:hover { border-color: rgba(57, 255, 20, 0.35); }
+
+  &__text {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: $white;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+}
+
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0;
+
+  &__input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    position: absolute;
+
+    &:checked + .toggle-switch__slider {
+      background: $neon;
+      box-shadow: 0 0 10px $neon-glow;
+
+      &::before {
+        transform: translateX(20px);
+        background: $bg-page;
+      }
+    }
+  }
+
+  &__slider {
+    position: absolute;
+    inset: 0;
+    background: #1a2a1a;
+    border: 1px solid $border;
+    border-radius: 24px;
+    transition: background 0.25s;
+    cursor: pointer;
+
+    &::before {
+      content: '';
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      left: 3px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: $muted;
+      border-radius: 50%;
+      transition: transform 0.25s;
+    }
+  }
+}
+
+// ─── Checkbox ────────────────────────────────────────────────────
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  margin-top: 24px;
+}
+
+.checkbox-input {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid rgba(57, 255, 20, 0.4);
+  border-radius: 4px;
+  background: $bg-input;
+  cursor: pointer;
+  flex-shrink: 0;
+  position: relative;
+  transition: background 0.2s, border-color 0.2s;
+
+  &:checked {
+    background: $neon;
+    border-color: $neon;
+
+    &::after {
+      content: '✓';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 11px;
+      font-weight: 700;
+      color: $bg-page;
+    }
+  }
+}
+
+.checkbox-text {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: $white;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+// ─── Dynamic Lists ───────────────────────────────────────────────
+.dynamic-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.dynamic-item {
+  background: $bg-item;
+  border: 1px solid $border;
+  border-radius: $radius;
+  padding: 20px;
+  position: relative;
+  animation: fadeInUp 0.3s ease;
+  transition: border-color 0.25s;
+
+  &:hover {
+    border-color: rgba(57, 255, 20, 0.3);
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  &__badge {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: $neon;
+    font-family: $font-display;
+  }
+}
+
+.empty-state {
+  text-align: center;
+  color: #555;
+  font-size: 0.88rem;
+  padding: 20px 0 12px;
+  font-style: italic;
+}
+
+// ─── Buttons ─────────────────────────────────────────────────────
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: $font-display;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  border: none;
+  border-radius: $radius;
+  cursor: pointer;
+  transition: all 0.25s ease;
+
+  &--primary {
+    background: $neon;
+    color: $bg-page;
+    font-size: 1rem;
+    padding: 14px 36px;
+
+    &:hover:not(:disabled) {
+      background: #2ee000;
+      box-shadow: 0 6px 24px rgba(57, 255, 20, 0.45);
+      transform: translateY(-2px);
+    }
+
+    &:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      transform: none;
+    }
+  }
+
+  &--outline {
+    background: transparent;
+    border: 1.5px solid rgba(57, 255, 20, 0.4);
+    color: $neon;
+    font-size: 0.82rem;
+    padding: 10px 20px;
+
+    &:hover {
+      background: rgba(57, 255, 20, 0.08);
+      border-color: $neon;
+      box-shadow: 0 0 12px rgba(57, 255, 20, 0.15);
+    }
+  }
+
+  &--icon {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    font-size: 0.75rem;
+    border-radius: 50%;
+    font-family: $font-main;
+    font-weight: 700;
+  }
+
+  &--danger {
+    background: rgba(255, 59, 59, 0.1);
+    border: 1px solid rgba(255, 59, 59, 0.3);
+    color: $red;
+
+    &:hover {
+      background: rgba(255, 59, 59, 0.2);
+      border-color: $red;
+      box-shadow: 0 0 10px rgba(255, 59, 59, 0.2);
+    }
+  }
+
+  &--add {
+    margin-top: 4px;
+  }
+
+  &--sm {
+    font-size: 0.75rem;
+    padding: 6px 14px;
+    text-decoration: none;
+  }
+
+  &--lg {
+    font-size: 1rem;
+    padding: 14px 36px;
+  }
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  color: $neon;
+  cursor: pointer;
+  font-size: inherit;
+  text-decoration: underline;
+  padding: 0 4px;
+  font-family: $font-main;
+}
+
+// ─── Spinner ─────────────────────────────────────────────────────
+.spinner-text {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(11, 15, 12, 0.4);
+  border-top-color: $bg-page;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+// ─── Form Actions ────────────────────────────────────────────────
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 8px 0 24px;
+}
+
+// ─── Responsive ──────────────────────────────────────────────────
+@media (max-width: 640px) {
+  .form-section { padding: 20px 16px; }
+  .admin-header  { padding: 24px 16px; }
+  .admin-form    { padding: 16px 16px 0; }
+  .admin-alerts  { padding: 12px 16px 0; }
+
+  .form-row {
+    grid-template-columns: 1fr;
+
+    &--toggles { grid-template-columns: 1fr 1fr; }
+  }
+
+  .form-group--two-thirds { grid-column: span 1; }
+  .form-actions { justify-content: stretch; }
+  .btn--primary { width: 100%; }
+}

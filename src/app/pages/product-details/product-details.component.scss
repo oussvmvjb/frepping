@@ -670,3 +670,61 @@
         }
     }
 }
+
+/* State Containers */
+.state-container {
+    height: 70vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 40px 20px;
+    position: relative;
+    z-index: 1;
+
+    .state-icon {
+        font-size: 3.5rem;
+        margin-bottom: 16px;
+    }
+
+    h2 {
+        font-size: 2.2rem;
+        color: #fff;
+        margin-bottom: 12px;
+        letter-spacing: 2px;
+    }
+
+    p {
+        color: #8892b0;
+        max-width: 450px;
+        margin-bottom: 24px;
+        font-size: 1.1rem;
+    }
+}
+
+.discount-pill {
+    display: inline-block;
+    background: #ff0055;
+    color: #fff;
+    font-weight: 800;
+    font-size: 0.85rem;
+    padding: 4px 10px;
+    letter-spacing: 1px;
+    margin-left: 14px;
+}
+
+.chip.disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    text-decoration: line-through;
+    border-color: #333;
+}
+
+.text-danger {
+    color: #ff4757 !important;
+}
+
+.text-success {
+    color: #39ff14 !important;
+}

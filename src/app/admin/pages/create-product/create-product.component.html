@@ -1,0 +1,410 @@
+<div class="admin-page">
+  <!-- ──────────────────── Header ──────────────────── -->
+  <header class="admin-header">
+    <div class="admin-header__inner">
+      <div class="admin-header__top-row">
+        <h1 class="admin-header__title">
+          <span class="admin-header__icon">🛍️</span>
+          New Product
+        </h1>
+        <a routerLink="/admin/products" class="btn btn--outline btn--sm">
+          ← Back to Inventory
+        </a>
+      </div>
+      <p class="admin-header__subtitle">Fill in all required fields and add images &amp; variants.</p>
+    </div>
+  </header>
+
+  <!-- ──────────────────── Alerts ─────────────────── -->
+  <div class="admin-alerts" *ngIf="successMessage || errorMessage">
+    <div class="alert alert--success" *ngIf="successMessage">{{ successMessage }}</div>
+    <div class="alert alert--error" *ngIf="errorMessage">{{ errorMessage }}</div>
+  </div>
+
+  <!-- ──────────────────── Form ───────────────────── -->
+  <form
+    id="create-product-form"
+    class="admin-form"
+    [formGroup]="productForm"
+    (ngSubmit)="onSubmit()"
+    novalidate
+  >
+    <!-- ── BASIC INFO ── -->
+    <section class="form-section">
+      <h2 class="form-section__title">
+        <span class="form-section__num">01</span> Basic Info
+      </h2>
+
+      <div class="form-row">
+        <!-- Name -->
+        <div class="form-group form-group--two-thirds">
+          <label for="field-name" class="form-label">Product Name <span class="required">*</span></label>
+          <input
+            id="field-name"
+            type="text"
+            class="form-input"
+            [class.form-input--error]="isFieldInvalid('name')"
+            formControlName="name"
+            placeholder="e.g. Classic Linen T-Shirt"
+            (input)="onNameInput()"
+          />
+          <span class="form-error" *ngIf="isFieldInvalid('name')">
+            Name is required (max 255 characters).
+          </span>
+        </div>
+
+        <!-- Slug -->
+        <div class="form-group form-group--one-third">
+          <label for="field-slug" class="form-label">URL Slug <span class="required">*</span></label>
+          <input
+            id="field-slug"
+            type="text"
+            class="form-input"
+            [class.form-input--error]="isFieldInvalid('slug')"
+            formControlName="slug"
+            placeholder="e.g. classic-linen-t-shirt"
+          />
+          <span class="form-error" *ngIf="isFieldInvalid('slug')">
+            Slug is required (max 255 characters).
+          </span>
+        </div>
+      </div>
+
+      <!-- Description -->
+      <div class="form-group">
+        <label for="field-description" class="form-label">Description</label>
+        <textarea
+          id="field-description"
+          class="form-input form-input--textarea"
+          formControlName="description"
+          rows="4"
+          placeholder="Detailed product description…"
+        ></textarea>
+      </div>
+
+      <!-- Category -->
+      <div class="form-row">
+        <div class="form-group form-group--half">
+          <label for="field-category" class="form-label">Category <span class="required">*</span></label>
+          <div class="select-wrapper">
+            <select
+              id="field-category"
+              class="form-input form-input--select"
+              [class.form-input--error]="isFieldInvalid('category_id')"
+              formControlName="category_id"
+            >
+              <option value="" disabled>
+                {{ isLoadingCategories ? 'Loading categories…' : '— Select category —' }}
+              </option>
+              <option
+                *ngFor="let cat of categories"
+                [value]="cat.id"
+              >{{ cat.name }}</option>
+            </select>
+          </div>
+          <span class="form-error" *ngIf="isFieldInvalid('category_id')">Category is required.</span>
+          <span class="form-error" *ngIf="categoryError">{{ categoryError }}
+            <button type="button" class="link-btn" (click)="loadCategories()">Retry</button>
+          </span>
+        </div>
+
+        <!-- Material -->
+        <div class="form-group form-group--half">
+          <label for="field-material" class="form-label">Material</label>
+          <input
+            id="field-material"
+            type="text"
+            class="form-input"
+            formControlName="material"
+            placeholder="e.g. 100% Organic Cotton"
+          />
+        </div>
+      </div>
+
+      <!-- Toggles -->
+      <div class="form-row form-row--toggles">
+        <label class="toggle-label" for="toggle-active">
+          <span class="toggle-label__text">Active</span>
+          <div class="toggle-switch">
+            <input id="toggle-active" type="checkbox" formControlName="is_active" class="toggle-switch__input" />
+            <span class="toggle-switch__slider"></span>
+          </div>
+        </label>
+
+        <label class="toggle-label" for="toggle-featured">
+          <span class="toggle-label__text">Featured</span>
+          <div class="toggle-switch">
+            <input id="toggle-featured" type="checkbox" formControlName="is_featured" class="toggle-switch__input" />
+            <span class="toggle-switch__slider"></span>
+          </div>
+        </label>
+      </div>
+    </section>
+
+    <!-- ── PRICING ── -->
+    <section class="form-section">
+      <h2 class="form-section__title">
+        <span class="form-section__num">02</span> Pricing
+      </h2>
+
+      <div class="form-row">
+        <!-- Price -->
+        <div class="form-group form-group--half">
+          <label for="field-price" class="form-label">Price ($) <span class="required">*</span></label>
+          <input
+            id="field-price"
+            type="number"
+            class="form-input"
+            [class.form-input--error]="isFieldInvalid('price')"
+            formControlName="price"
+            placeholder="0.00"
+            min="0"
+            step="0.01"
+          />
+          <span class="form-error" *ngIf="isFieldInvalid('price')">
+            Price is required and must be ≥ 0.
+          </span>
+        </div>
+
+        <!-- Compare Price -->
+        <div class="form-group form-group--half">
+          <label for="field-compare-price" class="form-label">Compare-at Price ($)</label>
+          <input
+            id="field-compare-price"
+            type="number"
+            class="form-input"
+            formControlName="compare_price"
+            placeholder="0.00 (optional)"
+            min="0"
+            step="0.01"
+          />
+        </div>
+      </div>
+    </section>
+
+    <!-- ── IMAGES ── -->
+    <section class="form-section">
+      <h2 class="form-section__title">
+        <span class="form-section__num">03</span> Product Images
+      </h2>
+
+      <div
+        formArrayName="images"
+        class="dynamic-list"
+        *ngIf="images.length > 0; else noImages"
+      >
+        <div
+          class="dynamic-item"
+          *ngFor="let img of images.controls; let i = index"
+          [formGroupName]="i"
+        >
+          <div class="dynamic-item__header">
+            <span class="dynamic-item__badge">Image {{ i + 1 }}</span>
+            <button
+              type="button"
+              class="btn btn--icon btn--danger"
+              (click)="removeImage(i)"
+              [attr.aria-label]="'Remove image ' + (i + 1)"
+            >✕</button>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group form-group--two-thirds">
+              <label [for]="'img-url-' + i" class="form-label">Image URL <span class="required">*</span></label>
+              <input
+                [id]="'img-url-' + i"
+                type="url"
+                class="form-input"
+                [class.form-input--error]="isImageFieldInvalid(i, 'image_url')"
+                formControlName="image_url"
+                placeholder="https://example.com/image.jpg"
+              />
+              <span class="form-error" *ngIf="isImageFieldInvalid(i, 'image_url')">Valid URL is required.</span>
+            </div>
+
+            <div class="form-group form-group--one-third">
+              <label [for]="'img-sort-' + i" class="form-label">Sort Order</label>
+              <input
+                [id]="'img-sort-' + i"
+                type="number"
+                class="form-input"
+                formControlName="sort_order"
+                min="0"
+                placeholder="0"
+              />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group form-group--two-thirds">
+              <label [for]="'img-alt-' + i" class="form-label">Alt Text</label>
+              <input
+                [id]="'img-alt-' + i"
+                type="text"
+                class="form-input"
+                formControlName="alt_text"
+                placeholder="Descriptive text for accessibility"
+              />
+            </div>
+
+            <div class="form-group form-group--one-third form-group--center">
+              <label class="checkbox-label">
+                <input type="checkbox" formControlName="is_primary" class="checkbox-input" />
+                <span class="checkbox-text">Primary Image</span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <ng-template #noImages>
+        <p class="empty-state">No images added yet. Add at least one image below.</p>
+      </ng-template>
+
+      <button
+        type="button"
+        id="btn-add-image"
+        class="btn btn--outline btn--add"
+        (click)="addImage()"
+      >
+        + Add Image
+      </button>
+    </section>
+
+    <!-- ── VARIANTS ── -->
+    <section class="form-section">
+      <h2 class="form-section__title">
+        <span class="form-section__num">04</span> Product Variants
+      </h2>
+
+      <div
+        formArrayName="variants"
+        class="dynamic-list"
+        *ngIf="variants.length > 0; else noVariants"
+      >
+        <div
+          class="dynamic-item"
+          *ngFor="let variant of variants.controls; let i = index"
+          [formGroupName]="i"
+        >
+          <div class="dynamic-item__header">
+            <span class="dynamic-item__badge">Variant {{ i + 1 }}</span>
+            <button
+              type="button"
+              class="btn btn--icon btn--danger"
+              (click)="removeVariant(i)"
+              [attr.aria-label]="'Remove variant ' + (i + 1)"
+            >✕</button>
+          </div>
+
+          <div class="form-row">
+            <!-- SKU -->
+            <div class="form-group form-group--one-third">
+              <label [for]="'var-sku-' + i" class="form-label">SKU <span class="required">*</span></label>
+              <input
+                [id]="'var-sku-' + i"
+                type="text"
+                class="form-input"
+                [class.form-input--error]="isVariantFieldInvalid(i, 'sku')"
+                formControlName="sku"
+                placeholder="e.g. SHIRT-BLK-M"
+              />
+              <span class="form-error" *ngIf="isVariantFieldInvalid(i, 'sku')">SKU is required.</span>
+            </div>
+
+            <!-- Size -->
+            <div class="form-group form-group--one-third">
+              <label [for]="'var-size-' + i" class="form-label">Size</label>
+              <input
+                [id]="'var-size-' + i"
+                type="text"
+                class="form-input"
+                formControlName="size"
+                placeholder="e.g. S, M, L, XL"
+              />
+            </div>
+
+            <!-- Color -->
+            <div class="form-group form-group--one-third">
+              <label [for]="'var-color-' + i" class="form-label">Color</label>
+              <input
+                [id]="'var-color-' + i"
+                type="text"
+                class="form-input"
+                formControlName="color"
+                placeholder="e.g. Black, #1a1a1a"
+              />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <!-- Stock -->
+            <div class="form-group form-group--one-third">
+              <label [for]="'var-stock-' + i" class="form-label">Stock <span class="required">*</span></label>
+              <input
+                [id]="'var-stock-' + i"
+                type="number"
+                class="form-input"
+                [class.form-input--error]="isVariantFieldInvalid(i, 'stock')"
+                formControlName="stock"
+                min="0"
+                placeholder="0"
+              />
+              <span class="form-error" *ngIf="isVariantFieldInvalid(i, 'stock')">Stock must be ≥ 0.</span>
+            </div>
+
+            <!-- Price override -->
+            <div class="form-group form-group--one-third">
+              <label [for]="'var-price-' + i" class="form-label">Price Override ($)</label>
+              <input
+                [id]="'var-price-' + i"
+                type="number"
+                class="form-input"
+                formControlName="price"
+                min="0"
+                step="0.01"
+                placeholder="Leave blank to use base price"
+              />
+            </div>
+
+            <!-- Active toggle -->
+            <div class="form-group form-group--one-third form-group--center">
+              <label class="checkbox-label">
+                <input type="checkbox" formControlName="is_active" class="checkbox-input" />
+                <span class="checkbox-text">Active</span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <ng-template #noVariants>
+        <p class="empty-state">No variants added yet. Add size/color variants below.</p>
+      </ng-template>
+
+      <button
+        type="button"
+        id="btn-add-variant"
+        class="btn btn--outline btn--add"
+        (click)="addVariant()"
+      >
+        + Add Variant
+      </button>
+    </section>
+
+    <!-- ── SUBMIT ── -->
+    <div class="form-actions">
+      <button
+        type="submit"
+        id="btn-submit-product"
+        class="btn btn--primary btn--lg"
+        [disabled]="isSubmitting"
+      >
+        <span *ngIf="!isSubmitting">Create Product</span>
+        <span *ngIf="isSubmitting" class="spinner-text">
+          <span class="spinner"></span> Creating…
+        </span>
+      </button>
+    </div>
+  </form>
+</div>

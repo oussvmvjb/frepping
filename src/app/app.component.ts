@@ -1,7 +1,7 @@
 import { Component, HostListener, OnInit, Renderer2, OnDestroy } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
-
+import { AuthService } from './services/auth.service';
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
@@ -45,7 +45,8 @@ export class AppComponent implements OnInit, OnDestroy {
 
   constructor(
     private renderer: Renderer2,
-    private router: Router
+    private router: Router,
+    public authService: AuthService
   ) {
     // Subscribe to router events
     this.routerSubscription = this.router.events.subscribe(event => {
@@ -63,6 +64,7 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.authService.initAuth().subscribe();
     this.initializeGTAMode();
     this.startUIAnimations();
 
@@ -356,7 +358,6 @@ export class AppComponent implements OnInit, OnDestroy {
       this.setCursor(this.cursorTypes.default);
     }, 1500);
   }
-
   showClickEffect(event: MouseEvent): void {
     // Create ripple effect on click
     const ripple = this.renderer.createElement('div');
@@ -386,5 +387,16 @@ export class AppComponent implements OnInit, OnDestroy {
 
   onLoadingFinished() {
     this.showIntro = false;
+  }
+
+  logout(event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+      event.preventDefault();
+    }
+    this.authService.logout().subscribe({
+      next: () => this.router.navigate(['/']),
+      error: () => this.router.navigate(['/'])
+    });
   }
 }

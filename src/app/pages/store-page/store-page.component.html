@@ -1,0 +1,101 @@
+<div class="store-page-container">
+  <!-- LOADING STATE -->
+  <div *ngIf="loading" class="state-container loading-state">
+    <div class="spinner"></div>
+    <p>LOADING STORE DATA...</p>
+  </div>
+
+  <!-- NOT FOUND STATE -->
+  <div *ngIf="!loading && notFound" class="state-container not-found-state">
+    <div class="state-icon">⚠️</div>
+    <h2>STORE NOT FOUND</h2>
+    <p>The requested store does not exist or may have been deactivated.</p>
+    <a routerLink="/shop" class="btn-primary">BACK TO SHOP</a>
+  </div>
+
+  <!-- ERROR STATE -->
+  <div *ngIf="!loading && !notFound && error" class="state-container error-state">
+    <div class="state-icon">✕</div>
+    <h2>FAILED TO LOAD STORE</h2>
+    <p>{{ error }}</p>
+    <button (click)="ngOnInit()" class="btn-primary">TRY AGAIN</button>
+  </div>
+
+  <!-- STORE DETAILS -->
+  <div *ngIf="!loading && !notFound && !error && store" class="store-content">
+    <!-- BANNER -->
+    <div class="store-banner" [style.background-image]="store.banner_url ? 'url(' + store.banner_url + ')' : 'none'">
+      <div class="banner-overlay"></div>
+      <div class="store-header-info">
+        <div class="store-avatar">
+          <img *ngIf="store.logo_url" [src]="store.logo_url" [alt]="store.name" />
+          <div *ngIf="!store.logo_url" class="avatar-placeholder">
+            {{ store.name.substring(0, 2).toUpperCase() }}
+          </div>
+        </div>
+        <div class="store-meta">
+          <h1 class="store-title">{{ store.name }}</h1>
+          <p class="store-slug">@{{ store.slug }}</p>
+          <p *ngIf="store.description" class="store-desc">{{ store.description }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- PRODUCTS SECTION -->
+    <div class="store-products-section">
+      <div class="section-header">
+        <h2 class="section-title">STORE PRODUCTS</h2>
+        <span class="badge">{{ products.length }} ITEMS</span>
+      </div>
+
+      <!-- PRODUCTS LOADING -->
+      <div *ngIf="loadingProducts" class="products-loading">
+        <div class="spinner-small"></div>
+        <span>Fetching store inventory...</span>
+      </div>
+
+      <!-- NO PRODUCTS EMPTY STATE -->
+      <div *ngIf="!loadingProducts && products.length === 0" class="empty-products">
+        <p>No products currently available from this store.</p>
+        <a routerLink="/shop" class="btn-secondary">BROWSE ALL PRODUCTS</a>
+      </div>
+
+      <!-- PRODUCTS GRID -->
+      <div *ngIf="!loadingProducts && products.length > 0" class="products-grid">
+        <div
+          *ngFor="let product of products"
+          class="product-card"
+          [routerLink]="['/product', product.id]"
+        >
+          <div class="card-image-wrap">
+            <img [src]="getProductImage(product)" [alt]="product.name" />
+            <span *ngIf="getDiscount(product) > 0" class="discount-badge">
+              -{{ getDiscount(product) }}%
+            </span>
+            <span *ngIf="!isInStock(product)" class="out-of-stock-badge">
+              OUT OF STOCK
+            </span>
+          </div>
+
+          <div class="card-info">
+            <span class="category-tag">{{ product.category?.name || 'FREPPING' }}</span>
+            <h3 class="product-name">{{ product.name }}</h3>
+            <div class="price-row">
+              <span class="current-price">${{ getPrice(product) | number : '1.2-2' }}</span>
+              <span *ngIf="product.compare_price && product.compare_price > product.price" class="compare-price">
+                ${{ product.compare_price | number : '1.2-2' }}
+              </span>
+            </div>
+            <button
+              class="add-to-cart-btn"
+              [disabled]="!isInStock(product)"
+              (click)="addToCart(product, $event)"
+            >
+              {{ isInStock(product) ? 'ADD TO CART' : 'SOLD OUT' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

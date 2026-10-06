@@ -1,157 +1,218 @@
 <div class="product-details-page">
-    <div class="product-page-container" *ngIf="product; else loading">
+  <!-- LOADING STATE -->
+  <div *ngIf="isLoading" class="loading-state">
+    <div class="spinner"></div>
+    <p>LOADING PRODUCT DATA...</p>
+  </div>
 
-        <div class="details-header">
-            <div class="back-button" (click)="goBack()">
-                <i class="fas fa-arrow-left"></i> BACK
-            </div>
-            <div class="model-indicator" *ngIf="has3DModel">
-                <i class="fas fa-cube"></i>
-                <span>3D VIEW</span>
-            </div>
-        </div>
+  <!-- NOT FOUND STATE -->
+  <div *ngIf="!isLoading && notFound" class="state-container not-found-state">
+    <div class="state-icon">⚠️</div>
+    <h2>PRODUCT NOT FOUND</h2>
+    <p>The product you are looking for does not exist or has been removed.</p>
+    <button class="gta-btn primary-btn" (click)="goBack()">
+      <i class="fas fa-arrow-left"></i> BACK TO SHOP
+    </button>
+  </div>
 
-        <div class="product-content">
-            <!-- Left: Product Gallery -->
-            <div class="product-gallery">
-                <!-- 3D Model Section - WITH BACKGROUND -->
-  <!-- 3D Model Section - WITH BACKGROUND -->
-<div *ngIf="has3DModel && show3DView" class="model-container">
-    <div class="model-viewer-wrapper">
-        <app-model-viewer 
-            [modelPath]="product.images[0]"
-            [autoRotate]="isRotating"
-            [autoScale]="true"
-            [targetSize]="12">
-        </app-model-viewer>
-    </div>
-</div>
+  <!-- ERROR STATE -->
+  <div *ngIf="!isLoading && !notFound && errorMessage" class="state-container error-state">
+    <div class="state-icon">✕</div>
+    <h2>FAILED TO LOAD PRODUCT</h2>
+    <p>{{ errorMessage }}</p>
+    <button class="gta-btn primary-btn" (click)="ngOnInit()">
+      <i class="fas fa-redo"></i> TRY AGAIN
+    </button>
+  </div>
 
-                <!-- Regular Image Section -->
-                <div *ngIf="!has3DModel || !show3DView" class="main-image-container">
-                    <div class="gta-bg-elements">
-                        <div class="bg-panel panel-1"></div>
-                        <div class="bg-panel panel-2"></div>
-                        <div class="bg-panel panel-3"></div>
-                    </div>
-                    <img [src]="getCurrentImage()" [alt]="product.name" class="main-image">
-                </div>
-
-                <!-- View Toggle & Thumbnails -->
-                <div class="gallery-controls">
-                    <!-- View Toggle -->
-                    <div class="view-toggle" *ngIf="has3DModel">
-                        <button class="view-btn" 
-                                [class.active]="show3DView" 
-                                (click)="show3DView = true">
-                            <i class="fas fa-cube"></i>
-                            <span>3D VIEW</span>
-                        </button>
-                        <button class="view-btn" 
-                                [class.active]="!show3DView" 
-                                (click)="show3DView = false">
-                            <i class="fas fa-image"></i>
-                            <span>IMAGE</span>
-                        </button>
-                    </div>
-
-                    <!-- Image Thumbnails -->
-                    <div class="thumbnail-gallery" *ngIf="!show3DView && product.images.length > 1">
-                        <div class="thumbnail" 
-                             *ngFor="let image of getImageThumbnails(); let i = index"
-                             [class.active]="selectedImageIndex === i"
-                             (click)="selectImage(i)">
-                            <img [src]="image" [alt]="product.name + ' thumbnail ' + (i+1)">
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Right: Product Info -->
-            <div class="product-info-panel">
-                <span class="product-brand">{{product.brand}} // {{product.category}}</span>
-                <h1 class="product-title">{{product.name}}</h1>
-
-                <div class="product-meta">
-                    <div class="price-tag">
-                        <span class="currency">$</span>{{product.price}}
-                        <span class="original-price" *ngIf="product.originalPrice">${{product.originalPrice}}</span>
-                    </div>
-                    <div class="rating">
-                        <i class="fas fa-star" *ngFor="let star of [1,2,3,4,5]"
-                            [style.opacity]="star <= product.rating ? 1 : 0.3"></i>
-                        <span>({{product.reviewCount}} REVIEWS)</span>
-                    </div>
-                </div>
-
-                <p class="product-description">{{product.description}}</p>
-
-                <!-- Product Specs -->
-                <div class="product-specs" *ngIf="product.material">
-                    <div class="spec-item">
-                        <span class="spec-label">MATERIAL:</span>
-                        <span class="spec-value">{{product.material}}</span>
-                    </div>
-                    <div class="spec-item" *ngIf="has3DModel">
-                        <span class="spec-label">VIEW:</span>
-                        <span class="spec-value">3D Model Available</span>
-                    </div>
-                </div>
-
-                <div class="options-container">
-                    <!-- Size Selector -->
-                    <div class="option-group" *ngIf="product.sizes.length">
-                        <h3>SELECT SIZE</h3>
-                        <div class="option-chips">
-                            <div class="chip" *ngFor="let size of product.sizes"
-                                [class.selected]="selectedSize === size" (click)="selectSize(size)">
-                                {{size}}
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Color Selector -->
-                    <div class="option-group" *ngIf="product.colors.length">
-                        <h3>SELECT COLOR</h3>
-                        <div class="option-chips">
-                            <div class="chip" *ngFor="let color of product.colors"
-                                [class.selected]="selectedColor === color" (click)="selectColor(color)">
-                                {{color}}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="action-buttons">
-                    <button class="gta-btn primary-btn" (click)="$event.stopPropagation(); addToCart(product)"
-                            [disabled]="!product.inStock">
-                        <i class="fas fa-shopping-cart"></i> 
-                        {{product.inStock ? 'ADD TO CART' : 'OUT OF STOCK'}}
-                    </button>
-                    <button class="gta-btn secondary-btn" (click)="tryOn()">
-                        <i class="fas fa-camera"></i> TRY ON
-                    </button>
-                </div>
-
-                <!-- 3D Info -->
-                <div class="model-info" *ngIf="has3DModel">
-                    <div class="info-icon">
-                        <i class="fas fa-info-circle"></i>
-                    </div>
-                    <div class="info-text">
-                        <h4>3D INTERACTIVE VIEW</h4>
-                        <p>Rotate, zoom, and change colors of this product in 3D. Click and drag to explore.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
+  <!-- MAIN PRODUCT VIEW -->
+  <div class="product-page-container" *ngIf="!isLoading && !notFound && !errorMessage && product">
+    <div class="details-header">
+      <div class="back-button" (click)="goBack()">
+        <i class="fas fa-arrow-left"></i> BACK
+      </div>
+      <div class="model-indicator" *ngIf="has3DModel">
+        <i class="fas fa-cube"></i>
+        <span>3D VIEW</span>
+      </div>
     </div>
 
-    <ng-template #loading>
-        <div class="loading-state">
-            <div class="spinner"></div>
-            <p>LOADING PRODUCT DATA...</p>
+    <div class="product-content">
+      <!-- Left: Product Gallery -->
+      <div class="product-gallery">
+        <!-- 3D Model Section -->
+        <div *ngIf="has3DModel && show3DView && model3DUrl" class="model-container">
+          <div class="model-viewer-wrapper">
+            <app-model-viewer
+              [modelPath]="model3DUrl"
+              [autoRotate]="isRotating"
+              [autoScale]="true"
+              [targetSize]="12"
+            >
+            </app-model-viewer>
+          </div>
         </div>
-    </ng-template>
+
+        <!-- Regular Image Section -->
+        <div *ngIf="!has3DModel || !show3DView" class="main-image-container">
+          <div class="gta-bg-elements">
+            <div class="bg-panel panel-1"></div>
+            <div class="bg-panel panel-2"></div>
+            <div class="bg-panel panel-3"></div>
+          </div>
+          <img [src]="getCurrentImage()" [alt]="product.name" class="main-image" />
+        </div>
+
+        <!-- View Toggle & Thumbnails -->
+        <div class="gallery-controls">
+          <!-- View Toggle -->
+          <div class="view-toggle" *ngIf="has3DModel">
+            <button
+              class="view-btn"
+              [class.active]="show3DView"
+              (click)="show3DView = true"
+            >
+              <i class="fas fa-cube"></i>
+              <span>3D VIEW</span>
+            </button>
+            <button
+              class="view-btn"
+              [class.active]="!show3DView"
+              (click)="show3DView = false"
+            >
+              <i class="fas fa-image"></i>
+              <span>IMAGE</span>
+            </button>
+          </div>
+
+          <!-- Image Thumbnails -->
+          <div class="thumbnail-gallery" *ngIf="getImageThumbnails().length > 1">
+            <div
+              class="thumbnail"
+              *ngFor="let image of getImageThumbnails(); let i = index"
+              [class.active]="!show3DView && selectedImageIndex === i"
+              (click)="selectImage(i)"
+            >
+              <img [src]="image.image_url" [alt]="image.alt_text || product.name" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Product Info -->
+      <div class="product-info-panel">
+        <span class="product-brand" *ngIf="product.category">
+          {{ product.category.name }}
+        </span>
+        <h1 class="product-title">{{ product.name }}</h1>
+
+        <div class="product-meta">
+          <div class="price-tag">
+            <span class="currency">$</span>{{ currentPrice | number : '1.2-2' }}
+            <span
+              class="original-price"
+              *ngIf="product.compare_price && product.compare_price > currentPrice"
+            >
+              ${{ product.compare_price | number : '1.2-2' }}
+            </span>
+          </div>
+
+          <div class="discount-pill" *ngIf="discountPercent > 0">
+            -{{ discountPercent }}% OFF
+          </div>
+        </div>
+
+        <p class="product-description" *ngIf="product.description">
+          {{ product.description }}
+        </p>
+
+        <!-- Product Specs -->
+        <div class="product-specs">
+          <div class="spec-item" *ngIf="product.material">
+            <span class="spec-label">MATERIAL:</span>
+            <span class="spec-value">{{ product.material }}</span>
+          </div>
+          <div class="spec-item">
+            <span class="spec-label">STOCK:</span>
+            <span
+              class="spec-value"
+              [class.text-danger]="!isInStock"
+              [class.text-success]="isInStock"
+            >
+              {{ isInStock ? stockCount + ' IN STOCK' : 'OUT OF STOCK' }}
+            </span>
+          </div>
+          <div class="spec-item" *ngIf="selectedVariant?.sku">
+            <span class="spec-label">SKU:</span>
+            <span class="spec-value">{{ selectedVariant?.sku }}</span>
+          </div>
+          <div class="spec-item" *ngIf="has3DModel">
+            <span class="spec-label">VIEW:</span>
+            <span class="spec-value">3D Interactive Model</span>
+          </div>
+        </div>
+
+        <!-- Options Container -->
+        <div class="options-container">
+          <!-- Size Selector -->
+          <div class="option-group" *ngIf="availableSizes.length > 0">
+            <h3>SELECT SIZE</h3>
+            <div class="option-chips">
+              <div
+                class="chip"
+                *ngFor="let size of availableSizes"
+                [class.selected]="selectedSize === size"
+                [class.disabled]="!isSizeAvailable(size)"
+                (click)="isSizeAvailable(size) && selectSize(size)"
+              >
+                {{ size }}
+              </div>
+            </div>
+          </div>
+
+          <!-- Color Selector -->
+          <div class="option-group" *ngIf="availableColors.length > 0">
+            <h3>SELECT COLOR</h3>
+            <div class="option-chips">
+              <div
+                class="chip"
+                *ngFor="let color of availableColors"
+                [class.selected]="selectedColor === color"
+                [class.disabled]="!isColorAvailable(color)"
+                (click)="isColorAvailable(color) && selectColor(color)"
+              >
+                {{ color }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="action-buttons">
+          <button
+            class="gta-btn primary-btn"
+            (click)="addToCart()"
+            [disabled]="!isInStock"
+          >
+            <i class="fas fa-shopping-cart"></i>
+            {{ isInStock ? 'ADD TO CART' : 'OUT OF STOCK' }}
+          </button>
+          <button class="gta-btn secondary-btn" (click)="tryOn()" *ngIf="has3DModel">
+            <i class="fas fa-camera"></i> TRY ON
+          </button>
+        </div>
+
+        <!-- 3D Info -->
+        <div class="model-info" *ngIf="has3DModel">
+          <div class="info-icon">
+            <i class="fas fa-info-circle"></i>
+          </div>
+          <div class="info-text">
+            <h4>3D INTERACTIVE VIEW</h4>
+            <p>Rotate, zoom, and explore this product in 3D. Click and drag to explore.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 <app-bottom-nav></app-bottom-nav>

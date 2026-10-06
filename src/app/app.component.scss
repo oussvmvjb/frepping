@@ -230,7 +230,23 @@ body {
   z-index: 9999;
   font-family: 'Street', 'Pricedown', sans-serif;
 
-  // Music control
+  // Auth actions buttons
+  .gta-auth-actions {
+    pointer-events: auto !important;
+    z-index: 100000 !important;
+
+    .gta-btn {
+      pointer-events: auto !important;
+      cursor: pointer !important;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(255, 68, 68, 0.4);
+      }
+    }
+  }
+
   // Music control
   .gta-music-toggle {
     position: absolute;

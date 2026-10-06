@@ -1,0 +1,290 @@
+<div class="admin-container">
+  <!-- ──────────────── Header ──────────────── -->
+  <div class="admin-page-header">
+    <div class="header-left">
+      <h1 class="header-title">
+        <span class="header-icon">🗂️</span>
+        Categories
+      </h1>
+      <span class="count-badge" *ngIf="!isLoading">{{ filteredCategories.length }} categories</span>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn--outline" (click)="loadCategories()" [disabled]="isLoading" title="Refresh">
+        ↻ Refresh
+      </button>
+      <button class="btn btn--primary" (click)="openCreateModal()">
+        + Add Category
+      </button>
+    </div>
+  </div>
+
+  <!-- ──────────────── Alerts ──────────────── -->
+  <div class="admin-alerts" *ngIf="successMessage || errorMessage">
+    <div class="alert alert--success" *ngIf="successMessage">
+      {{ successMessage }}
+      <button class="alert-close" (click)="successMessage = null">✕</button>
+    </div>
+    <div class="alert alert--error" *ngIf="errorMessage">
+      {{ errorMessage }}
+      <button class="alert-close" (click)="errorMessage = null">✕</button>
+    </div>
+  </div>
+
+  <!-- ──────────────── Filter Toolbar ──────────────── -->
+  <div class="filter-toolbar">
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input
+        type="text"
+        class="form-input"
+        placeholder="Search categories by name, slug, description..."
+        [(ngModel)]="searchTerm"
+        (input)="applyFilter()"
+      />
+    </div>
+  </div>
+
+  <!-- ──────────────── Loading State ──────────────── -->
+  <div class="loading-state" *ngIf="isLoading">
+    <div class="spinner"></div>
+    <p>Loading categories...</p>
+  </div>
+
+  <!-- ──────────────── Table ──────────────── -->
+  <div class="table-card" *ngIf="!isLoading">
+    <div class="table-responsive" *ngIf="filteredCategories.length > 0; else noCategories">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Category</th>
+            <th>Description</th>
+            <th>Status</th>
+            <th>Created</th>
+            <th class="text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let cat of filteredCategories">
+            <!-- Category info -->
+            <td class="category-cell">
+              <div class="cat-thumb">
+                <img
+                  *ngIf="cat.image_url"
+                  [src]="cat.image_url"
+                  [alt]="cat.name"
+                  onerror="this.style.display='none'"
+                />
+                <span *ngIf="!cat.image_url" class="no-img">🏷️</span>
+              </div>
+              <div class="cat-meta">
+                <span class="cat-name">{{ cat.name }}</span>
+                <span class="cat-slug">/{{ cat.slug }}</span>
+              </div>
+            </td>
+
+            <!-- Description -->
+            <td class="desc-cell">
+              <span *ngIf="cat.description" class="desc-text">{{ cat.description }}</span>
+              <span *ngIf="!cat.description" class="desc-empty">—</span>
+            </td>
+
+            <!-- Status -->
+            <td>
+              <span class="status-tag" [class.status-tag--active]="cat.is_active">
+                {{ cat.is_active ? 'Active' : 'Disabled' }}
+              </span>
+            </td>
+
+            <!-- Created At -->
+            <td class="date-cell">
+              {{ cat.created_at | date:'shortDate' }}
+            </td>
+
+            <!-- Actions -->
+            <td class="text-right actions-cell">
+              <button
+                class="btn-action btn-action--edit"
+                (click)="openEditModal(cat)"
+                title="Edit category"
+              >
+                ✏️ Edit
+              </button>
+              <button
+                class="btn-action btn-action--delete"
+                (click)="openDeleteConfirm(cat)"
+                title="Delete category"
+              >
+                🗑️ Delete
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <ng-template #noCategories>
+      <div class="empty-box">
+        <div class="empty-icon">🗂️</div>
+        <h3>No Categories Found</h3>
+        <p *ngIf="searchTerm">No categories match your search terms.</p>
+        <p *ngIf="!searchTerm">You haven't added any categories yet.</p>
+        <button class="btn btn--primary mt-12" (click)="openCreateModal()">+ Create Category</button>
+      </div>
+    </ng-template>
+  </div>
+
+  <!-- ──────────────── Create Category Modal ──────────────── -->
+  <div class="modal-backdrop" *ngIf="showCreateModal" (click)="closeCreateModal()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2 class="modal-title">New Category</h2>
+        <button class="modal-close" (click)="closeCreateModal()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="alert alert--error" *ngIf="createError">{{ createError }}</div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Category Name *</label>
+            <input
+              type="text"
+              class="form-input"
+              [(ngModel)]="createForm.name"
+              (input)="onCreateNameChange()"
+              placeholder="e.g. Streetwear"
+            />
+          </div>
+          <div class="form-group">
+            <label class="form-label">URL Slug *</label>
+            <input
+              type="text"
+              class="form-input"
+              [(ngModel)]="createForm.slug"
+              placeholder="e.g. streetwear"
+            />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Banner / Thumbnail Image URL</label>
+          <input
+            type="url"
+            class="form-input"
+            [(ngModel)]="createForm.image_url"
+            placeholder="https://example.com/banner.jpg"
+          />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea
+            class="form-input form-input--textarea"
+            rows="3"
+            [(ngModel)]="createForm.description"
+            placeholder="Optional category description..."
+          ></textarea>
+        </div>
+
+        <div class="form-row form-row--toggles">
+          <label class="toggle-control">
+            <input type="checkbox" [(ngModel)]="createForm.is_active" />
+            <span>Active and visible</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn--outline" (click)="closeCreateModal()" [disabled]="isCreating">Cancel</button>
+        <button class="btn btn--primary" (click)="submitCreate()" [disabled]="isCreating">
+          <span *ngIf="!isCreating">Create Category</span>
+          <span *ngIf="isCreating">Creating...</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ──────────────── Edit Category Modal ──────────────── -->
+  <div class="modal-backdrop" *ngIf="categoryToEdit" (click)="closeEditModal()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2 class="modal-title">Edit Category</h2>
+        <button class="modal-close" (click)="closeEditModal()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="alert alert--error" *ngIf="editError">{{ editError }}</div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Category Name *</label>
+            <input type="text" class="form-input" [(ngModel)]="editForm.name" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">URL Slug *</label>
+            <input type="text" class="form-input" [(ngModel)]="editForm.slug" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Banner / Thumbnail Image URL</label>
+          <input
+            type="url"
+            class="form-input"
+            [(ngModel)]="editForm.image_url"
+            placeholder="https://example.com/banner.jpg"
+          />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea
+            class="form-input form-input--textarea"
+            rows="3"
+            [(ngModel)]="editForm.description"
+          ></textarea>
+        </div>
+
+        <div class="form-row form-row--toggles">
+          <label class="toggle-control">
+            <input type="checkbox" [(ngModel)]="editForm.is_active" />
+            <span>Active and visible</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn--outline" (click)="closeEditModal()" [disabled]="isUpdating">Cancel</button>
+        <button class="btn btn--primary" (click)="submitEdit()" [disabled]="isUpdating">
+          <span *ngIf="!isUpdating">Save Changes</span>
+          <span *ngIf="isUpdating">Updating...</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ──────────────── Delete Confirmation Modal ──────────────── -->
+  <div class="modal-backdrop" *ngIf="categoryToDelete" (click)="closeDeleteConfirm()">
+    <div class="modal-card modal-card--sm" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2 class="modal-title modal-title--danger">Delete Category?</h2>
+        <button class="modal-close" (click)="closeDeleteConfirm()">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="delete-warning">
+          Are you sure you want to delete category:
+          <br>
+          <strong class="highlight-title">"{{ categoryToDelete.name }}"</strong>?
+        </p>
+        <p class="delete-sub">Products linked to this category may need to be updated. This cannot be undone.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn--outline" (click)="closeDeleteConfirm()" [disabled]="isDeleting">Cancel</button>
+        <button class="btn btn--danger" (click)="confirmDelete()" [disabled]="isDeleting">
+          <span *ngIf="!isDeleting">Yes, Delete</span>
+          <span *ngIf="isDeleting">Deleting...</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

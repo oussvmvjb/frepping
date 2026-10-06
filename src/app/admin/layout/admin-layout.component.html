@@ -1,0 +1,100 @@
+<div class="admin-shell" [class.nav-open]="navOpen">
+
+  <!-- ── SIDEBAR (Desktop & Mobile Drawer) ── -->
+  <aside class="admin-sidebar">
+    <div class="sidebar-brand">
+      <span class="sidebar-brand__logo">FR</span>
+      <div class="sidebar-brand__meta">
+        <span class="sidebar-brand__text">FREPPING</span>
+        <small class="sidebar-brand__sub">Admin Control</small>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav" aria-label="Admin sidebar navigation">
+      <a
+        *ngFor="let link of navLinks"
+        [routerLink]="link.route"
+        routerLinkActive="sidebar-nav__link--active"
+        [routerLinkActiveOptions]="{ exact: link.exact }"
+        class="sidebar-nav__link"
+        (click)="navOpen = false"
+      >
+        <span class="sidebar-nav__icon">{{ link.icon }}</span>
+        <span class="sidebar-nav__label">{{ link.label }}</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <a routerLink="/" class="sidebar-footer-link">
+        <span class="footer-icon">←</span>
+        <span>Back to Store</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- ── BACKDROP (mobile drawer) ── -->
+  <div class="admin-backdrop" (click)="navOpen = false"></div>
+
+  <!-- ── MAIN WRAPPER ── -->
+  <div class="admin-main">
+    <!-- ── TOP NAVIGATION BAR (Visible everywhere) ── -->
+    <header class="admin-top-navbar">
+      <div class="top-nav-left">
+        <button
+          class="topbar-burger"
+          (click)="toggleNav()"
+          aria-label="Toggle navigation"
+        >
+          <span></span><span></span><span></span>
+        </button>
+
+        <div class="top-brand">
+          <span class="badge-panel">ADMIN</span>
+          <span class="top-title">DASHBOARD</span>
+        </div>
+      </div>
+
+      <!-- Quick Nav Tabs -->
+      <nav class="top-nav-links" aria-label="Quick tabs">
+        <a
+          routerLink="/admin/products"
+          routerLinkActive="top-nav-link--active"
+          [routerLinkActiveOptions]="{ exact: true }"
+          class="top-nav-link"
+        >
+          <span class="top-icon">🛍️</span>
+          <span>All Products</span>
+        </a>
+
+        <a
+          routerLink="/admin/categories"
+          routerLinkActive="top-nav-link--active"
+          class="top-nav-link"
+        >
+          <span class="top-icon">🗂️</span>
+          <span>All Categories</span>
+        </a>
+
+        <a
+          routerLink="/admin/products/new"
+          routerLinkActive="top-nav-link--active"
+          class="top-nav-link top-nav-link--cta"
+        >
+          <span class="top-icon">＋</span>
+          <span>Add Product</span>
+        </a>
+      </nav>
+
+      <div class="top-nav-right">
+        <a routerLink="/" class="btn-store-link" title="Return to storefront">
+          Storefront ↗
+        </a>
+      </div>
+    </header>
+
+    <!-- ── CONTENT OUTLET ── -->
+    <main class="admin-content">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>

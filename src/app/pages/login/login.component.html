@@ -1,0 +1,78 @@
+<div class="auth-container">
+
+  <!-- LEFT: WebGL warp animation (looping OR password-state frames) -->
+  <div class="anim-left">
+    <div #bgContainer class="bg-warp-container"></div>
+  </div>
+
+  <!-- RIGHT: Login card -->
+  <div class="auth-box">
+    <h2 class="title">FREPPING</h2>
+    <h3>Login</h3>
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+
+      <div class="form-group">
+        <label>Email</label>
+        <input
+          type="email"
+          formControlName="email"
+          class="form-control"
+          [ngClass]="{ 'is-invalid': loginForm.get('email')?.invalid && loginForm.get('email')?.touched }"
+        />
+        <div *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched" class="invalid-feedback">
+          Valid email is required.
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Password</label>
+        <div class="password-input-wrapper">
+          <input
+            [type]="isPasswordVisible ? 'text' : 'password'"
+            formControlName="password"
+            class="form-control"
+            [ngClass]="{ 'is-invalid': loginForm.get('password')?.invalid && loginForm.get('password')?.touched }"
+            (focus)="onPasswordFocus()"
+            (blur)="onPasswordBlur()"
+          />
+          <button
+            type="button"
+            class="eye-toggle"
+            (mousedown)="$event.preventDefault()"
+            (click)="togglePasswordVisibility()"
+            [attr.aria-label]="isPasswordVisible ? 'Hide password' : 'Show password'"
+          >
+            <!-- Eye open (password visible) -->
+            <svg *ngIf="isPasswordVisible" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+            <!-- Eye closed / slash (password hidden) -->
+            <svg *ngIf="!isPasswordVisible" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+              <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+              <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/>
+              <line x1="1" y1="1" x2="23" y2="23"/>
+            </svg>
+          </button>
+        </div>
+        <div *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched" class="invalid-feedback">
+          Password is required.
+        </div>
+      </div>
+
+      <div *ngIf="error" class="alert alert-danger">{{error}}</div>
+
+      <button [disabled]="loading" class="btn btn-primary w-100">
+        <span *ngIf="loading" class="spinner-border spinner-border-sm mr-1"></span>
+        Login
+      </button>
+
+      <div class="links">
+        <p>Don't have an account? <a routerLink="/register">Create account</a></p>
+        <p><a routerLink="/">→ Back to FREPPING</a></p>
+      </div>
+
+    </form>
+  </div>
+</div>

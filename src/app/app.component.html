@@ -20,6 +20,24 @@
  
 
 
+    <!-- Auth buttons -->
+    <div class="gta-auth-actions" style="position: absolute; top: 20px; right: 20px; display: flex; gap: 10px; pointer-events: auto !important; z-index: 99999;">
+      <ng-container *ngIf="!(authService.isAuthenticated$ | async)">
+        <button type="button" class="gta-btn" routerLink="/login" style="background: rgba(0,0,0,0.7); color: white; border: 2px solid #39ff14; padding: 8px 16px; font-family: 'Pricedown', sans-serif; cursor: pointer; text-transform: uppercase; pointer-events: auto !important;">Login</button>
+        <button type="button" class="gta-btn" routerLink="/register" style="background: rgba(0,0,0,0.7); color: white; border: 2px solid #ff9900; padding: 8px 16px; font-family: 'Pricedown', sans-serif; cursor: pointer; text-transform: uppercase; pointer-events: auto !important;">Register</button>
+      </ng-container>
+      <ng-container *ngIf="authService.isAuthenticated$ | async">
+        <button type="button" class="gta-btn" routerLink="/profile" style="background: rgba(0,0,0,0.8); color: #39ff14; border: 2px solid #39ff14; padding: 8px 16px; font-family: 'Pricedown', sans-serif; cursor: pointer; text-transform: uppercase; display: flex; align-items: center; gap: 8px; pointer-events: auto !important;">
+          <i class="fas fa-user"></i>
+          <span>{{ (authService.currentUser$ | async)?.first_name || (authService.currentUser$ | async)?.email || 'Profile' }}</span>
+        </button>
+        <button type="button" class="gta-btn" (click)="logout($event)" style="background: rgba(0,0,0,0.8); color: #ff4444; border: 2px solid #ff4444; padding: 8px 16px; font-family: 'Pricedown', sans-serif; cursor: pointer; text-transform: uppercase; display: flex; align-items: center; gap: 8px; pointer-events: auto !important;">
+          <i class="fas fa-sign-out-alt"></i>
+          <span>Logout</span>
+        </button>
+      </ng-container>
+    </div>
+
     <!-- Money display -->
     <div class="gta-money">
       <i class="fas fa-money-bill-wave"></i>
