@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://your-production-api.com/api/v1'  // Replace with real production API URL
+  apiUrl: 'https://freepping-backend.onrender.com/api/v1'
 };
