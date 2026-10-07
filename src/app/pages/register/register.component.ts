@@ -18,7 +18,7 @@ export class RegisterComponent implements OnInit {
     private router: Router,
     private authService: AuthService
   ) {
-    if (this.authService.getAccessToken()) {
+    if (this.authService.getCurrentUser()) {
       this.router.navigate(['/']);
     }
     this.registerForm = this.formBuilder.group({

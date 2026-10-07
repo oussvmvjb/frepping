@@ -64,6 +64,12 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    if (typeof window !== 'undefined') {
+      const p = window.location.pathname;
+      if (p.includes('/login') || p.includes('/register') || p.includes('/admin')) {
+        this.showIntro = false;
+      }
+    }
     this.authService.initAuth().subscribe();
     this.initializeGTAMode();
     this.startUIAnimations();

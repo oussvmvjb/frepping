@@ -3,6 +3,8 @@ import { BrowserModule } from '@angular/platform-browser';
 import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { AuthInterceptor } from './services/auth.interceptor';
 import { AppRoutingModule } from './app-routing.module';
+import { DollyGalleryComponent } from './components/dolly-gallery/dolly-gallery.component';
+import { FlexCarouselComponent } from './components/flex-carousel/flex-carousel.component';
 import { AppComponent } from './app.component';
 import { HomeComponent } from './pages/home/home.component';
 import { ShopComponent } from './pages/shop/shop.component';
@@ -42,7 +44,9 @@ import { SellerDashboardComponent } from './pages/seller/seller-dashboard/seller
     AppRoutingModule,
     FormsModule,
     ReactiveFormsModule,
-    HttpClientModule
+    HttpClientModule,
+    DollyGalleryComponent,
+    FlexCarouselComponent
   ],
   providers: [
     { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true }

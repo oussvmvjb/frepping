@@ -167,7 +167,7 @@ export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
     private router: Router,
     private authService: AuthService
   ) {
-    if (this.authService.getAccessToken()) {
+    if (this.authService.getCurrentUser()) {
       this.router.navigate(['/']);
     }
     this.loginForm = this.formBuilder.group({

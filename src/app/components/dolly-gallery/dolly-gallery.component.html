@@ -1,0 +1,75 @@
+<div
+  class="dolly-wrapper"
+  [style.height]="height"
+  [style.background]="backgroundColor">
+
+  <!-- Radial vignette overlay -->
+  <div class="dolly-vignette"></div>
+
+  <!-- 3D scene container -->
+  <div
+    class="dolly-container"
+    tabindex="0"
+    role="region"
+    aria-label="Category gallery – scroll or drag to explore"
+    [style.perspective]="perspective + 'px'">
+
+    <!-- Items rendered once; transforms applied directly in rAF loop -->
+    <div
+      *ngFor="let item of items; let i = index; trackBy: trackByIdx"
+      class="dolly-item"
+      [attr.data-index]="i"
+      [style.width.px]="itemWidth"
+      [style.height.px]="itemWidth / aspectRatio"
+      style="visibility:hidden; opacity:0;">
+
+      <div class="dolly-card-inner" [style.border-radius.px]="borderRadius">
+        <img
+          [src]="item.src || makePlaceholderSvg(item.label || 'CAT')"
+          [alt]="item.alt || item.label || ''"
+          draggable="false"
+          class="dolly-img"
+          [style.filter]="'grayscale(' + grayscale + ')'"
+          (error)="item.src = makePlaceholderSvg(item.label || 'CAT')" />
+
+        <!-- Explore pill (shown on hover via CSS) -->
+        <div class="dolly-explore-pill">EXPLORE →</div>
+      </div>
+
+      <!-- Category Label: visible only on images with opacity > 0.6 -->
+      <div class="dolly-label" *ngIf="item.label">{{ item.label }}</div>
+    </div>
+
+    <!-- Content projection slot layered above gallery -->
+    <div class="dolly-projection">
+      <ng-content></ng-content>
+    </div>
+  </div>
+
+  <!-- Footer with progress dots & category counter -->
+  <div class="dolly-footer" *ngIf="items.length > 1" (wheel)="onFooterWheel($event)">
+    <div class="dolly-progress-dots" (wheel)="onFooterWheel($event)">
+      <button
+        type="button"
+        *ngFor="let item of items; let i = index"
+        class="dolly-dot"
+        [class.dolly-dot--active]="i === focusedIndex"
+        [attr.aria-label]="'Go to ' + item.label"
+        (mouseenter)="onDotHover(i)"
+        (click)="scrollToIndex(i)">
+      </button>
+    </div>
+    <div class="dolly-counter" (wheel)="onFooterWheel($event)">
+      <span class="dolly-counter-idx">{{ focusedIndex + 1 }}</span>
+      <span class="dolly-counter-sep">/</span>
+      <span class="dolly-counter-total">{{ items.length }}</span>
+      <span class="dolly-counter-label" *ngIf="items[focusedIndex]?.label"> — {{ items[focusedIndex].label }}</span>
+    </div>
+  </div>
+
+  <!-- Scroll hint -->
+  <div class="dolly-hint" [class.dolly-hint--hidden]="hasInteracted">
+    <span *ngIf="!infinite && focusedIndex >= items.length - 1">Scroll down to continue ↓</span>
+    <span *ngIf="infinite || focusedIndex < items.length - 1">Scroll or drag to explore categories →</span>
+  </div>
+</div>

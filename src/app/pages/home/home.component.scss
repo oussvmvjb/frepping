@@ -507,15 +507,15 @@
   }
 }
 
-/* ===== QUICK CATEGORIES ===== */
+/* ===== QUICK CATEGORIES (Dolly Gallery) ===== */
 .quick-categories {
   padding: 80px 20px;
   background: #111;
-  
+
   .section-header {
     text-align: center;
-    margin-bottom: 60px;
-    
+    margin-bottom: 40px;
+
     .section-title {
       font-size: 36px;
       display: flex;
@@ -525,14 +525,14 @@
       margin-bottom: 15px;
       font-family: 'Oswald', sans-serif;
       letter-spacing: 3px;
-      
+
       .title-accent {
         width: 60px;
         height: 2px;
         background: #39ff14;
       }
     }
-    
+
     .section-subtitle {
       color: #888;
       font-size: 16px;
@@ -540,84 +540,33 @@
       margin: 0 auto;
     }
   }
-  
-  .categories-grid {
-    max-width: 1200px;
-    margin: 0 auto;
-    display: grid;
-    /* Responsive Grid: Single column on mobile */
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 20px;
 
-    @media (max-width: var(--bp-mobile)) {
-      grid-template-columns: 1fr;
+  .loading-state-inline {
+    text-align: center;
+    color: #888;
+    padding: 40px 0;
+
+    i { color: #39ff14; margin-right: 8px; }
+  }
+
+  app-dolly-gallery {
+    display: block;
+    width: 100%;
+    height: 70vh;
+    min-height: 420px;
+    max-height: 720px;
+
+    @media (max-width: 768px) {
+      height: 60vh;
     }
-    
-    .category-card {
-      background: #1a1a1a;
-      border-radius: 15px;
-      padding: 30px 20px;
-      text-align: center;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      position: relative;
-      overflow: hidden;
-      
-      &:hover {
-        border-color: #39ff14;
-        transform: translateY(-10px);
-        box-shadow: 0 20px 40px rgba(57, 255, 20, 0.1);
-        
-        .category-hover {
-          opacity: 1;
-          transform: translateY(0);
-        }
-        
-        .category-icon i {
-          transform: scale(1.2);
-        }
-      }
-      
-      .category-icon {
-        margin-bottom: 20px;
-        
-        i {
-          font-size: 40px;
-          color: #39ff14;
-          transition: transform 0.3s ease;
-        }
-      }
-      
-      .category-name {
-        font-size: 18px;
-        font-weight: 600;
-        margin-bottom: 10px;
-        color: white;
-      }
-      
-      .category-count {
-        color: #888;
-        font-size: 14px;
-      }
-      
-      .category-hover {
-        position: absolute;
-        bottom: 20px;
-        left: 0;
-        right: 0;
-        text-align: center;
-        opacity: 0;
-        transform: translateY(10px);
-        transition: all 0.3s ease;
-        
-        span {
-          color: #39ff14;
-          font-size: 12px;
-          letter-spacing: 2px;
-        }
-      }
-    }
+  }
+
+  .empty-categories {
+    text-align: center;
+    color: #888;
+    padding: 60px 20px;
+    font-size: 16px;
+    letter-spacing: 1px;
   }
 }
 
@@ -2130,8 +2079,8 @@
   }
   
   .quick-categories {
-    .categories-grid {
-      grid-template-columns: repeat(2, 1fr);
+    app-dolly-gallery {
+      height: 55vh;
     }
   }
   

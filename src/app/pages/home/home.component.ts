@@ -7,6 +7,7 @@ import { CategoryService } from '../../services/category.service';
 import { CartService } from '../../services/cart.service';
 import { ApiProduct, getPrimaryImage, getDiscountPercent, isProductInStock } from '../../models/api-product.model';
 import { Category } from '../../models/category.model';
+import { FlexCarouselItem } from '../../components/flex-carousel/flex-carousel.component';
 
 @Component({
   selector: 'app-home',
@@ -20,6 +21,8 @@ export class HomeComponent implements OnInit, OnDestroy {
   /** Recent products used for "New Arrivals" display (sorted by created_at desc by backend). */
   newArrivals: ApiProduct[] = [];
   categories: Category[] = [];
+  /** Memoized gallery items – computed once when categories load. */
+  categoryGalleryItems: { id: string; src: string; alt: string; label: string }[] = [];
 
   isLoadingFeatured = false;
   isLoadingArrivals = false;
@@ -27,9 +30,8 @@ export class HomeComponent implements OnInit, OnDestroy {
   featuredError: string | null = null;
   arrivalsError: string | null = null;
 
-  // Slider state
-  currentSlide = 0;
-  sliderInterval: any;
+  // Slider state (REMOVED – FlexCarousel manages this internally)
+  // currentSlide / sliderInterval removed
 
   // Favorites (localStorage, presentation only)
   favorites: { [productId: string]: boolean } = {};
@@ -59,14 +61,12 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.loadFeaturedProducts();
     this.loadRecentProducts();
     this.loadCategories();
-    this.startSlider();
     this.loadFavorites();
   }
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
-    if (this.sliderInterval) clearInterval(this.sliderInterval);
   }
 
   // ── Data loading ─────────────────────────────────────────────────────────
@@ -92,7 +92,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.isLoadingArrivals = true;
     this.arrivalsError = null;
     this.productService
-      .getRecentProducts(4)
+      .getRecentProducts(8)
       .pipe(takeUntil(this.destroy$), finalize(() => (this.isLoadingArrivals = false)))
       .subscribe({
         next: (res) => {
@@ -109,7 +109,27 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.categoryService
       .getCategories()
       .pipe(takeUntil(this.destroy$), finalize(() => (this.isLoadingCategories = false)))
-      .subscribe({ next: (cats) => (this.categories = cats) });
+      .subscribe({
+        next: (cats) => {
+          this.categories = cats;
+          this.categoryGalleryItems = cats.map((c) => ({
+            id: c.id,
+            src: c.image_url || this.makeCategoryPlaceholder(c.name),
+            alt: c.name,
+            label: c.name,
+          }));
+        }
+      });
+  }
+
+  private makeCategoryPlaceholder(name: string): string {
+    const initials = name.split(' ').slice(0, 2).map((w) => w[0]?.toUpperCase() || '').join('');
+    const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='120' height='150' viewBox='0 0 120 150'>` +
+      `<rect width='120' height='150' fill='#1a1a1a'/>` +
+      `<text x='60' y='70' font-family='sans-serif' font-size='28' fill='#39ff14' font-weight='bold' text-anchor='middle' dominant-baseline='middle'>${initials}</text>` +
+      `<text x='60' y='105' font-family='sans-serif' font-size='10' fill='#888888' text-anchor='middle' letter-spacing='2'>${name.toUpperCase().slice(0, 12)}</text>` +
+      `</svg>`;
+    return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
   }
 
   // ── Helpers (shared utilities from model) ────────────────────────────────
@@ -172,17 +192,34 @@ export class HomeComponent implements OnInit, OnDestroy {
     localStorage.setItem('home_favorites', JSON.stringify(this.favorites));
   }
 
-  // ── Slider ───────────────────────────────────────────────────────────────
+  // ── FlexCarousel helpers ──────────────────────────────────────────────────
 
-  startSlider(): void {
-    this.sliderInterval = setInterval(() => this.nextSlide(), 5000);
+  getCarouselItems(): FlexCarouselItem[] {
+    return this.newArrivals.map(p => ({
+      src: this.getProductImage(p),
+      alt: p.name,
+      title: p.name,
+      subtitle: this.getCategoryName(p) + (p.material ? ' · ' + p.material : ''),
+      productId: p.id,
+      price: (+p.price).toFixed(2),
+      category: this.getCategoryName(p),
+    }));
   }
-  nextSlide(): void { this.currentSlide = (this.currentSlide + 1) % Math.max(1, this.newArrivals.length); }
-  prevSlide(): void { this.currentSlide = this.currentSlide === 0 ? Math.max(0, this.newArrivals.length - 1) : this.currentSlide - 1; }
-  goToSlide(index: number): void {
-    this.currentSlide = index;
-    if (this.sliderInterval) { clearInterval(this.sliderInterval); this.startSlider(); }
+
+  onCarouselItemClick(event: { index: number; item: FlexCarouselItem }): void {
+    const item = event.item as any;
+    if (item._addToCart) {
+      // ADD TO CART action from carousel action bar
+      const product = this.newArrivals[event.index];
+      if (product) this.addToCart(product);
+    } else {
+      // QUICK VIEW — navigate to product
+      if (event.item.productId) this.goToProduct(event.item.productId);
+    }
   }
+
+  // ── Slider (REMOVED — FlexCarousel is self-contained) ────────────────────
+  // startSlider / nextSlide / prevSlide / goToSlide removed
 
   @HostListener('window:resize') onResize(): void {}
 }

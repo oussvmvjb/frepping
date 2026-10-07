@@ -22,7 +22,7 @@
         <p class="hero-subtitle">
           Experience urban fashion through cutting-edge 3D visualization.
           <span class="highlight">Try before you buy</span> in our virtual fitting room.
-        </p>
+        </p>Recent
 
         <div class="hero-stats">
           <div class="stat-item"><div class="stat-number">500+</div><div class="stat-label">PREMIUM ITEMS</div></div>
@@ -158,20 +158,36 @@
       <i class="fas fa-spinner fa-spin"></i> Loading categories...
     </div>
 
-    <div class="categories-grid" *ngIf="!isLoadingCategories">
-      <div *ngFor="let category of categories"
-           class="category-card"
-           (click)="goToCategory(category.id)">
-        <div class="category-icon">
-          <img *ngIf="category.image_url" [src]="category.image_url" [alt]="category.name" class="cat-img">
-          <i *ngIf="!category.image_url" class="fas fa-tags"></i>
-        </div>
-        <h3 class="category-name">{{ category.name }}</h3>
-        <div class="category-hover"><span>EXPLORE →</span></div>
-      </div>
-      <div *ngIf="categories.length === 0" class="empty-categories">
-        <p>No categories available.</p>
-      </div>
+    <app-dolly-gallery
+      *ngIf="!isLoadingCategories && categories.length"
+      [images]="categoryGalleryItems"
+      [itemWidth]="170"
+      [aspectRatio]="0.8"
+      [borderRadius]="10"
+      [grayscale]="1"
+      [perspective]="1000"
+      [spacing]="800"
+      [spread]="0.8"
+      [scatter]="0.1"
+      [revealRange]="1.5"
+      [passRange]="1"
+      [parallaxX]="0.12"
+      [parallaxY]="0.06"
+      [parallaxSmooth]="0.85"
+      [tilt]="4"
+      [pulse]="0.03"
+      [drift]="0.08"
+      [smooth]="0.85"
+      [wheelSpeed]="1"
+      [dragSpeed]="1.5"
+      [autoScroll]="0"
+      [pauseOnHover]="true"
+      [infinite]="false"
+      (itemClick)="goToCategory($event.item.id)">
+    </app-dolly-gallery>
+
+    <div *ngIf="!isLoadingCategories && categories.length === 0" class="empty-categories">
+      <p>No categories available.</p>
     </div>
   </section>
 
@@ -352,7 +368,7 @@
     </div>
   </section>
 
-  <!-- NEW ARRIVALS (Recent products from backend, sorted by created_at) -->
+  <!-- NEW ARRIVALS — WebGL FlexCarousel (OGL) -->
   <section class="new-arrivals">
     <div class="section-header">
       <h2 class="section-title">
@@ -374,55 +390,39 @@
       <button class="btn-retry" (click)="loadRecentProducts()">RETRY</button>
     </div>
 
-    <div class="arrivals-slider" *ngIf="!isLoadingArrivals && !arrivalsError && newArrivals.length > 0">
-      <button class="slider-nav prev" (click)="prevSlide()">
-        <i class="fas fa-chevron-left"></i>
-      </button>
-
-      <div class="slider-container">
-        <div class="slider-track" [style.transform]="'translateX(' + (-currentSlide * 100) + '%)'" >
-          <div *ngFor="let arrival of newArrivals" class="arrival-slide">
-            <div class="arrival-card-home">
-              <div class="arrival-image-home">
-                <div class="arrival-badge-home">NEW DROP</div>
-                <img [src]="getProductImage(arrival)" [alt]="arrival.name">
-                <div class="arrival-overlay">
-                  <button class="btn-quick-view-arrival" (click)="goToProduct(arrival.id)">
-                    <i class="fas fa-eye"></i>
-                    QUICK VIEW
-                  </button>
-                </div>
-              </div>
-              <div class="arrival-info-home">
-                <h3 class="arrival-name">{{ arrival.name }}</h3>
-                <p class="arrival-description">{{ arrival.description || '' }}</p>
-                <div class="arrival-meta">
-                  <span class="arrival-category">{{ getCategoryName(arrival) }}</span>
-                  <span class="arrival-material" *ngIf="arrival.material">{{ arrival.material }}</span>
-                </div>
-                <div class="arrival-price-home">
-                  <span class="price">${{ (+arrival.price).toFixed(2) }}</span>
-                  <span class="arrival-action" (click)="addToCart(arrival)">
-                    ADD TO CART <i class="fas fa-plus"></i>
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <button class="slider-nav next" (click)="nextSlide()">
-        <i class="fas fa-chevron-right"></i>
-      </button>
-
-      <div class="slider-dots">
-        <span *ngFor="let arrival of newArrivals; let i = index"
-              [class.active]="i === currentSlide"
-              (click)="goToSlide(i)"
-              class="dot"></span>
-      </div>
+    <div *ngIf="!isLoadingArrivals && !arrivalsError && newArrivals.length === 0" class="empty-state">
+      <i class="fas fa-tshirt"></i>
+      <p>No new arrivals yet. Check back soon.</p>
+      <button class="btn-view-all" (click)="goToShop()">BROWSE ALL →</button>
     </div>
+
+    <app-flex-carousel
+      *ngIf="!isLoadingArrivals && !arrivalsError && newArrivals.length > 0"
+      [items]="getCarouselItems()"
+      [preset]="'liquid'"
+      [intro]="'rise'"
+      [cardHeight]="0.5"
+      [gap]="12"
+      [squeeze]="0.2"
+      [focusOnClick]="true"
+      [captions]="true"
+      [fit]="'natural'"
+      [radius]="0"
+      [lensWidth]="0.74"
+      [lensHeight]="1.18"
+      [tilt]="62"
+      [roundness]="1"
+      [bend]="0.34"
+      [reach]="0.38"
+      [curl]="'twist'"
+      [dispersion]="0.45"
+      [liquid]="0"
+      [followCursor]="false"
+      [autoplay]="false"
+      [interval]="4"
+      [captureWheel]="true"
+      (itemClick)="onCarouselItemClick($event)">
+    </app-flex-carousel>
   </section>
 
   <!-- COLLECTIONS (static content, not connected to backend) -->

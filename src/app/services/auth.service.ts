@@ -50,7 +50,7 @@ export class AuthService {
         this.isLoadingSubject.next(false);
       }),
       catchError(err => {
-        this.setAuthState(false, null);
+        this.clearAuth();
         this.isLoadingSubject.next(false);
         return of(null);
       })
