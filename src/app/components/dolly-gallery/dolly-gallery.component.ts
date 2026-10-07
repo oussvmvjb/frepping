@@ -156,11 +156,15 @@ export class DollyGalleryComponent
       this.containerEl.removeEventListener('pointerenter', this.onPointerEnter);
       this.containerEl.removeEventListener('pointerleave', this.onPointerLeave);
       this.containerEl.removeEventListener('keydown', this.onKeyDown);
+      this.containerEl.removeEventListener('touchstart', this.onTouchStart);
     }
     if (typeof window !== 'undefined') {
       window.removeEventListener('pointermove', this.onPointerMove);
       window.removeEventListener('pointerup', this.onPointerUp);
       window.removeEventListener('pointercancel', this.onPointerUp);
+      window.removeEventListener('touchmove', this.onTouchMove);
+      window.removeEventListener('touchend', this.onTouchEnd);
+      window.removeEventListener('touchcancel', this.onTouchEnd);
     }
   }
 
@@ -469,13 +473,20 @@ export class DollyGalleryComponent
     return false;
   }
 
-  // ── Event Handlers ────────────────────────────────────────────────────────
+  // ── Event Handlers & Touch Support ────────────────────────────────────────
+
+  private lastTouchY = 0;
+  private lastTouchX = 0;
+  private touchVelocity = 0;
+  private lastTouchTime = 0;
 
   private bindEvents(): void {
-    // Listen to wheel on host element so the entire section area reacts
+    // Wheel event for desktop mouse / trackpad
     this.hostEl.addEventListener('wheel', this.onWheel, { passive: false });
 
-    const el = this.containerEl!;
+    const el = this.containerEl || this.hostEl;
+
+    // Pointer events (Mouse / Stylus)
     el.addEventListener('pointerdown', this.onPointerDown);
     window.addEventListener('pointermove', this.onPointerMove);
     window.addEventListener('pointerup', this.onPointerUp);
@@ -484,7 +495,112 @@ export class DollyGalleryComponent
     el.addEventListener('pointerenter', this.onPointerEnter);
     el.addEventListener('pointerleave', this.onPointerLeave);
     el.addEventListener('keydown', this.onKeyDown);
+
+    // Native Touch Events for Mobile (iOS Safari & Android Chrome)
+    el.addEventListener('touchstart', this.onTouchStart, { passive: false });
+    window.addEventListener('touchmove', this.onTouchMove, { passive: false });
+    window.addEventListener('touchend', this.onTouchEnd, { passive: false });
+    window.addEventListener('touchcancel', this.onTouchEnd, { passive: false });
   }
+
+  private onTouchStart = (e: TouchEvent): void => {
+    if (e.touches.length !== 1) return;
+    const touch = e.touches[0];
+    this.isDragging = true;
+    this.dragStartY = touch.clientY;
+    this.dragStartX = touch.clientX;
+    this.lastTouchY = touch.clientY;
+    this.lastTouchX = touch.clientX;
+    this.lastTouchTime = performance.now();
+    this.touchVelocity = 0;
+    this.dragScrollStart = this.targetScroll;
+    this.dragMovedPx = 0;
+    this.hasInteracted = true;
+
+    if (!this.rafId) this.startRaf();
+  };
+
+  private onTouchMove = (e: TouchEvent): void => {
+    if (!this.isDragging || e.touches.length !== 1) return;
+    const touch = e.touches[0];
+    const now = performance.now();
+    const dt = Math.max(1, now - this.lastTouchTime);
+
+    const dy = touch.clientY - this.dragStartY;
+    const dx = touch.clientX - this.dragStartX;
+    this.dragMovedPx = Math.hypot(dx, dy);
+
+    // Calculate instantaneous velocity for inertia
+    const stepDy = touch.clientY - this.lastTouchY;
+    const stepDx = touch.clientX - this.lastTouchX;
+    const stepDelta = Math.abs(stepDy) >= Math.abs(stepDx) ? stepDy : stepDx;
+    this.touchVelocity = (stepDelta / dt) * 1000;
+
+    this.lastTouchY = touch.clientY;
+    this.lastTouchX = touch.clientX;
+    this.lastTouchTime = now;
+
+    const n = this.items.length;
+    const maxScroll = (n - 1) * this.spacing;
+
+    // Check if at boundary to allow natural page scroll if user reaches edge
+    if (!this.infinite && n > 1) {
+      if (this.currentScroll <= 15 && stepDy > 0 && Math.abs(dy) > Math.abs(dx)) {
+        return; // Allow page scroll up
+      }
+      if (this.currentScroll >= maxScroll - 15 && stepDy < 0 && Math.abs(dy) > Math.abs(dx)) {
+        return; // Allow page scroll down
+      }
+    }
+
+    // Intercept touch gesture to drive 3D gallery
+    if (e.cancelable) {
+      e.preventDefault();
+    }
+
+    const delta = Math.abs(dy) >= Math.abs(dx) ? dy : dx;
+    // Enhanced touch sensitivity for mobile (2.0x factor)
+    this.targetScroll = this.dragScrollStart - delta * (this.dragSpeed * 1.8);
+    this.lastInputTime = now;
+
+    if (!this.infinite) {
+      this.targetScroll = Math.max(0, Math.min(this.targetScroll, maxScroll));
+    }
+
+    if (!this.rafId) this.startRaf();
+  };
+
+  private onTouchEnd = (e: TouchEvent): void => {
+    if (!this.isDragging) return;
+    this.isDragging = false;
+
+    // Apply swipe inertia on release if flicked
+    if (Math.abs(this.touchVelocity) > 200) {
+      const inertiaDistance = -this.touchVelocity * 0.35;
+      this.targetScroll += inertiaDistance;
+      if (!this.infinite) {
+        const maxScroll = (this.items.length - 1) * this.spacing;
+        this.targetScroll = Math.max(0, Math.min(this.targetScroll, maxScroll));
+      }
+    }
+
+    // If small movement (tap), trigger click on item
+    if (this.dragMovedPx < 10) {
+      const touch = e.changedTouches?.[0];
+      if (touch) {
+        const targetEl = document.elementFromPoint(touch.clientX, touch.clientY);
+        const itemEl = targetEl?.closest<HTMLElement>('.dolly-item');
+        if (itemEl) {
+          const idx = parseInt(itemEl.dataset['index'] || '-1', 10);
+          if (idx >= 0 && this.items[idx]) {
+            this.ngZone.run(() => this.itemClick.emit({ index: idx, item: this.items[idx] }));
+          }
+        }
+      }
+    }
+
+    if (!this.rafId) this.startRaf();
+  };
 
   private onWheel = (e: WheelEvent): void => {
     const n = this.items.length;
@@ -493,16 +609,8 @@ export class DollyGalleryComponent
     const maxScroll = (n - 1) * this.spacing;
 
     if (!this.infinite) {
-      // If at the end and scrolling down: DO NOT call preventDefault!
-      // This allows the page to smoothly continue scrolling down to the next section!
-      if (this.currentScroll >= maxScroll - 15 && e.deltaY > 0) {
-        return;
-      }
-      // If at the beginning and scrolling up: DO NOT call preventDefault!
-      // This allows the page to smoothly continue scrolling up to the previous section!
-      if (this.currentScroll <= 15 && e.deltaY < 0) {
-        return;
-      }
+      if (this.currentScroll >= maxScroll - 15 && e.deltaY > 0) return;
+      if (this.currentScroll <= 15 && e.deltaY < 0) return;
     }
 
     // Intercept wheel to dolly through items
@@ -519,6 +627,7 @@ export class DollyGalleryComponent
   };
 
   private onPointerDown = (e: PointerEvent): void => {
+    if (e.pointerType === 'touch') return; // Handled by touch events
     if (e.button !== 0 && e.pointerType === 'mouse') return;
     this.isDragging = true;
     this.dragStartY = e.clientY;
@@ -536,6 +645,7 @@ export class DollyGalleryComponent
   };
 
   private onPointerMove = (e: PointerEvent): void => {
+    if (e.pointerType === 'touch') return; // Handled by touch events
     if (!this.isDragging) return;
     const dy = e.clientY - this.dragStartY;
     const dx = e.clientX - this.dragStartX;
@@ -554,6 +664,7 @@ export class DollyGalleryComponent
   };
 
   private onPointerUp = (e: PointerEvent): void => {
+    if (e.pointerType === 'touch') return;
     if (!this.isDragging) return;
     this.isDragging = false;
     if (this.containerEl) this.containerEl.style.cursor = 'grab';
@@ -570,7 +681,7 @@ export class DollyGalleryComponent
   };
 
   private onPointerMoveParallax = (e: PointerEvent): void => {
-    if (!this.containerEl) return;
+    if (!this.containerEl || e.pointerType === 'touch') return;
     const rect = this.containerEl.getBoundingClientRect();
     this.pointerNormX = ((e.clientX - rect.left) / rect.width - 0.5) * 2;
     this.pointerNormY = ((e.clientY - rect.top) / rect.height - 0.5) * 2;

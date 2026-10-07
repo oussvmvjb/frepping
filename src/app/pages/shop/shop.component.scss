@@ -723,7 +723,7 @@
 /* Product Grid */
 .products-modern-grid {
   display: grid;
-  gap: 35px;
+  gap: 28px;
   position: relative;
   z-index: 2;
 }
@@ -733,38 +733,56 @@
 }
 
 .grid-medium {
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
 }
 
 .grid-large {
-  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
 }
 
-/* Better Grid Logic for Tablet/Mobile */
-@media (max-width: var(--bp-desktop, 1024px)) {
+/* Tablet / Medium Screens: 3 products responsive */
+@media (max-width: 1024px) {
+  .products-modern-grid {
+    gap: 20px;
+  }
   .grid-small, .grid-medium, .grid-large {
-    grid-template-columns: repeat(2, 1fr) !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
   }
 }
 
-@media (max-width: var(--bp-tablet, 768px)) {
-  .grid-small, .grid-medium, .grid-large {
-    grid-template-columns: 1fr !important;
-  }
-}
-
-/* Mobile responsive - single column on small screens */
+/* Mobile & Phone size: 2 products per row */
 @media (max-width: 768px) {
+  .products-modern-grid {
+    gap: 14px;
+  }
 
   .grid-small,
   .grid-medium,
   .grid-large {
-    grid-template-columns: 1fr !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
 
   .modern-product-image {
-    height: 1000px;
-    /* Even taller on mobile */
+    min-height: 180px;
+    height: auto;
+  }
+}
+
+/* Compact phones */
+@media (max-width: 480px) {
+  .products-modern-grid {
+    gap: 10px;
+  }
+
+  .grid-small,
+  .grid-medium,
+  .grid-large {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .modern-product-image {
+    min-height: 150px;
+    height: auto;
   }
 }
 
@@ -1367,7 +1385,7 @@
   .grid-small,
   .grid-medium,
   .grid-large {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .modern-view-controls {

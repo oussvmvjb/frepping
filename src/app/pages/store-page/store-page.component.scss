@@ -231,6 +231,21 @@
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 24px;
 
+  @media (max-width: 1024px) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  @media (max-width: 480px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
   .product-card {
     background: #14171f;
     border: 1px solid rgba(255, 255, 255, 0.06);
