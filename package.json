@@ -18,6 +18,7 @@
     "@angular/platform-browser": "^16.1.0",
     "@angular/platform-browser-dynamic": "^16.1.0",
     "@angular/router": "^16.1.0",
+    "@hugeicons/core-free-icons": "^4.3.5",
     "animejs": "^4.5.0",
     "emailjs-com": "^3.2.0",
     "ogl": "^1.0.11",

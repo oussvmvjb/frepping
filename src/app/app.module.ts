@@ -5,10 +5,10 @@ import { AuthInterceptor } from './services/auth.interceptor';
 import { AppRoutingModule } from './app-routing.module';
 import { DollyGalleryComponent } from './components/dolly-gallery/dolly-gallery.component';
 import { FlexCarouselComponent } from './components/flex-carousel/flex-carousel.component';
+import { SidebarNavComponent } from './layout/sidebar-nav/sidebar-nav.component';
 import { AppComponent } from './app.component';
 import { HomeComponent } from './pages/home/home.component';
 import { ShopComponent } from './pages/shop/shop.component';
-import { BottomNavComponent } from './pages/bottom-nav/bottom-nav.component';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { IntroComponent } from './components/intro/intro.component';
 import { ProductDetailsComponent } from './pages/product-details/product-details.component';
@@ -27,7 +27,6 @@ import { SellerDashboardComponent } from './pages/seller/seller-dashboard/seller
     AppComponent,
     HomeComponent,
     ShopComponent,
-    BottomNavComponent,
     IntroComponent,
     ProductDetailsComponent,
     TryOnComponent,
@@ -46,7 +45,8 @@ import { SellerDashboardComponent } from './pages/seller/seller-dashboard/seller
     ReactiveFormsModule,
     HttpClientModule,
     DollyGalleryComponent,
-    FlexCarouselComponent
+    FlexCarouselComponent,
+    SidebarNavComponent
   ],
   providers: [
     { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true }

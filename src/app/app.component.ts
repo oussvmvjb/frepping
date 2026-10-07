@@ -43,6 +43,8 @@ export class AppComponent implements OnInit, OnDestroy {
   // Router subscription
   private routerSubscription: Subscription;
 
+  isSidebarHidden = false;
+
   constructor(
     private renderer: Renderer2,
     private router: Router,
@@ -53,6 +55,8 @@ export class AppComponent implements OnInit, OnDestroy {
       if (event instanceof NavigationEnd) {
         // Scroll to top on navigation
         window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        this.updateSidebarVisibility(event.urlAfterRedirects || event.url);
 
         console.log('Navigation completed, attempting to play ambience...');
         // Try to play ambience when navigation completes
@@ -66,6 +70,7 @@ export class AppComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     if (typeof window !== 'undefined') {
       const p = window.location.pathname;
+      this.updateSidebarVisibility(p);
       if (p.includes('/login') || p.includes('/register') || p.includes('/admin')) {
         this.showIntro = false;
       }
@@ -76,6 +81,11 @@ export class AppComponent implements OnInit, OnDestroy {
 
     // Initialize audio system
     this.initializeAudio();
+  }
+
+  private updateSidebarVisibility(url: string): void {
+    const cleanUrl = url.split('#')[0];
+    this.isSidebarHidden = ['/login', '/register', '/admin'].some(p => cleanUrl.startsWith(p));
   }
 
   ngOnDestroy(): void {

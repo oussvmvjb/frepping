@@ -1,0 +1,101 @@
+<nav #navEl
+     class="bm-nav"
+     [class]="className"
+     [ngStyle]="navStyles"
+     role="navigation">
+
+  <!-- Glide marker on left rail -->
+  <div #marker
+       class="bm-marker"
+       aria-hidden="true">
+  </div>
+
+  <!-- Sections -->
+  <ng-container *ngFor="let section of items; let si = index; trackBy: trackByIndex">
+
+    <!-- Section head button -->
+    <button #head
+            class="bm-head"
+            [class.bm-head--open]="openSet.has(si)"
+            [class.bm-head--leaf]="!section.children?.length && section.value"
+            [attr.aria-expanded]="section.children?.length ? openSet.has(si) : null"
+            [attr.aria-current]="(!section.children?.length && section.value === activeValue) ? 'page' : null"
+            (click)="toggleOpen(si)"
+            type="button">
+      <app-hugeicon *ngIf="section.icon" [icon]="section.icon" [size]="16" aria-hidden="true"></app-hugeicon>
+      <span class="bm-head__label">{{ section.label }}</span>
+      <span *ngIf="section.children?.length" class="bm-head__chevron" aria-hidden="true">
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+          <path d="M2 3.5 L5 6.5 L8 3.5"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"/>
+        </svg>
+      </span>
+    </button>
+
+    <!-- Section body (animated fold) -->
+    <div *ngIf="section.children?.length"
+         class="bm-body"
+         [class.bm-body--open]="openSet.has(si)"
+         role="group"
+         [attr.aria-label]="section.label + ' submenu'">
+
+      <!-- Branch SVG -->
+      <svg *ngIf="openSet.has(si)"
+           class="bm-svg"
+           aria-hidden="true"
+           [attr.width]="svgW"
+           [attr.height]="bodyH(si)">
+
+        <!-- Trunk vertical line -->
+        <path [attr.d]="trunkPath(si)"
+              stroke="var(--bm-line)"
+              [attr.stroke-width]="lineWidth"
+              fill="none"
+              stroke-linecap="round">
+        </path>
+
+        <!-- Per-child branches -->
+        <ng-container *ngFor="let child of section.children; let k = index; trackBy: trackByValue">
+          <!-- Static branch base -->
+          <path [attr.d]="branchBase(k)"
+                stroke="var(--bm-line)"
+                [attr.stroke-width]="lineWidth"
+                fill="none"
+                stroke-linecap="round">
+          </path>
+
+          <!-- Animated reach path (dashoffset draw trick) -->
+          <path [attr.d]="reachPath(k)"
+                stroke="var(--bm-accent)"
+                [attr.stroke-width]="lineWidth"
+                fill="none"
+                stroke-linecap="round"
+                [attr.stroke-dasharray]="length(k)"
+                [style.stroke-dashoffset]="child.value === activeValue ? 0 : length(k)"
+                [style.transition]="'stroke-dashoffset ' + drawDuration + 'ms ease'">
+          </path>
+        </ng-container>
+      </svg>
+
+      <!-- Child items -->
+      <ul class="bm-list" role="list">
+        <li *ngFor="let child of section.children; let k = index; trackBy: trackByValue"
+            role="listitem">
+          <button class="bm-child"
+                  type="button"
+                  [class.bm-child--active]="child.value === activeValue"
+                  [attr.aria-current]="child.value === activeValue ? 'page' : null"
+                  [attr.tabindex]="openSet.has(si) ? 0 : -1"
+                  (click)="onChildClick(child)">
+            <app-hugeicon *ngIf="child.icon" [icon]="child.icon" [size]="14" aria-hidden="true"></app-hugeicon>
+            <span>{{ child.label }}</span>
+          </button>
+        </li>
+      </ul>
+    </div>
+
+  </ng-container>
+</nav>

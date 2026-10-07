@@ -1,0 +1,100 @@
+<ng-container *ngIf="!hideSidebar">
+
+  <!-- ── DESKTOP SIDEBAR (min-width: 769px) ─────────────────────────────────── -->
+  <aside class="sidebar" *ngIf="!isMobile" role="complementary" aria-label="Site Navigation">
+    <div class="sidebar__brand">
+      <a routerLink="/" class="sidebar__logo">
+        <span class="logo-txt-primary">FREE</span><span class="logo-txt-accent">PPING</span>
+      </a>
+      <span class="sidebar__badge">LOS SANTOS</span>
+    </div>
+
+    <div class="sidebar__menu-wrap">
+      <app-branched-menu
+        [items]="menuItems"
+        [active]="activeRoute"
+        [width]="'100%'"
+        [rowHeight]="38"
+        [indent]="42"
+        [trunk]="14"
+        [radius]="10"
+        [fontSize]="13"
+        (selectItem)="onSelectMenuItem($event)">
+      </app-branched-menu>
+    </div>
+
+    <div class="sidebar__footer">
+      <div class="sidebar__status">
+        <span class="status-indicator"></span>
+        <span class="status-text">NETWORK ONLINE</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── MOBILE FLOATING TOGGLE BUTTON (max-width: 768px) ──────────────────── -->
+  <button
+    *ngIf="isMobile"
+    #toggleBtn
+    type="button"
+    class="nav-toggle"
+    [class.nav-toggle--open]="mobileOpen"
+    [attr.aria-expanded]="mobileOpen"
+    [attr.aria-label]="mobileOpen ? 'Close menu' : 'Open menu'"
+    aria-controls="mobile-nav-panel"
+    (click)="toggleMobile()">
+    <span class="nav-toggle__bar bar-1"></span>
+    <span class="nav-toggle__bar bar-2"></span>
+    <span class="nav-toggle__bar bar-3"></span>
+  </button>
+
+  <!-- ── MOBILE BACKDROP & DRAWER PANEL ───────────────────────────────────── -->
+  <div
+    *ngIf="isMobile && mobileOpen"
+    class="nav-backdrop"
+    (click)="closeMobile()"
+    aria-hidden="true">
+  </div>
+
+  <div
+    *ngIf="isMobile"
+    #mobilePanel
+    id="mobile-nav-panel"
+    class="nav-panel"
+    [class.nav-panel--open]="mobileOpen"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Navigation"
+    tabindex="-1">
+
+    <div class="nav-panel__header">
+      <div class="sidebar__brand">
+        <a routerLink="/" (click)="closeMobile()" class="sidebar__logo">
+          <span class="logo-txt-primary">FREE</span><span class="logo-txt-accent">PPING</span>
+        </a>
+        <span class="sidebar__badge">LS</span>
+      </div>
+    </div>
+
+    <div class="nav-panel__content">
+      <app-branched-menu
+        [items]="menuItems"
+        [active]="activeRoute"
+        [width]="'100%'"
+        [rowHeight]="40"
+        [indent]="44"
+        [trunk]="14"
+        [radius]="10"
+        [fontSize]="14"
+        (selectItem)="onSelectMenuItem($event)">
+      </app-branched-menu>
+    </div>
+
+    <div class="nav-panel__footer">
+      <div class="sidebar__status">
+        <span class="status-indicator"></span>
+        <span class="status-text">LOS SANTOS EDITION</span>
+      </div>
+    </div>
+  </div>
+
+</ng-container>

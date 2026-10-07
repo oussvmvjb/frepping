@@ -630,3 +630,27 @@ body {
   -ms-user-select: none;
   user-select: none;
 }
+
+// ── Layout Main Content Offset for Left Sidebar ────────────────────────────
+:root {
+  --sidebar-w: 260px;
+}
+
+.app-main {
+  min-height: 100vh;
+  position: relative;
+  transition: padding-left 250ms ease;
+
+  @media (min-width: 769px) {
+    padding-left: var(--sidebar-w, 260px);
+
+    &.app-main--full {
+      padding-left: 0;
+    }
+  }
+
+  @media (max-width: 768px) {
+    padding-left: 0;
+  }
+}
+

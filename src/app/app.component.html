@@ -38,11 +38,7 @@
       </ng-container>
     </div>
 
-    <!-- Money display -->
-    <div class="gta-money">
-      <i class="fas fa-money-bill-wave"></i>
-      <span>${{money | number}}</span>
-    </div>
+   
 
     <!-- Wanted level stars -->
     <div class="gta-wanted" *ngIf="wantedLevel > 0">
@@ -53,8 +49,11 @@
     </div>
   </div>
 
-  <!-- Your existing app content -->
-  <div class="app-container">
+  <!-- Left-Side Navigation -->
+  <app-sidebar-nav></app-sidebar-nav>
+
+  <!-- Main App Content -->
+  <main class="app-container app-main" [class.app-main--full]="isSidebarHidden">
     <router-outlet></router-outlet>
-  </div>
+  </main>
 </ng-container>
