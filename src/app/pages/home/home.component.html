@@ -14,15 +14,36 @@
         </div>
 
         <h1 class="hero-title">
-          <span class="title-line-1">FREEPPING</span>
-          <span class="title-line-2">LOS SANTOS</span>
-          <span class="title-line-3">STREETWEAR</span>
+          <app-blur-text
+            class="title-line-1"
+            text="FREEPPING"
+            animateBy="letters"
+            [delay]="90"
+            [startDelay]="0"
+            [stepDuration]="0.35">
+          </app-blur-text>
+          <app-blur-text
+            class="title-line-2"
+            text="LOS SANTOS"
+            animateBy="words"
+            [delay]="90"
+            [startDelay]="350"
+            [stepDuration]="0.35">
+          </app-blur-text>
+          <app-blur-text
+            class="title-line-3"
+            text="STREETWEAR"
+            animateBy="letters"
+            [delay]="90"
+            [startDelay]="700"
+            [stepDuration]="0.35">
+          </app-blur-text>
         </h1>
 
         <p class="hero-subtitle">
           Experience urban fashion through cutting-edge 3D visualization.
           <span class="highlight">Try before you buy</span> in our virtual fitting room.
-        </p>Recent
+        </p>
 
         <div class="hero-stats">
           <div class="stat-item"><div class="stat-number">500+</div><div class="stat-label">PREMIUM ITEMS</div></div>
@@ -31,27 +52,27 @@
           <div class="stat-item"><div class="stat-number">4.8</div><div class="stat-label">RATING</div></div>
         </div>
 
-        <div class="hero-actions">
-          <button class="btn-hero-primary" (click)="goToTryOn()">
-            <i class="fas fa-vr-cardboard"></i>
-            <span>LAUNCH 3D FITTING ROOM</span>
-            <i class="fas fa-arrow-right"></i>
-          </button>
-          <button class="btn-hero-secondary" (click)="goToShop()">
-            <i class="fas fa-store"></i>
-            <span>EXPLORE COLLECTION</span>
-          </button>
-        </div>
+      
 
         <div class="hero-scroll-indicator">
-          <span>SCROLL TO EXPLORE</span>
+          <span class="scroll-text">SCROLL TO EXPLORE</span>
           <i class="fas fa-chevron-down"></i>
         </div>
       </div>
 
       <div class="hero-right">
         <div class="hero-featured-product">
-          <div class="featured-badge">FEATURED DROP</div>
+
+          <!-- ── Featured Badge ── -->
+          <div class="featured-badge">
+            <app-blur-text
+              class="featured-badge-text"
+              text="FEATURED DROP"
+              animateBy="letters"
+              [delay]="50"
+              [stepDuration]="0.28">
+            </app-blur-text>
+          </div>
 
           <!-- Loading state -->
           <div *ngIf="isLoadingFeatured" class="featured-product-card">
@@ -59,7 +80,7 @@
               <div class="image-container">
                 <div class="image-placeholder-large">
                   <i class="fas fa-spinner fa-spin"></i>
-                  <span>LOADING...</span>
+                  <app-blur-text text="LOADING..." animateBy="words" [delay]="60" [stepDuration]="0.3"></app-blur-text>
                 </div>
               </div>
             </div>
@@ -71,7 +92,7 @@
               <div class="image-container">
                 <div class="image-placeholder-large">
                   <i class="fas fa-exclamation-circle"></i>
-                  <span>UNABLE TO LOAD</span>
+                  <app-blur-text text="UNABLE TO LOAD" animateBy="words" [delay]="60" [stepDuration]="0.3"></app-blur-text>
                 </div>
               </div>
             </div>
@@ -81,7 +102,32 @@
           <div *ngIf="!isLoadingFeatured && !featuredError && featuredProduct" class="featured-product-card">
             <div class="featured-product-image">
               <div class="image-container">
-                <img [src]="getProductImage(featuredProduct)"
+                <!-- DitherVeil filling the full product box -->
+                <app-dither-veil
+                  *ngIf="!veilFailed"
+                  [src]="getProductImage(featuredProduct)"
+                  pattern="floyd"
+                  [pixelSize]="isMobile ? 3 : 2"
+                  [levels]="2"
+                  palette="duotone"
+                  inkColor="#120f17"
+                  paperColor="#f4f1ea"
+                  rimColor="#a78bfa"
+                  [revealRadius]="isMobile ? 120 : 220"
+                  [softness]="0.6"
+                  [linger]="1"
+                  fit="contain"
+                  [contrast]="1.15"
+                  [brightness]="0"
+                  [rim]="0"
+                  [reverse]="false"
+                  [wander]="isMobile"
+                  [clickBurst]="!isMobile"
+                  (imageError)="veilFailed = true">
+                </app-dither-veil>
+                <!-- Fallback standard image if WebGL fails -->
+                <img *ngIf="veilFailed"
+                     [src]="getProductImage(featuredProduct)"
                      [alt]="featuredProduct.name"
                      class="featured-img">
                 <div class="product-tags">
@@ -127,17 +173,69 @@
             </div>
           </div>
 
-          <!-- No products state -->
+          <!-- Default / Fallback state (when no products loaded yet from backend) -->
           <div *ngIf="!isLoadingFeatured && !featuredError && !featuredProduct" class="featured-product-card">
             <div class="featured-product-image">
               <div class="image-container">
-                <div class="image-placeholder-large">
-                  <i class="fas fa-tshirt"></i>
-                  <span>FEATURED PRODUCT</span>
+                <!-- DitherVeil filling the full product box with default streetwear asset -->
+                <app-dither-veil
+                  src="assets/images/home/67d42860e79a4.png"
+                  pattern="floyd"
+                  [pixelSize]="isMobile ? 3 : 2"
+                  [levels]="2"
+                  palette="duotone"
+                  inkColor="#120f17"
+                  paperColor="#f4f1ea"
+                  rimColor="#a78bfa"
+                  [revealRadius]="isMobile ? 120 : 220"
+                  [softness]="0.6"
+                  [linger]="1"
+                  fit="contain"
+                  [contrast]="1.15"
+                  [brightness]="0"
+                  [rim]="0"
+                  [reverse]="false"
+                  [wander]="isMobile"
+                  [clickBurst]="!isMobile">
+                </app-dither-veil>
+                <div class="product-tags">
+                  <span class="tag">FEATURED DROP</span>
                 </div>
               </div>
             </div>
+
+            <div class="featured-product-info">
+              <div class="featured-product-header">
+                <h3 class="featured-brand">EXCLUSIVE STREETWEAR</h3>
+              </div>
+              <h2 class="featured-name">CYBER METALLIC HOODIE</h2>
+              <p class="featured-description">Holographic iridescent finish with cyberpunk dither diffusion.</p>
+
+              <div class="featured-specs">
+                <div class="spec">
+                  <i class="fas fa-tag"></i>
+                  <span>100% French Terry</span>
+                </div>
+                <div class="spec">
+                  <i class="fas fa-layer-group"></i>
+                  <span>Hoodies</span>
+                </div>
+              </div>
+
+              <div class="featured-price-section">
+                <div class="price">
+                  <span class="current">$140.00</span>
+                  <span class="original">$180.00</span>
+                  <span class="discount">-22%</span>
+                </div>
+                <button class="btn-featured-view" (click)="goToShop()">
+                  <i class="fas fa-eye"></i>
+                  EXPLORE SHOP
+                </button>
+              </div>
+            </div>
           </div>
+
         </div>
       </div>
     </div>
@@ -148,7 +246,7 @@
     <div class="section-header">
       <h2 class="section-title">
         <span class="title-accent"></span>
-        SHOP BY CATEGORY
+        <app-blur-text text="SHOP BY CATEGORY" animateBy="words" [delay]="40" [stepDuration]="0.35"></app-blur-text>
         <span class="title-accent"></span>
       </h2>
       <p class="section-subtitle">Browse our curated collections</p>
@@ -197,7 +295,7 @@
       <div class="header-left">
         <h2 class="section-title">
           <span class="title-accent"></span>
-          TRENDING NOW
+          <app-blur-text text="TRENDING NOW" animateBy="words" [delay]="40" [stepDuration]="0.35"></app-blur-text>
           <span class="title-accent"></span>
         </h2>
         <p class="section-subtitle">Most popular this week</p>
@@ -213,7 +311,7 @@
     <!-- Loading -->
     <div *ngIf="isLoadingFeatured" class="loading-modern">
       <div class="modern-spinner"></div>
-      <span class="modern-loading-text">LOADING DROPS...</span>
+      <app-blur-text class="modern-loading-text" text="LOADING DROPS..." animateBy="words" [delay]="60" [stepDuration]="0.28"></app-blur-text>
     </div>
 
     <!-- Error -->
@@ -373,7 +471,7 @@
     <div class="section-header">
       <h2 class="section-title">
         <span class="title-accent"></span>
-        RECENT ARRIVALS
+        <app-blur-text text="RECENT ARRIVALS" animateBy="words" [delay]="40" [stepDuration]="0.35"></app-blur-text>
         <span class="title-accent"></span>
       </h2>
       <p class="section-subtitle">Fresh from Los Santos</p>
@@ -381,7 +479,7 @@
 
     <div *ngIf="isLoadingArrivals" class="loading-modern">
       <div class="modern-spinner"></div>
-      <span class="modern-loading-text">LOADING...</span>
+      <app-blur-text class="modern-loading-text" text="LOADING..." animateBy="words" [delay]="60" [stepDuration]="0.28"></app-blur-text>
     </div>
 
     <div *ngIf="!isLoadingArrivals && arrivalsError" class="error-state">
@@ -430,7 +528,7 @@
     <div class="section-header">
       <h2 class="section-title">
         <span class="title-accent"></span>
-        CURATED COLLECTIONS
+        <app-blur-text text="CURATED COLLECTIONS" animateBy="words" [delay]="40" [stepDuration]="0.35"></app-blur-text>
         <span class="title-accent"></span>
       </h2>
       <p class="section-subtitle">Handpicked styles for every vibe</p>
@@ -463,7 +561,9 @@
   <section class="testimonials">
     <div class="section-header">
       <h2 class="section-title">
-        <span class="title-accent"></span>FROM THE STREETS<span class="title-accent"></span>
+        <span class="title-accent"></span>
+        <app-blur-text text="FROM THE STREETS" animateBy="words" [delay]="40" [stepDuration]="0.35"></app-blur-text>
+        <span class="title-accent"></span>
       </h2>
       <p class="section-subtitle">What Los Santos is saying</p>
     </div>
@@ -519,4 +619,5 @@
       </div>
     </div>
   </section>
+
 </div>

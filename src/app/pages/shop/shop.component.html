@@ -23,29 +23,59 @@
     <div class="filter-row">
       <div class="filter-section">
         <h3 class="filter-title">CATEGORIES</h3>
-        <div class="category-filters">
-          <button
-            [class.active]="selectedCategoryId === null"
-            (click)="onCategorySelect(null)"
-            class="category-filter-btn"
-          >
-            <i class="fas fa-th-large"></i> ALL
-          </button>
-          <button
-            *ngFor="let category of categories"
-            [class.active]="selectedCategoryId === category.id"
-            (click)="onCategorySelect(category.id)"
-            class="category-filter-btn"
-          >
-            <i class="fas fa-tag"></i> {{ category.name }}
-          </button>
+
+        <div
+          class="category-marquee"
+          (touchstart)="marqueePaused = true"
+          (touchend)="marqueePaused = false"
+          [class.paused]="marqueePaused"
+        >
+          <div class="category-filters category-track">
+            <!-- SET 1 -->
+            <button
+              [class.active]="selectedCategoryId === null"
+              (click)="onCategorySelect(null)"
+              class="category-filter-btn"
+            >
+              <i class="fas fa-th-large"></i> ALL
+            </button>
+            <button
+              *ngFor="let category of categories"
+              [class.active]="selectedCategoryId === category.id"
+              (click)="onCategorySelect(category.id)"
+              class="category-filter-btn"
+            >
+              <i class="fas fa-tag"></i> {{ category.name }}
+            </button>
+
+            <!-- SET 2 (duplicate for seamless loop, mobile only, hidden from a11y) -->
+            <ng-container *ngIf="isMobile">
+              <button
+                aria-hidden="true" tabindex="-1"
+                [class.active]="selectedCategoryId === null"
+                (click)="onCategorySelect(null)"
+                class="category-filter-btn clone"
+              >
+                <i class="fas fa-th-large"></i> ALL
+              </button>
+              <button
+                *ngFor="let category of categories"
+                aria-hidden="true" tabindex="-1"
+                [class.active]="selectedCategoryId === category.id"
+                (click)="onCategorySelect(category.id)"
+                class="category-filter-btn clone"
+              >
+                <i class="fas fa-tag"></i> {{ category.name }}
+              </button>
+            </ng-container>
+          </div>
         </div>
       </div>
     </div>
 
-    <div class="filter-row">
-      <div class="filter-section">
-        <h3 class="filter-title">SORT BY</h3>
+    <div class="filter-row filter-row-sort">
+      <div class="filter-section sort-section">
+        <h3 class="filter-title sort-title">SORT BY</h3>
         <div class="sort-options">
           <select [(ngModel)]="selectedSort" (change)="onSortChange()" class="sort-select">
             <option *ngFor="let option of sortOptions" [value]="option">{{ option }}</option>
@@ -53,7 +83,7 @@
         </div>
       </div>
 
-      <div class="filter-section">
+      <div class="filter-section clear-section">
         <button class="btn btn-dark" (click)="clearFilters()">
           <i class="fas fa-redo mr-2"></i>CLEAR FILTERS
         </button>
@@ -192,22 +222,11 @@
           </div>
         </div>
 
-        <!-- Product Content -->
+        <!-- Product Content (compact – no description / material) -->
         <div class="modern-product-content">
           <div class="modern-product-info">
             <div class="modern-category">{{ getCategoryName(product) }}</div>
             <h3 class="modern-product-name">{{ product.name }}</h3>
-
-            <p class="product-description" *ngIf="product.description">
-              {{ product.description | slice : 0 : 80 }}...
-            </p>
-
-            <div class="product-specs" *ngIf="product.material">
-              <div class="spec-item">
-                <span class="spec-label">MATERIAL:</span>
-                <span class="spec-value">{{ product.material }}</span>
-              </div>
-            </div>
           </div>
 
           <!-- Price & Actions -->
@@ -244,7 +263,8 @@
         [disabled]="currentPage === 1"
         (click)="goToPage(currentPage - 1)"
       >
-        <i class="fas fa-chevron-left"></i> PREV
+        <i class="fas fa-chevron-left"></i>
+        <span class="pagination-nav-text"> PREV</span>
       </button>
 
       <div class="pagination-numbers">
@@ -263,7 +283,8 @@
         [disabled]="currentPage === totalPages"
         (click)="goToPage(currentPage + 1)"
       >
-        NEXT <i class="fas fa-chevron-right"></i>
+        <span class="pagination-nav-text">NEXT </span>
+        <i class="fas fa-chevron-right"></i>
       </button>
     </div>
   </section>

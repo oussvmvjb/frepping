@@ -41,6 +41,8 @@ export class ShopComponent implements OnInit, OnDestroy {
   // ── UI ────────────────────────────────────────────────────────────────────
   gridSize: 'small' | 'medium' | 'large' = 'medium';
   favorites: { [id: string]: boolean } = {};
+  isMobile = window.innerWidth <= 768;
+  marqueePaused = false;
 
   private searchSubject = new Subject<string>();
   private destroy$ = new Subject<void>();
@@ -211,5 +213,6 @@ export class ShopComponent implements OnInit, OnDestroy {
     return !!this.favorites[productId];
   }
 
-  @HostListener('window:resize') onResize(): void {}
+  @HostListener('window:resize')
+  onResize(): void { this.isMobile = window.innerWidth <= 768; }
 }

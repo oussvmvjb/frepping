@@ -1,5 +1,6 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { AuthInterceptor } from './services/auth.interceptor';
 import { AppRoutingModule } from './app-routing.module';
@@ -8,6 +9,8 @@ import { FlexCarouselComponent } from './components/flex-carousel/flex-carousel.
 import { SidebarNavComponent } from './layout/sidebar-nav/sidebar-nav.component';
 import { AppComponent } from './app.component';
 import { HomeComponent } from './pages/home/home.component';
+import { BlurTextComponent } from './shared/blur-text/blur-text.component';
+import { DitherVeilComponent } from './shared/dither-veil/dither-veil.component';
 import { ShopComponent } from './pages/shop/shop.component';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { IntroComponent } from './components/intro/intro.component';
@@ -40,13 +43,16 @@ import { SellerDashboardComponent } from './pages/seller/seller-dashboard/seller
   ],
   imports: [
     BrowserModule,
+    BrowserAnimationsModule,
     AppRoutingModule,
     FormsModule,
     ReactiveFormsModule,
     HttpClientModule,
     DollyGalleryComponent,
     FlexCarouselComponent,
-    SidebarNavComponent
+    SidebarNavComponent,
+    BlurTextComponent,
+    DitherVeilComponent
   ],
   providers: [
     { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true }

@@ -1,0 +1,84 @@
+/* ── BlurText host ───────────────────────────────────────────────────────── */
+:host {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: var(--bt-justify, flex-start);
+}
+
+/* ── CSS custom props (overridable per-host) ─────────────────────────────── */
+:host {
+  --bt-blur-from:   10px;
+  --bt-blur-mid:    5px;
+  --bt-y-from:     -50px;
+  --bt-y-mid:       5px;
+}
+
+:host(.bt-dir-bottom) {
+  --bt-y-from:  50px;
+  --bt-y-mid:  -5px;
+}
+
+/* ── Segment base state (hidden before in-view) ──────────────────────────── */
+.bt-seg {
+  display: inline-block;
+  will-change: transform, filter, opacity;
+
+  /* Default: frozen at the "from" keyframe */
+  filter: blur(var(--bt-blur-from));
+  opacity: 0;
+  transform: translateY(var(--bt-y-from));
+}
+
+/* ── Animated state ──────────────────────────────────────────────────────── */
+:host(.in-view) .bt-seg,
+.bt-seg.in-view {
+  animation-name: bt-reveal;
+  animation-timing-function: ease-out;
+  animation-fill-mode: both;
+  /* duration and delay come from the parent component via inline style */
+  animation-duration: var(--bt-duration, 0.7s);
+  animation-delay: calc(var(--i, 0) * var(--bt-delay, 200ms) + var(--bt-start-delay, 0ms));
+}
+
+@keyframes bt-reveal {
+  0% {
+    filter: blur(var(--bt-blur-from));
+    opacity: 0;
+    transform: translateY(var(--bt-y-from));
+  }
+  50% {
+    filter: blur(var(--bt-blur-mid));
+    opacity: 0.5;
+    transform: translateY(var(--bt-y-mid));
+  }
+  100% {
+    filter: blur(0);
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Mobile: lighter motion ──────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  :host {
+    --bt-blur-from: 6px;
+    --bt-blur-mid:  3px;
+    --bt-y-from:   -24px;
+    --bt-y-mid:     4px;
+  }
+
+  :host(.bt-dir-bottom) {
+    --bt-y-from:  24px;
+    --bt-y-mid:  -4px;
+  }
+}
+
+/* ── Reduced motion: skip animation entirely ─────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .bt-seg {
+    filter: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    animation: none !important;
+  }
+}

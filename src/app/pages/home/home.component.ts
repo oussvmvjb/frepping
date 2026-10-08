@@ -36,6 +36,10 @@ export class HomeComponent implements OnInit, OnDestroy {
   // Favorites (localStorage, presentation only)
   favorites: { [productId: string]: boolean } = {};
 
+  // ── Veil / mobile state ──────────────────────────────────────────────────
+  veilFailed = false;
+  isMobile   = typeof window !== 'undefined' && window.innerWidth <= 768;
+
   // Hardcoded static content (not connected to backend — kept as-is)
   collections = [
     { id: 'street-essentials', name: 'Street Essentials', image: 'assets/collections/essentials.jpg', description: 'Core pieces for everyday wear', itemCount: 45, startingPrice: 39.99 },
@@ -80,7 +84,8 @@ export class HomeComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (res) => {
           this.featuredProducts = res.items;
-          this.featuredProduct = res.items[0] ?? null;
+          this.featuredProduct  = res.items[0] ?? null;
+          this.veilFailed       = false;   // reset when product changes
         },
         error: (err: Error) => {
           this.featuredError = err.message;
@@ -135,7 +140,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   // ── Helpers (shared utilities from model) ────────────────────────────────
 
   getProductImage(product: ApiProduct): string {
-    return getPrimaryImage(product) ?? 'assets/placeholder.jpg';
+    return getPrimaryImage(product) ?? 'assets/images/home/67d42860e79a4.png';
   }
 
   getDiscountPercent(product: ApiProduct): number {
@@ -221,5 +226,6 @@ export class HomeComponent implements OnInit, OnDestroy {
   // ── Slider (REMOVED — FlexCarousel is self-contained) ────────────────────
   // startSlider / nextSlide / prevSlide / goToSlide removed
 
-  @HostListener('window:resize') onResize(): void {}
+  @HostListener('window:resize')
+  onResize(): void { this.isMobile = window.innerWidth <= 768; }
 }
