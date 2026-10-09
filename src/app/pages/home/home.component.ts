@@ -8,6 +8,7 @@ import { CartService } from '../../services/cart.service';
 import { ApiProduct, getPrimaryImage, getDiscountPercent, isProductInStock } from '../../models/api-product.model';
 import { Category } from '../../models/category.model';
 import { FlexCarouselItem } from '../../components/flex-carousel/flex-carousel.component';
+import { DriftItem } from '../../shared/drift-wall/drift-wall.component';
 
 @Component({
   selector: 'app-home',
@@ -39,6 +40,27 @@ export class HomeComponent implements OnInit, OnDestroy {
   // ── Veil / mobile state ──────────────────────────────────────────────────
   veilFailed = false;
   isMobile   = typeof window !== 'undefined' && window.innerWidth <= 768;
+
+  // ── DriftWall ────────────────────────────────────────────────────────────
+  /** Memoized DriftItem array – rebuilt once after products load. */
+  private _driftItems: DriftItem[] = [];
+  private _driftItemsSrc: ApiProduct[] = [];
+
+  get driftItems(): DriftItem[] { return this._driftItems; }
+
+  get favoriteIdsSet(): Set<string> {
+    return new Set(Object.keys(this.favorites).filter(k => this.favorites[k]));
+  }
+
+  get driftColumns(): number {
+    const w = typeof window !== 'undefined' ? window.innerWidth : 1400;
+    if (w >= 1200) return 5;
+    if (w >= 768)  return 3;
+    return 2;
+  }
+
+  get driftTileWidth(): number  { return this.isMobile ? 150 : 200; }
+  get driftTileHeight(): number { return this.isMobile ? 200 : 270; }
 
   // Hardcoded static content (not connected to backend — kept as-is)
   collections = [
@@ -83,9 +105,28 @@ export class HomeComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$), finalize(() => (this.isLoadingFeatured = false)))
       .subscribe({
         next: (res) => {
-          this.featuredProducts = res.items;
-          this.featuredProduct  = res.items[0] ?? null;
-          this.veilFailed       = false;   // reset when product changes
+          if (res.items.length > 0) {
+            // Normal path – backend has is_featured=true products
+            this.featuredProducts = res.items;
+            this.featuredProduct  = res.items[0] ?? null;
+            this.veilFailed       = false;
+            this._buildDriftItems();
+          } else {
+            // Fallback – no product is marked is_featured in the DB yet;
+            // show the most recent products so the wall is never empty.
+            this.productService
+              .getRecentProducts(8)
+              .pipe(takeUntil(this.destroy$))
+              .subscribe({
+                next: (recent) => {
+                  this.featuredProducts = recent.items;
+                  this.featuredProduct  = recent.items[0] ?? null;
+                  this.veilFailed       = false;
+                  this._buildDriftItems();
+                },
+                error: (err: Error) => { this.featuredError = err.message; },
+              });
+          }
         },
         error: (err: Error) => {
           this.featuredError = err.message;
@@ -135,6 +176,26 @@ export class HomeComponent implements OnInit, OnDestroy {
       `<text x='60' y='105' font-family='sans-serif' font-size='10' fill='#888888' text-anchor='middle' letter-spacing='2'>${name.toUpperCase().slice(0, 12)}</text>` +
       `</svg>`;
     return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+  }
+
+  // ── DriftWall helpers ────────────────────────────────────────────────────
+
+  private _buildDriftItems(): void {
+    const prods = this.featuredProducts;
+    if (prods === this._driftItemsSrc) return; // no change
+    this._driftItemsSrc = prods;
+    this._driftItems = prods.map((p, i) => ({
+      id:             p.id,
+      image:          this.getProductImage(p),
+      title:          p.name,
+      price:          Number(p.price),
+      comparePrice:   p.compare_price ? Number(p.compare_price) : null,
+      category:       this.getCategoryName(p),
+      inStock:        this.isInStock(p),
+      discountPercent: this.getDiscountPercent(p),
+      rank:           i + 1,
+      raw:            p,
+    }));
   }
 
   // ── Helpers (shared utilities from model) ────────────────────────────────

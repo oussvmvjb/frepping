@@ -1,0 +1,343 @@
+/* ═══════════════════════════════════════════════════════════════════
+   DriftWall – 3D drifting product wall
+   Ported from React Bits DriftWall, adapted for Frepping's dark theme
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── Host ─────────────────────────────────────────────────────────── */
+:host {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* ── Container ────────────────────────────────────────────────────── */
+.dw-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+  cursor: default;
+}
+
+/* ── 3D Plane (perspective + parallax target) ─────────────────────── */
+.dw-plane {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  will-change: transform;
+  /* initial perspective, overridden inline each frame */
+  transform: perspective(var(--dw-persp, 1200px))
+             rotateX(0deg) rotateY(0deg) rotateZ(0deg);
+  transition: none;
+}
+
+/* ── Inner (columns container) ────────────────────────────────────── */
+.dw-inner {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: var(--dw-gap, 18px);
+  pointer-events: none; /* tiles get pointer-events individually */
+  padding: 0 8px;
+}
+
+/* ── Column ───────────────────────────────────────────────────────── */
+.dw-column {
+  flex: 0 0 var(--dw-tw, 200px);
+  width: var(--dw-tw, 200px);
+  overflow: visible;
+  position: relative;
+}
+
+/* ── Track (scrolling strip, direct DOM write per frame) ─────────── */
+.dw-track {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dw-gap, 18px);
+  will-change: transform;
+}
+
+/* ── Tile ─────────────────────────────────────────────────────────── */
+.dw-tile {
+  position: relative;
+  width: var(--dw-tw, 200px);
+  height: var(--dw-th, 260px);
+  border-radius: var(--dw-radius, 14px);
+  overflow: hidden;
+  flex-shrink: 0;
+  pointer-events: auto;  /* re-enable over inner's none */
+  cursor: pointer;
+  outline: none;
+  background: #1a1a1a;
+  transform-style: preserve-3d;
+  transition:
+    transform 0.35s cubic-bezier(0.22, 0.68, 0, 1.2),
+    box-shadow 0.35s ease,
+    filter 0.3s ease;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
+}
+
+.dw-tile:focus-visible {
+  outline: 2px solid #39ff14;
+  outline-offset: 3px;
+}
+
+/* Active / hovered state: lift + glow */
+.dw-tile--active {
+  transform: translateZ(var(--dw-lift, 64px)) scale(1.05);
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.7),
+    0 0 0 2px rgba(57, 255, 20, 0.55),
+    0 0 40px rgba(57, 255, 20, 0.18);
+  z-index: 10;
+}
+
+.dw-tile--grayscale {
+  filter: grayscale(100%);
+}
+
+/* ── Product image ────────────────────────────────────────────────── */
+.dw-tile__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease, opacity 0.3s ease;
+  pointer-events: none;
+  user-select: none;
+}
+
+.dw-tile--active .dw-tile__img {
+  transform: scale(1.06);
+}
+
+/* ── Dark veil (dims the non-active tiles) ────────────────────────── */
+.dw-tile__veil {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(6, 0, 16, 0.15) 0%,
+    rgba(6, 0, 16, 0.55) 100%
+  );
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.dw-tile--active .dw-tile__veil {
+  opacity: calc(1 - var(--dw-fade, 0.6));
+}
+
+/* Non-active tiles are dimmed by `dim` */
+.dw-inner:hover .dw-tile:not(.dw-tile--active) .dw-tile__img {
+  opacity: var(--dw-dim, 0.55);
+  filter: brightness(0.65);
+}
+
+/* ── Badges ───────────────────────────────────────────────────────── */
+.dw-tile__badges {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.dw-badge {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  padding: 3px 7px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.dw-badge--trending {
+  background: linear-gradient(90deg, #39ff14, #00ffaa);
+  color: #000;
+}
+
+.dw-badge--rank {
+  background: rgba(57, 255, 20, 0.2);
+  border: 1px solid rgba(57, 255, 20, 0.5);
+  color: #39ff14;
+}
+
+.dw-badge--sale {
+  background: rgba(255, 50, 80, 0.85);
+  color: #fff;
+}
+
+/* ── Info layer (hover reveal) ────────────────────────────────────── */
+.dw-tile__info {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 12px;
+  background: linear-gradient(
+    0deg,
+    rgba(6, 0, 16, 0.93) 0%,
+    rgba(6, 0, 16, 0.6) 55%,
+    transparent 100%
+  );
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.28s ease;
+  z-index: 4;
+}
+
+.dw-tile__info--visible {
+  opacity: 1;
+  pointer-events: none; /* buttons inside handle their own pointer-events */
+}
+
+.dw-tile__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-bottom: 8px;
+}
+
+.dw-tile__category {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: #39ff14;
+}
+
+.dw-tile__name {
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+  line-height: 1.3;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.dw-tile__price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  margin-top: 2px;
+}
+
+.dw-tile__price {
+  font-size: 14px;
+  font-weight: 700;
+  color: #39ff14;
+}
+
+.dw-tile__compare {
+  font-size: 11px;
+  color: #888;
+  text-decoration: line-through;
+}
+
+.dw-tile__stock {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #ff4466;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.dw-tile__stock--in {
+  color: #39ff14;
+}
+
+/* ── Action buttons ───────────────────────────────────────────────── */
+.dw-tile__actions {
+  display: flex;
+  gap: 6px;
+  pointer-events: auto; /* re-enable over info's none */
+}
+
+.dw-action {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background 0.2s ease, transform 0.15s ease, opacity 0.2s ease;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  backdrop-filter: blur(6px);
+}
+
+.dw-action:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.dw-action:not(:disabled):hover {
+  transform: translateY(-2px);
+}
+
+.dw-action--cart {
+  background: rgba(57, 255, 20, 0.2);
+  color: #39ff14;
+  border: 1px solid rgba(57, 255, 20, 0.35);
+}
+.dw-action--cart:not(:disabled):hover {
+  background: rgba(57, 255, 20, 0.35);
+}
+
+.dw-action--tryon {
+  background: rgba(167, 139, 250, 0.2);
+  color: #a78bfa;
+  border: 1px solid rgba(167, 139, 250, 0.35);
+}
+.dw-action--tryon:hover {
+  background: rgba(167, 139, 250, 0.35);
+}
+
+.dw-action--fav {
+  background: rgba(255, 255, 255, 0.08);
+  color: #888;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+.dw-action--fav:hover {
+  color: #ff4466;
+}
+.dw-action--fav-active {
+  color: #ff4466 !important;
+  background: rgba(255, 68, 102, 0.2) !important;
+  border-color: rgba(255, 68, 102, 0.35) !important;
+}
+
+/* ── Empty state ──────────────────────────────────────────────────── */
+.dw-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #555;
+}
+.dw-empty i { font-size: 40px; }
+.dw-empty p  { font-size: 14px; letter-spacing: 1px; text-transform: uppercase; }

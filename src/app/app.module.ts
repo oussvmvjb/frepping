@@ -11,6 +11,7 @@ import { AppComponent } from './app.component';
 import { HomeComponent } from './pages/home/home.component';
 import { BlurTextComponent } from './shared/blur-text/blur-text.component';
 import { DitherVeilComponent } from './shared/dither-veil/dither-veil.component';
+import { DriftWallComponent } from './shared/drift-wall/drift-wall.component';
 import { ShopComponent } from './pages/shop/shop.component';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { IntroComponent } from './components/intro/intro.component';
@@ -52,7 +53,8 @@ import { SellerDashboardComponent } from './pages/seller/seller-dashboard/seller
     FlexCarouselComponent,
     SidebarNavComponent,
     BlurTextComponent,
-    DitherVeilComponent
+    DitherVeilComponent,
+    DriftWallComponent
   ],
   providers: [
     { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true }

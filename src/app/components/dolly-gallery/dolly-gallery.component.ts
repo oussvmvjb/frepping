@@ -113,6 +113,7 @@ export class DollyGalleryComponent
   private lastFrameTime = 0;
   private needsElCache = true;
   private cachedItemCount = 0;
+  private eventsBound = false;
 
   constructor(
     private el: ElementRef<HTMLElement>,
@@ -138,7 +139,13 @@ export class DollyGalleryComponent
       this.cachedItemCount = currentCount;
       this.needsElCache = false;
 
-      if (!this.containerEl) this.setupContainer();
+      // cacheElements() already sets this.containerEl, so the old
+      // "if (!this.containerEl) setupContainer()" check was always false.
+      // Guard with eventsBound so we only bind once.
+      if (!this.eventsBound && this.containerEl) {
+        this.setupContainer();
+        this.eventsBound = true;
+      }
       if (!this.rafId && this.items.length > 0) this.startRaf();
     }
   }
@@ -543,13 +550,17 @@ export class DollyGalleryComponent
     const n = this.items.length;
     const maxScroll = (n - 1) * this.spacing;
 
-    // Check if at boundary to allow natural page scroll if user reaches edge
-    if (!this.infinite && n > 1) {
-      if (this.currentScroll <= 15 && stepDy > 0 && Math.abs(dy) > Math.abs(dx)) {
-        return; // Allow page scroll up
-      }
-      if (this.currentScroll >= maxScroll - 15 && stepDy < 0 && Math.abs(dy) > Math.abs(dx)) {
-        return; // Allow page scroll down
+    // At the first/last card hand the vertical swipe back to the page
+    // instead of just returning (which does nothing useful).
+    if (!this.infinite && n > 1 && Math.abs(dy) > Math.abs(dx)) {
+      const atStart = this.targetScroll <= 15 && stepDy > 0;
+      const atEnd   = this.targetScroll >= maxScroll - 15 && stepDy < 0;
+      if (atStart || atEnd) {
+        window.scrollBy(0, -stepDy);         // hand scroll to the page
+        this.dragStartY       = touch.clientY; // re-anchor so reversing doesn't jump
+        this.dragStartX       = touch.clientX;
+        this.dragScrollStart  = this.targetScroll;
+        return;
       }
     }
 

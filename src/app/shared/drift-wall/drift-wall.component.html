@@ -1,0 +1,109 @@
+<div
+  #containerRef
+  class="dw-container"
+  [style]="getCssVarString()"
+  (pointermove)="onPointerMove($event)"
+  (pointerleave)="onPointerLeave()">
+
+  <div #planeRef class="dw-plane">
+    <div class="dw-inner">
+
+      <div
+        *ngFor="let col of columnsData; trackBy: trackByCol"
+        class="dw-column"
+        [attr.data-col]="col.index">
+
+        <!-- ONE track per column; transform is written directly by rAF loop -->
+        <div class="dw-track">
+          <!-- Two copies for seamless looping -->
+          <ng-container *ngFor="let copy of col.copies; trackBy: trackByCopy">
+            <div
+              *ngFor="let item of copy.items; trackBy: trackByItem"
+              class="dw-tile"
+              [class.dw-tile--active]="isActive(item)"
+              [class.dw-tile--grayscale]="grayscale && !isActive(item)"
+              [attr.data-tile-id]="item.id"
+              [attr.data-col]="col.index"
+              tabindex="0"
+              role="button"
+              [attr.aria-label]="item.title"
+              (mouseenter)="onTileEnter(item, col.index)"
+              (mouseleave)="onTileLeave($event)"
+              (click)="onTileClick($event, item)"
+              (focus)="onTileFocus(item)"
+              (blur)="onTileBlur()"
+              (keydown)="onTileKeydown($event, item)">
+
+              <!-- Product image -->
+              <img
+                class="dw-tile__img"
+                [src]="item.image"
+                [alt]="item.title"
+                loading="lazy" />
+
+              <!-- Dark veil overlay (fades on active) -->
+              <div class="dw-tile__veil"></div>
+
+              <!-- Badges (top-left) -->
+              <div class="dw-tile__badges">
+                <span *ngIf="item.rank && item.rank <= 3" class="dw-badge dw-badge--trending">TRENDING</span>
+                <span *ngIf="item.rank && item.rank <= 3" class="dw-badge dw-badge--rank">#{{ item.rank }}</span>
+                <span *ngIf="item.discountPercent > 0" class="dw-badge dw-badge--sale">-{{ item.discountPercent }}%</span>
+              </div>
+
+              <!-- Info layer: shown on hover/focus -->
+              <div class="dw-tile__info" [class.dw-tile__info--visible]="isActive(item)">
+                <div class="dw-tile__meta">
+                  <span class="dw-tile__category">{{ item.category }}</span>
+                  <h4 class="dw-tile__name">{{ item.title }}</h4>
+                  <div class="dw-tile__price-row">
+                    <span class="dw-tile__price">${{ item.price | number:'1.2-2' }}</span>
+                    <span *ngIf="item.comparePrice" class="dw-tile__compare">${{ item.comparePrice | number:'1.2-2' }}</span>
+                  </div>
+                  <span class="dw-tile__stock" [class.dw-tile__stock--in]="item.inStock">
+                    <i class="fas" [class.fa-check-circle]="item.inStock" [class.fa-times-circle]="!item.inStock"></i>
+                    {{ item.inStock ? 'IN STOCK' : 'OUT OF STOCK' }}
+                  </span>
+                </div>
+
+                <!-- Action buttons — pointer-events:auto is set on .dw-tile__actions in CSS -->
+                <div class="dw-tile__actions">
+                  <button
+                    class="dw-action dw-action--cart"
+                    [disabled]="!item.inStock"
+                    (click)="onAddToCart($event, item)"
+                    title="Add to cart">
+                    <i class="fas fa-shopping-bag"></i>
+                  </button>
+                  <button
+                    class="dw-action dw-action--tryon"
+                    (click)="onTryOn($event, item)"
+                    title="Try on">
+                    <i class="fas fa-user-check"></i>
+                  </button>
+                  <button
+                    class="dw-action dw-action--fav"
+                    [class.dw-action--fav-active]="isFav(item)"
+                    (click)="onToggleFav($event, item)"
+                    title="Favourite">
+                    <i class="fas fa-heart"></i>
+                  </button>
+                </div>
+              </div>
+
+            </div>
+          </ng-container>
+        </div><!-- /.dw-track -->
+
+      </div><!-- /.dw-column -->
+
+    </div><!-- /.dw-inner -->
+  </div><!-- /.dw-plane -->
+
+  <!-- Empty state -->
+  <div *ngIf="items.length === 0" class="dw-empty">
+    <i class="fas fa-tshirt"></i>
+    <p>No products to display</p>
+  </div>
+
+</div>

@@ -328,89 +328,33 @@
       <button class="btn-view-all" (click)="goToShop()">BROWSE ALL →</button>
     </div>
 
-    <div class="products-grid-home" *ngIf="!isLoadingFeatured && !featuredError && featuredProducts.length > 0">
-      <div *ngFor="let product of featuredProducts; let i = index"
-           class="product-card-home"
-           [class.featured]="i === 0"
-           (click)="goToProduct(product.id)">
-
-        <div class="product-rank" *ngIf="i < 3">
-          <span class="rank-number">#{{ i + 1 }}</span>
-          <div class="rank-glow"></div>
-        </div>
-
-        <div class="product-image-home">
-          <div class="product-badges-home">
-            <span class="badge hot" *ngIf="i < 3">TRENDING</span>
-            <span class="badge sale" *ngIf="getDiscountPercent(product) > 0">-{{ getDiscountPercent(product) }}%</span>
-          </div>
-
-          <div class="image-container-home">
-            <img *ngIf="getProductImage(product)"
-                 [src]="getProductImage(product)"
-                 [alt]="product.name"
-                 class="product-img-home">
-            <div *ngIf="!getProductImage(product)" class="image-placeholder-home">
-              <i class="fas fa-tshirt"></i>
-            </div>
-          </div>
-
-          <div class="quick-actions-home">
-            <button class="quick-action-btn"
-                    (click)="$event.stopPropagation(); addToCart(product)"
-                    [disabled]="!isInStock(product)">
-              <i class="fas fa-shopping-bag"></i>
-            </button>
-            <button class="quick-action-btn"
-                    (click)="$event.stopPropagation(); tryOnProduct(product)">
-              <i class="fas fa-user-check"></i>
-            </button>
-            <button class="quick-action-btn"
-                    (click)="$event.stopPropagation(); toggleFavorite(product.id)">
-              <i class="fas fa-heart" [class.active]="isFavorite(product.id)"></i>
-            </button>
-          </div>
-
-          <div class="stock-status-home" [class.in-stock]="isInStock(product)">
-            <i class="fas" [class.fa-check-circle]="isInStock(product)" [class.fa-times-circle]="!isInStock(product)"></i>
-            <span>{{ isInStock(product) ? 'IN STOCK' : 'OUT OF STOCK' }}</span>
-          </div>
-        </div>
-
-        <div class="product-info-home">
-          <div class="product-meta-home">
-            <span class="category">{{ getCategoryName(product) }}</span>
-          </div>
-          <h3 class="product-name-home">{{ product.name }}</h3>
-          <p class="product-description-home">{{ (product.description || '') | slice:0:80 }}...</p>
-
-          <div class="product-specs-home" *ngIf="product.material">
-            <div class="spec-home">
-              <i class="fas fa-tag"></i>
-              <span>{{ product.material }}</span>
-            </div>
-          </div>
-
-          <div class="product-footer-home">
-            <div class="price-home">
-              <span class="current">${{ (+product.price).toFixed(2) }}</span>
-              <span class="original" *ngIf="product.compare_price">
-                ${{ (+product.compare_price).toFixed(2) }}
-              </span>
-            </div>
-            <div class="actions-home">
-              <button class="btn-quick-view" (click)="$event.stopPropagation(); goToProduct(product.id)">
-                <i class="fas fa-eye"></i>
-              </button>
-              <button class="btn-quick-add"
-                      (click)="$event.stopPropagation(); addToCart(product)"
-                      [disabled]="!isInStock(product)">
-                <i class="fas fa-plus"></i>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+    <!-- DriftWall – 3D drifting product tiles -->
+    <div class="drift-wrap"
+         *ngIf="!isLoadingFeatured && !featuredError && featuredProducts.length > 0">
+      <app-drift-wall
+        [items]="driftItems"
+        [columns]="driftColumns"
+        [tileWidth]="driftTileWidth"
+        [tileHeight]="driftTileHeight"
+        [favoriteIds]="favoriteIdsSet"
+        [speed]="42"
+        [variance]="0.45"
+        [parallax]="0.6"
+        [lift]="64"
+        [fade]="0.6"
+        [dim]="0.55"
+        [tilt]="16"
+        [turn]="-14"
+        [perspective]="1200"
+        [depth]="120"
+        [gap]="18"
+        [radius]="14"
+        overlayColor="#060010"
+        (tileClick)="goToProduct($event.id.toString())"
+        (addToCart)="addToCart($event.raw)"
+        (tryOn)="tryOnProduct($event.raw)"
+        (toggleFav)="toggleFavorite($event.id.toString())">
+      </app-drift-wall>
     </div>
   </section>
 
