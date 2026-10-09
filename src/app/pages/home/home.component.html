@@ -105,7 +105,7 @@
                 <!-- DitherVeil filling the full product box -->
                 <app-dither-veil
                   *ngIf="!veilFailed"
-                  [src]="getProductImage(featuredProduct)"
+                  src="assets/images/home/67d42860e79a4.png"
                   pattern="floyd"
                   [pixelSize]="isMobile ? 3 : 2"
                   [levels]="2"
@@ -127,7 +127,7 @@
                 </app-dither-veil>
                 <!-- Fallback standard image if WebGL fails -->
                 <img *ngIf="veilFailed"
-                     [src]="getProductImage(featuredProduct)"
+                     src="assets/images/home/67d42860e79a4.png"
                      [alt]="featuredProduct.name"
                      class="featured-img">
                 <div class="product-tags">
