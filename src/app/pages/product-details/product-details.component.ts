@@ -34,6 +34,7 @@ export class ProductDetailsComponent implements OnInit {
   has3DModel: boolean = false;
   show3DView: boolean = false;
   model3DUrl: string | null = null;
+  etherColors: string[] = ['#5227FF', '#FF9FFC', '#B497CF'];
 
   @ViewChild(ModelViewerComponent) modelViewer!: ModelViewerComponent;
 

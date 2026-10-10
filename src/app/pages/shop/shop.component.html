@@ -5,14 +5,8 @@
     <div class="search-container">
       <div class="search-bar">
         <i class="fas fa-search"></i>
-        <input
-          type="text"
-          [(ngModel)]="searchQuery"
-          (input)="onSearchInput()"
-          (keyup.enter)="onSearch()"
-          placeholder="SEARCH STREETWEAR..."
-          class="search-input"
-        />
+        <input type="text" [(ngModel)]="searchQuery" (input)="onSearchInput()" (keyup.enter)="onSearch()"
+          placeholder="SEARCH STREETWEAR..." class="search-input" />
         <button class="search-btn" (click)="onSearch()">GO</button>
       </div>
     </div>
@@ -24,47 +18,28 @@
       <div class="filter-section">
         <h3 class="filter-title">CATEGORIES</h3>
 
-        <div
-          class="category-marquee"
-          (touchstart)="marqueePaused = true"
-          (touchend)="marqueePaused = false"
-          [class.paused]="marqueePaused"
-        >
+        <div class="category-marquee" (touchstart)="marqueePaused = true" (touchend)="marqueePaused = false"
+          [class.paused]="marqueePaused">
           <div class="category-filters category-track">
             <!-- SET 1 -->
-            <button
-              [class.active]="selectedCategoryId === null"
-              (click)="onCategorySelect(null)"
-              class="category-filter-btn"
-            >
+            <button [class.active]="selectedCategoryId === null" (click)="onCategorySelect(null)"
+              class="category-filter-btn">
               <i class="fas fa-th-large"></i> ALL
             </button>
-            <button
-              *ngFor="let category of categories"
-              [class.active]="selectedCategoryId === category.id"
-              (click)="onCategorySelect(category.id)"
-              class="category-filter-btn"
-            >
+            <button *ngFor="let category of categories" [class.active]="selectedCategoryId === category.id"
+              (click)="onCategorySelect(category.id)" class="category-filter-btn">
               <i class="fas fa-tag"></i> {{ category.name }}
             </button>
 
             <!-- SET 2 (duplicate for seamless loop, mobile only, hidden from a11y) -->
             <ng-container *ngIf="isMobile">
-              <button
-                aria-hidden="true" tabindex="-1"
-                [class.active]="selectedCategoryId === null"
-                (click)="onCategorySelect(null)"
-                class="category-filter-btn clone"
-              >
+              <button aria-hidden="true" tabindex="-1" [class.active]="selectedCategoryId === null"
+                (click)="onCategorySelect(null)" class="category-filter-btn clone">
                 <i class="fas fa-th-large"></i> ALL
               </button>
-              <button
-                *ngFor="let category of categories"
-                aria-hidden="true" tabindex="-1"
-                [class.active]="selectedCategoryId === category.id"
-                (click)="onCategorySelect(category.id)"
-                class="category-filter-btn clone"
-              >
+              <button *ngFor="let category of categories" aria-hidden="true" tabindex="-1"
+                [class.active]="selectedCategoryId === category.id" (click)="onCategorySelect(category.id)"
+                class="category-filter-btn clone">
                 <i class="fas fa-tag"></i> {{ category.name }}
               </button>
             </ng-container>
@@ -101,25 +76,13 @@
       <div class="modern-header-right">
         <span class="modern-count">{{ totalProducts }} ITEMS</span>
         <div class="modern-view-controls">
-          <button
-            class="modern-view-btn"
-            [class.active]="gridSize === 'small'"
-            (click)="gridSize = 'small'"
-          >
+          <button class="modern-view-btn" [class.active]="gridSize === 'small'" (click)="gridSize = 'small'">
             <i class="fas fa-th"></i>
           </button>
-          <button
-            class="modern-view-btn"
-            [class.active]="gridSize === 'medium'"
-            (click)="gridSize = 'medium'"
-          >
+          <button class="modern-view-btn" [class.active]="gridSize === 'medium'" (click)="gridSize = 'medium'">
             <i class="fas fa-th-large"></i>
           </button>
-          <button
-            class="modern-view-btn"
-            [class.active]="gridSize === 'large'"
-            (click)="gridSize = 'large'"
-          >
+          <button class="modern-view-btn" [class.active]="gridSize === 'large'" (click)="gridSize = 'large'">
             <i class="fas fa-square"></i>
           </button>
         </div>
@@ -153,33 +116,31 @@
     </div>
 
     <!-- MAIN PRODUCT GRID -->
-    <div
-      *ngIf="!isLoading && !errorMessage && filteredProducts.length > 0"
-      class="products-modern-grid"
-      [ngClass]="'grid-' + gridSize"
-    >
-      <div
-        *ngFor="let product of filteredProducts"
-        class="modern-product"
-        (click)="onProductClick(product)"
-      >
+    <div *ngIf="!isLoading && !errorMessage && filteredProducts.length > 0" class="products-modern-grid"
+      [ngClass]="'grid-' + gridSize">
+      <div *ngFor="let product of filteredProducts" class="modern-product" (click)="onProductClick(product)">
         <!-- Product Image Section -->
         <div class="modern-product-image">
-          <!-- GTA Intro Panels -->
-          <div class="gta-panels">
-            <div class="gta-panel panel-1"></div>
-            <div class="gta-panel panel-2"></div>
-            <div class="gta-panel panel-3"></div>
-          </div>
+          <app-liquid-ether
+            class="product-ether-canvas"
+            [colors]="etherColors"
+            [mouseForce]="18"
+            [cursorSize]="80"
+            [isViscous]="true"
+            [viscous]="30"
+            [iterationsViscous]="24"
+            [iterationsPoisson]="24"
+            [resolution]="0.35"
+            [isBounce]="false"
+            [autoDemo]="true"
+            [autoSpeed]="0.4"
+            [autoIntensity]="1.8"
+          ></app-liquid-ether>
 
           <div class="product-img-container" (click)="goToProduct(product.id)">
             <ng-container *ngIf="product.images && product.images.length > 0; else placeholder">
-              <img
-                [src]="getProductImage(product)"
-                [alt]="product.name"
-                class="product-img"
-                (error)="handleImageError($event)"
-              />
+              <img [src]="getProductImage(product)" [alt]="product.name" class="product-img"
+                (error)="handleImageError($event)" />
             </ng-container>
 
             <ng-template #placeholder>
@@ -205,18 +166,11 @@
 
           <!-- Quick Actions -->
           <div class="modern-quick-actions">
-            <button
-              class="modern-quick-btn"
-              (click)="$event.stopPropagation(); tryOnProduct(product)"
-              title="Try On"
-            >
+            <button class="modern-quick-btn" (click)="$event.stopPropagation(); tryOnProduct(product)" title="Try On">
               <i class="fas fa-user"></i>
             </button>
-            <button
-              class="modern-quick-btn"
-              (click)="$event.stopPropagation(); toggleFavorite(product.id)"
-              title="Favorite"
-            >
+            <button class="modern-quick-btn" (click)="$event.stopPropagation(); toggleFavorite(product.id)"
+              title="Favorite">
               <i [class]="isFavorite(product.id) ? 'fas fa-heart text-danger' : 'far fa-heart'"></i>
             </button>
           </div>
@@ -234,21 +188,14 @@
             <div class="modern-price-section">
               <div class="modern-price">
                 <span class="modern-current">${{ product.price | number : '1.2-2' }}</span>
-                <span
-                  class="modern-original"
-                  *ngIf="product.compare_price && product.compare_price > product.price"
-                >
+                <span class="modern-original" *ngIf="product.compare_price && product.compare_price > product.price">
                   ${{ product.compare_price | number : '1.2-2' }}
                 </span>
               </div>
             </div>
 
-            <button
-              class="modern-add-btn"
-              (click)="$event.stopPropagation(); addToCart(product)"
-              [disabled]="!isInStock(product)"
-              [title]="isInStock(product) ? 'Add to Cart' : 'Out of Stock'"
-            >
+            <button class="modern-add-btn" (click)="$event.stopPropagation(); addToCart(product)"
+              [disabled]="!isInStock(product)" [title]="isInStock(product) ? 'Add to Cart' : 'Out of Stock'">
               <i class="fas fa-plus"></i>
             </button>
           </div>
@@ -258,31 +205,19 @@
 
     <!-- PAGINATION -->
     <div *ngIf="!isLoading && totalPages > 1" class="shop-pagination">
-      <button
-        class="pagination-nav-btn"
-        [disabled]="currentPage === 1"
-        (click)="goToPage(currentPage - 1)"
-      >
+      <button class="pagination-nav-btn" [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)">
         <i class="fas fa-chevron-left"></i>
         <span class="pagination-nav-text"> PREV</span>
       </button>
 
       <div class="pagination-numbers">
-        <button
-          *ngFor="let p of pages"
-          class="pagination-num-btn"
-          [class.active]="currentPage === p"
-          (click)="goToPage(p)"
-        >
+        <button *ngFor="let p of pages" class="pagination-num-btn" [class.active]="currentPage === p"
+          (click)="goToPage(p)">
           {{ p }}
         </button>
       </div>
 
-      <button
-        class="pagination-nav-btn"
-        [disabled]="currentPage === totalPages"
-        (click)="goToPage(currentPage + 1)"
-      >
+      <button class="pagination-nav-btn" [disabled]="currentPage === totalPages" (click)="goToPage(currentPage + 1)">
         <span class="pagination-nav-text">NEXT </span>
         <i class="fas fa-chevron-right"></i>
       </button>

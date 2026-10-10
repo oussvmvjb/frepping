@@ -62,11 +62,7 @@
 
       <!-- PRODUCTS GRID -->
       <div *ngIf="!loadingProducts && products.length > 0" class="products-grid">
-        <div
-          *ngFor="let product of products"
-          class="product-card"
-          [routerLink]="['/product', product.id]"
-        >
+        <div *ngFor="let product of products" class="product-card" [routerLink]="['/product', product.id]">
           <div class="card-image-wrap">
             <img [src]="getProductImage(product)" [alt]="product.name" />
             <span *ngIf="getDiscount(product) > 0" class="discount-badge">
@@ -86,11 +82,7 @@
                 ${{ product.compare_price | number : '1.2-2' }}
               </span>
             </div>
-            <button
-              class="add-to-cart-btn"
-              [disabled]="!isInStock(product)"
-              (click)="addToCart(product, $event)"
-            >
+            <button class="add-to-cart-btn" [disabled]="!isInStock(product)" (click)="addToCart(product, $event)">
               {{ isInStock(product) ? 'ADD TO CART' : 'SOLD OUT' }}
             </button>
           </div>

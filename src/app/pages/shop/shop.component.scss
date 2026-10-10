@@ -82,7 +82,8 @@
   min-height: 520px;
   max-width: 100%;
   overflow: hidden;
-  position: relative;  box-shadow: 2px 2px 0 #000;
+  position: relative;
+  box-shadow: 2px 2px 0 #000;
 }
 
 .product-details-style .product-content {
@@ -90,9 +91,10 @@
   flex-direction: column;
   gap: 0;
   padding: 0;
-  min-height: 400px;flex: 1 1 50%;
+  min-height: 400px;
+  flex: 1 1 50%;
 }
-  
+
 .product-details-style .product-gallery {
   width: 100%;
   background: #000;
@@ -101,10 +103,11 @@
   justify-content: center;
   min-width: 0;
   min-height: 260px;
-  padding: 0;font-family: 'Oswald', sans-serif;
+  padding: 0;
+  font-family: 'Oswald', sans-serif;
   position: relative;
 }
-  
+
 .product-details-style .product-info-panel {
   width: 100%;
   padding: 18px 18px 18px 18px;
@@ -114,18 +117,21 @@
   background: #fff;
   min-width: 0;
   min-height: 180px;
-  border-top: 2px solid #eee; letter-spacing: 1.5px;
+  border-top: 2px solid #eee;
+  letter-spacing: 1.5px;
 }
- 
+
 /* Add spacing between image and info */
-.product-details-style .product-gallery + .product-info-panel {
+.product-details-style .product-gallery+.product-info-panel {
   margin-top: 0;
 
 }
+
 @media (max-width: 900px) {
   .product-details-style .product-content {
     flex-direction: column;
   }
+
   .product-details-style .product-gallery,
   .product-details-style .product-info-panel {
     min-width: 0;
@@ -133,29 +139,34 @@
     min-height: 160px;
     padding: 10px 8px;
   }
+
   .product-details-style .model-viewer-wrapper,
   .product-details-style app-model-viewer {
     height: 180px !important;
   }
 }
+
 .product-details-style .product-meta {
   display: flex;
   align-items: center;
   gap: 18px;
   margin-bottom: 10px;
 }
+
 .product-details-style .price-tag {
   color: #000;
   font-size: 20px;
   font-family: 'Street', 'Pricedown', sans-serif;
   font-weight: 900;
 }
+
 .product-details-style .original-price {
   color: #777;
   font-size: 15px;
   text-decoration: line-through;
   margin-left: 8px;
 }
+
 .product-details-style .rating {
   color: #ff9900;
   font-size: 15px;
@@ -163,30 +174,36 @@
   align-items: center;
   gap: 3px;
 }
+
 .product-details-style .product-description {
   color: #222;
   font-size: 15px;
   margin: 10px 0 12px 0;
   font-family: 'Oswald', sans-serif;
 }
+
 .product-details-style .product-specs {
   margin-bottom: 10px;
 }
+
 .product-details-style .spec-item {
   font-size: 13px;
   color: #555;
   margin-bottom: 2px;
 }
+
 .product-details-style .spec-label {
   color: #39ff14;
   font-weight: 700;
   margin-right: 4px;
 }
+
 .product-details-style .action-buttons {
   display: flex;
   gap: 10px;
   margin-top: 10px;
 }
+
 .product-details-style .gta-btn {
   background: #39ff14;
   color: #000;
@@ -200,17 +217,20 @@
   font-weight: 900;
   box-shadow: 2px 2px 0 #000;
 }
+
 .product-details-style .gta-btn.secondary-btn {
   background: #fff;
   color: #39ff14;
   border: 2px solid #39ff14;
 }
+
 .product-details-style .gta-btn:disabled {
   background: #ccc;
   color: #777;
   border-color: #aaa;
   cursor: not-allowed;
 }
+
 .product-details-style .model-info {
   display: flex;
   align-items: flex-start;
@@ -221,17 +241,20 @@
   padding: 8px 12px;
   border-radius: 0 6px 6px 0;
 }
+
 .product-details-style .info-icon {
   color: #39ff14;
   font-size: 22px;
   margin-top: 2px;
 }
+
 .product-details-style .info-text h4 {
   margin: 0 0 2px 0;
   font-size: 15px;
   color: #222;
   font-family: 'Street', 'Pricedown', sans-serif;
 }
+
 .product-details-style .info-text p {
   margin: 0;
   font-size: 13px;
@@ -243,6 +266,7 @@
   .product-details-style .product-content {
     flex-direction: column;
   }
+
   .product-details-style .product-gallery,
   .product-details-style .product-info-panel {
     min-width: 0;
@@ -250,11 +274,13 @@
     min-height: 220px;
     padding: 10px 8px;
   }
+
   .product-details-style .model-viewer-wrapper,
   .product-details-style app-model-viewer {
     height: 220px !important;
   }
 }
+
 .shop {
   background: #0b0f0c;
   min-height: 100vh;
@@ -305,7 +331,8 @@
 
 .shop-title {
   font-family: 'Street', 'Pricedown', sans-serif;
-  font-size: clamp(32px, 8vw, 52px); /* Responsive title */
+  font-size: clamp(32px, 8vw, 52px);
+  /* Responsive title */
   color: #39ff14;
   text-align: center;
   letter-spacing: 4px;
@@ -750,7 +777,10 @@
   .products-modern-grid {
     gap: 12px;
   }
-  .grid-small, .grid-medium, .grid-large {
+
+  .grid-small,
+  .grid-medium,
+  .grid-large {
     grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
   }
 }
@@ -793,6 +823,18 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.product-ether-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: auto;
+  border-radius: 0;
+  overflow: hidden;
+  background: #080c09;
 }
 
 /* GTA Intro Panels (User implementation) */
@@ -921,6 +963,7 @@
   filter: drop-shadow(5px 5px 0 rgba(0, 0, 0, 0.3)) contrast(1.1);
   /* Attempt to remove white background from JPEGs using blend mode */
   mix-blend-mode: multiply;
+  pointer-events: none;
 }
 
 .product-img-placeholder {
@@ -1475,7 +1518,9 @@
     mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
     -webkit-mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
 
-    &::-webkit-scrollbar { display: none; }
+    &::-webkit-scrollbar {
+      display: none;
+    }
   }
 
   .category-track {
@@ -1513,7 +1558,7 @@
     }
 
     &.active {
-      box-shadow: 0 0 0 1px currentColor, 0 4px 14px rgba(0,0,0,.35);
+      box-shadow: 0 0 0 1px currentColor, 0 4px 14px rgba(0, 0, 0, .35);
     }
   }
 
@@ -1684,8 +1729,13 @@
 
 /* ── Marquee Keyframe ───────────────────────────────────────────────────── */
 @keyframes categoryScroll {
-  from { transform: translateX(0); }
-  to   { transform: translateX(-50%); }
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-50%);
+  }
 }
 
 /* Respect prefers-reduced-motion */
@@ -1693,4 +1743,4 @@
   .category-track {
     animation: none !important;
   }
-}
+}

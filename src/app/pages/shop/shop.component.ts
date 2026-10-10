@@ -43,6 +43,7 @@ export class ShopComponent implements OnInit, OnDestroy {
   favorites: { [id: string]: boolean } = {};
   isMobile = window.innerWidth <= 768;
   marqueePaused = false;
+  etherColors: string[] = ['#5227FF', '#FF9FFC', '#B497CF'];
 
   private searchSubject = new Subject<string>();
   private destroy$ = new Subject<void>();
