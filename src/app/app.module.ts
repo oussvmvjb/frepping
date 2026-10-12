@@ -26,6 +26,7 @@ import { LoginComponent } from './pages/login/login.component';
 import { RegisterComponent } from './pages/register/register.component';
 import { StorePageComponent } from './pages/store-page/store-page.component';
 import { SellerDashboardComponent } from './pages/seller/seller-dashboard/seller-dashboard.component';
+import { CheckoutComponent } from './pages/checkout/checkout.component';
 
 @NgModule({
   declarations: [
@@ -36,6 +37,7 @@ import { SellerDashboardComponent } from './pages/seller/seller-dashboard/seller
     ProductDetailsComponent,
     TryOnComponent,
     CartComponent,
+    CheckoutComponent,
     ProfileComponent,
     ModelViewerComponent,
     LoginComponent,

@@ -1,7 +1,9 @@
 import { Component, HostListener, OnInit, Renderer2, OnDestroy } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
-import { Subscription } from 'rxjs';
+import { of, Subscription } from 'rxjs';
+import { catchError, filter, switchMap } from 'rxjs/operators';
 import { AuthService } from './services/auth.service';
+import { CartService } from './services/cart.service';
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
@@ -42,13 +44,15 @@ export class AppComponent implements OnInit, OnDestroy {
 
   // Router subscription
   private routerSubscription: Subscription;
+  private cartSubscription?: Subscription;
 
   isSidebarHidden = false;
 
   constructor(
     private renderer: Renderer2,
     private router: Router,
-    public authService: AuthService
+    public authService: AuthService,
+    public cartService: CartService
   ) {
     // Subscribe to router events
     this.routerSubscription = this.router.events.subscribe(event => {
@@ -75,6 +79,10 @@ export class AppComponent implements OnInit, OnDestroy {
         this.showIntro = false;
       }
     }
+    this.cartSubscription = this.authService.isAuthenticated$.pipe(
+      filter(isAuthenticated => isAuthenticated),
+      switchMap(() => this.cartService.load().pipe(catchError(() => of(null))))
+    ).subscribe();
     this.authService.initAuth().subscribe();
     this.initializeGTAMode();
     this.startUIAnimations();
@@ -93,6 +101,7 @@ export class AppComponent implements OnInit, OnDestroy {
     if (this.routerSubscription) {
       this.routerSubscription.unsubscribe();
     }
+    this.cartSubscription?.unsubscribe();
 
     // Clean up audio
     if (this.ambienceAudio) {
@@ -104,7 +113,7 @@ export class AppComponent implements OnInit, OnDestroy {
   initializeAudio(): void {
     // Create audio element but don't play yet
     this.ambienceAudio = new Audio();
-    this.ambienceAudio.src = 'assets/sounds/gta-ambience.mp3';
+    this.ambienceAudio.src = 'assets/sounds/gta-ambience1.mp3';
     this.ambienceAudio.loop = true;
     this.ambienceAudio.volume = 0.1;
     this.ambienceAudio.preload = 'auto';
@@ -405,14 +414,4 @@ export class AppComponent implements OnInit, OnDestroy {
     this.showIntro = false;
   }
 
-  logout(event?: Event): void {
-    if (event) {
-      event.stopPropagation();
-      event.preventDefault();
-    }
-    this.authService.logout().subscribe({
-      next: () => this.router.navigate(['/']),
-      error: () => this.router.navigate(['/'])
-    });
-  }
 }

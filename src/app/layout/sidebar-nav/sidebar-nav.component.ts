@@ -18,6 +18,7 @@ import { Subject } from 'rxjs';
 import { BranchedMenuComponent, BranchedSection } from '../../shared/components/branched-menu/branched-menu.component';
 import { CategoryService } from '../../services/category.service';
 import { Category } from '../../models/category.model';
+import { AuthService } from '../../services/auth.service';
 
 const HIDDEN_PATH_PREFIXES = ['/login', '/register', '/admin'];
 
@@ -49,6 +50,7 @@ export class SidebarNavComponent implements OnInit, OnDestroy {
   constructor(
     private router: Router,
     private categoryService: CategoryService,
+    public authService: AuthService,
     private cdr: ChangeDetectorRef,
     private ngZone: NgZone,
     @Inject(PLATFORM_ID) platformId: Object
@@ -133,6 +135,7 @@ export class SidebarNavComponent implements OnInit, OnDestroy {
         children: [
           { label: 'Profile', value: '/profile', icon: 'fas fa-id-card' },
           { label: 'Cart', value: '/cart', icon: 'fas fa-shopping-cart' },
+          { label: 'Checkout', value: '/checkout', icon: 'fas fa-credit-card' },
           { label: 'Seller Hub', value: '/seller', icon: 'fas fa-store' },
         ],
       },
@@ -206,6 +209,16 @@ export class SidebarNavComponent implements OnInit, OnDestroy {
     }
 
     this.router.navigateByUrl(event.value);
+  }
+
+  logout(event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.closeMobile();
+    this.authService.logout().subscribe({
+      next: () => this.router.navigate(['/']),
+      error: () => this.router.navigate(['/']),
+    });
   }
 
   // ── Mobile Drawer & Accessibility ──────────────────────────────────────────

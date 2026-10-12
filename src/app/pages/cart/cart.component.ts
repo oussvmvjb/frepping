@@ -4,7 +4,7 @@ import { CartService } from '../../services/cart.service';
 import { CartItem } from '../../models/cart-item';
 import { Observable, Subscription } from 'rxjs';
 import { Router } from '@angular/router';
-import { getPrimaryImage, ApiProduct } from '../../models/api-product.model';
+import { getPrimaryImage } from '../../models/api-product.model';
 import emailjs from 'emailjs-com';
 
 @Component({
@@ -145,6 +145,10 @@ export class CartComponent implements OnInit, OnDestroy {
   }
 
   removeFromCart(item: CartItem): void {
+    if (!item.product) {
+      if (item.id) this.cartService.removeItem(item.id).subscribe({ error: () => {} });
+      return;
+    }
     this.cartService.removeFromCart(item.product.id, item.variant?.id ?? null);
   }
 
@@ -157,10 +161,14 @@ export class CartComponent implements OnInit, OnDestroy {
     if (isNaN(validQuantity)) {
       return;
     }
+    if (!item.product) {
+      if (item.id) this.cartService.updateQty(item.id, validQuantity).subscribe({ error: () => {} });
+      return;
+    }
     this.cartService.updateQuantity(item.product.id, item.variant?.id ?? null, validQuantity);
   }
 
-  getItemImage(product: ApiProduct): string {
+  getItemImage(product: CartItem['product']): string {
     return getPrimaryImage(product) || 'assets/placeholder.jpg';
   }
 
@@ -169,21 +177,23 @@ export class CartComponent implements OnInit, OnDestroy {
   }
 
   getItemSavings(item: CartItem): number {
-    if (item.product.compare_price && item.product.compare_price > item.unitPrice) {
-      const savingsPerItem = item.product.compare_price - item.unitPrice;
+    const cp = Number(item.product?.compare_price);
+    if (cp && cp > item.unitPrice) {
+      const savingsPerItem = cp - item.unitPrice;
       return Math.round(savingsPerItem * item.quantity * 100) / 100;
     }
     return 0;
   }
 
   isItemOnSale(item: CartItem): boolean {
-    return !!(item.product.compare_price && item.product.compare_price > item.unitPrice);
+    const cp = Number(item.product?.compare_price);
+    return !!(cp && cp > item.unitPrice);
   }
 
   getItemDiscountPercentage(item: CartItem): number {
-    if (item.product.compare_price && item.product.compare_price > item.unitPrice) {
-      const discount =
-        ((item.product.compare_price - item.unitPrice) / item.product.compare_price) * 100;
+    const cp = Number(item.product?.compare_price);
+    if (cp && cp > item.unitPrice) {
+      const discount = ((cp - item.unitPrice) / cp) * 100;
       return Math.round(discount);
     }
     return 0;
@@ -242,12 +252,21 @@ export class CartComponent implements OnInit, OnDestroy {
     return this.cartItems.reduce((total, item) => total + item.quantity, 0);
   }
 
+  get hasUnavailableItems(): boolean {
+    return this.cartItems.some(item => !item.product);
+  }
+
+  goToCheckout(): void {
+    if (this.hasUnavailableItems) return;
+    this.router.navigate(['/checkout']);
+  }
+
   continueShopping(): void {
     this.router.navigate(['/shop']);
   }
 
   proceedToCheckout(): void {
-    if (this.cartItems.length === 0) return;
+    if (this.cartItems.length === 0 || this.hasUnavailableItems) return;
     this.showCheckoutForm = true;
   }
 
@@ -256,6 +275,7 @@ export class CartComponent implements OnInit, OnDestroy {
   }
 
   submitCheckout(): void {
+    if (this.hasUnavailableItems) return;
     if (this.checkoutForm.invalid) {
       Object.keys(this.checkoutForm.controls).forEach((key) => {
         const control = this.checkoutForm.get(key);
@@ -299,7 +319,7 @@ export class CartComponent implements OnInit, OnDestroy {
       const variantInfo = item.variant
         ? ` (${[item.variant.size, item.variant.color].filter(Boolean).join('/')})`
         : '';
-      text += `${item.quantity}x ${item.product.name}${variantInfo} - $${total.toFixed(2)}\n`;
+      text += `${item.quantity}x ${item.product?.name || 'Unavailable product'}${variantInfo} - $${total.toFixed(2)}\n`;
     });
     return text;
   }
@@ -311,7 +331,7 @@ export class CartComponent implements OnInit, OnDestroy {
         const variantInfo = item.variant
           ? ` (${[item.variant.size, item.variant.color].filter(Boolean).join('/')})`
           : '';
-        return `${item.quantity}x ${item.product.name}${variantInfo} - $${itemTotal.toFixed(2)}`;
+        return `${item.quantity}x ${item.product?.name || 'Unavailable product'}${variantInfo} - $${itemTotal.toFixed(2)}`;
       })
       .join('\n');
   }

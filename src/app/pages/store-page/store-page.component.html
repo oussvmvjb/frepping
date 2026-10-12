@@ -78,7 +78,7 @@
             <h3 class="product-name">{{ product.name }}</h3>
             <div class="price-row">
               <span class="current-price">${{ getPrice(product) | number : '1.2-2' }}</span>
-              <span *ngIf="product.compare_price && product.compare_price > product.price" class="compare-price">
+              <span *ngIf="product.compare_price" class="compare-price">
                 ${{ product.compare_price | number : '1.2-2' }}
               </span>
             </div>

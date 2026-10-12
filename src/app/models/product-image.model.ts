@@ -6,5 +6,5 @@ export interface ProductImage {
   alt_text: string | null;
   sort_order: number;
   is_primary: boolean;
-  created_at: string;
+  created_at?: string;
 }

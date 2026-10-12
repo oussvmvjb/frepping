@@ -89,6 +89,53 @@ $border-color: rgba(255, 255, 255, 0.08);
   border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
+.sidebar__account {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding: 12px;
+  border: 1px solid rgba(57, 255, 20, 0.2);
+  border-radius: 4px;
+  background: rgba(57, 255, 20, 0.04);
+}
+
+.sidebar__user,
+.sidebar__logout {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 12px;
+  text-decoration: none;
+
+  i {
+    flex: 0 0 16px;
+    color: $accent-color;
+    text-align: center;
+  }
+
+  span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.sidebar__user:hover,
+.sidebar__logout:hover {
+  color: $accent-color;
+}
+
+.sidebar__logout {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+
 .sidebar__status {
   display: flex;
   align-items: center;

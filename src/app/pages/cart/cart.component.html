@@ -44,8 +44,8 @@
             </div>
             
             <div class="product-img-container">
-              <img [src]="getItemImage(item.product)" 
-                   [alt]="item.product.name" 
+                  <img [src]="getItemImage(item.product)" 
+                    [alt]="item.product?.name || 'Unavailable product'" 
                    class="cart-img product-img"
                    onerror="this.onerror=null; this.src='assets/placeholder.jpg'">
             </div>
@@ -55,7 +55,7 @@
               <div class="modern-badge sale" *ngIf="isItemOnSale(item)">
                 -{{getItemDiscountPercentage(item)}}%
               </div>
-              <div class="modern-badge new" *ngIf="item.product.is_featured">
+              <div class="modern-badge new" *ngIf="item.product?.is_featured">
                 FEATURED
               </div>
               <div class="modern-badge quantity" *ngIf="item.quantity > 1">
@@ -79,22 +79,23 @@
           <!-- Cart Item Content -->
           <div class="modern-cart-content modern-product-content">
             <div class="modern-cart-info modern-product-info">
-              <div class="modern-brand">{{item.product.category?.name || 'FREPPING'}}</div>
-              <h3 class="modern-product-name">{{item.product.name}}</h3>
+              <div class="modern-brand">{{item.product?.category?.name || 'FREPPING'}}</div>
+              <h3 class="modern-product-name">{{item.product?.name || 'Product unavailable'}}</h3>
+              <p class="modern-material" *ngIf="!item.product">This item is no longer available. Remove it to continue.</p>
               
               <!-- Price Display with Savings -->
               <div class="modern-price-section">
                 <div class="modern-price">
                   <span class="modern-current">${{item.unitPrice | number:'1.2-2'}}</span>
                   <span class="modern-original" *ngIf="isItemOnSale(item)">
-                    ${{item.product.compare_price | number:'1.2-2'}}
+                    ${{item.product?.compare_price | number:'1.2-2'}}
                   </span>
                 </div>
                 <div class="savings-badge" *ngIf="getItemSavings(item) > 0">
                   <i class="fas fa-tag"></i>
                   Save ${{getItemSavings(item) | number:'1.2-2'}}
                 </div>
-                <div class="modern-material" *ngIf="item.product.material">{{item.product.material}}</div>
+                <div class="modern-material" *ngIf="item.product?.material">{{item.product?.material}}</div>
               </div>
               
               <!-- Size & Color Info from Variant -->
@@ -119,18 +120,20 @@
                 <div class="qty-controls">
                   <button class="qty-btn minus" 
                           (click)="updateQuantity(item, item.quantity - 1)"
-                          [disabled]="item.quantity <= 1">
+                      [disabled]="!item.product || item.quantity <= 1">
                     <i class="fas fa-minus"></i>
                   </button>
                   <input type="number" 
                          class="street-input" 
                          min="1" 
+                         [disabled]="!item.product"
                          [value]="item.quantity" 
                          (change)="updateQuantity(item, $any($event.target).value)"
                          (keyup.enter)="onInputEnter($event)"
                          (blur)="updateQuantity(item, $any($event.target).value)" />
                   <button class="qty-btn plus" 
-                          (click)="updateQuantity(item, item.quantity + 1)">
+                      (click)="updateQuantity(item, item.quantity + 1)"
+                      [disabled]="!item.product">
                     <i class="fas fa-plus"></i>
                   </button>
                 </div>
@@ -201,6 +204,7 @@
       </div>
     </div>
     
+    <p class="modern-material" *ngIf="hasUnavailableItems">Remove unavailable items before checkout.</p>
     <!-- Checkout Form (Hidden by default) -->
     <div class="checkout-form-modern" *ngIf="showCheckoutForm">
       <div class="form-header">
@@ -538,7 +542,7 @@
           </button>
           <button type="submit" 
           class="btn-modern checkout-btn" 
-          [disabled]="checkoutForm.invalid || isSubmitting">
+          [disabled]="checkoutForm.invalid || isSubmitting || hasUnavailableItems">
     <i class="fas fa-lock"></i> 
     <span *ngIf="!isSubmitting">CONFIRM ORDER - ${{getTotal().toFixed(2)}}</span>
     <span *ngIf="isSubmitting">
@@ -557,26 +561,12 @@
       <button class="btn-modern danger-btn" (click)="clearCart()">
         <i class="fas fa-trash-alt"></i> CLEAR CART
       </button>
-      <button class="btn-modern checkout-btn" (click)="showCheckoutForm = true">
+      <button class="btn-modern checkout-btn" (click)="goToCheckout()" [disabled]="hasUnavailableItems">
         <i class="fas fa-lock"></i> SECURE CHECKOUT - ${{getTotal().toFixed(2)}}
       </button>
     </div>
     
-    <!-- Security Badges -->
-    <div class="security-badges" *ngIf="!showCheckoutForm">
-      <div class="security-badge">
-        <i class="fas fa-shield-alt"></i>
-        <span>Secure Payment</span>
-      </div>
-      <div class="security-badge">
-        <i class="fas fa-undo"></i>
-        <span>30-Day Returns</span>
-      </div>
-      <div class="security-badge">
-        <i class="fas fa-truck"></i>
-        <span>Fast Shipping</span>
-      </div>
-    </div>
+   
   </div>
 </div>
     </div>

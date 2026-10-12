@@ -17,11 +17,9 @@
     <div class="filter-row">
       <div class="filter-section">
         <h3 class="filter-title">CATEGORIES</h3>
-
         <div class="category-marquee" (touchstart)="marqueePaused = true" (touchend)="marqueePaused = false"
           [class.paused]="marqueePaused">
           <div class="category-filters category-track">
-            <!-- SET 1 -->
             <button [class.active]="selectedCategoryId === null" (click)="onCategorySelect(null)"
               class="category-filter-btn">
               <i class="fas fa-th-large"></i> ALL
@@ -30,8 +28,6 @@
               (click)="onCategorySelect(category.id)" class="category-filter-btn">
               <i class="fas fa-tag"></i> {{ category.name }}
             </button>
-
-            <!-- SET 2 (duplicate for seamless loop, mobile only, hidden from a11y) -->
             <ng-container *ngIf="isMobile">
               <button aria-hidden="true" tabindex="-1" [class.active]="selectedCategoryId === null"
                 (click)="onCategorySelect(null)" class="category-filter-btn clone">
@@ -57,7 +53,6 @@
           </select>
         </div>
       </div>
-
       <div class="filter-section clear-section">
         <button class="btn btn-dark" (click)="clearFilters()">
           <i class="fas fa-redo mr-2"></i>CLEAR FILTERS
@@ -105,8 +100,8 @@
       </div>
     </div>
 
-    <!-- NO PRODUCTS EMPTY STATE -->
-    <div *ngIf="!isLoading && !errorMessage && filteredProducts.length === 0" class="no-products-modern">
+    <!-- EMPTY STATE -->
+    <div *ngIf="!isLoading && !errorMessage && products.length === 0" class="no-products-modern">
       <div class="modern-empty-state">
         <i class="fas fa-search"></i>
         <h3>NO MATCHES FOUND</h3>
@@ -116,33 +111,21 @@
     </div>
 
     <!-- MAIN PRODUCT GRID -->
-    <div *ngIf="!isLoading && !errorMessage && filteredProducts.length > 0" class="products-modern-grid"
+    <div *ngIf="!isLoading && !errorMessage && products.length > 0" class="products-modern-grid"
       [ngClass]="'grid-' + gridSize">
-      <div *ngFor="let product of filteredProducts" class="modern-product" (click)="onProductClick(product)">
+      <div *ngFor="let product of products" class="modern-product" (click)="onProductClick(product)">
         <!-- Product Image Section -->
         <div class="modern-product-image">
-          <app-liquid-ether
-            class="product-ether-canvas"
-            [colors]="etherColors"
-            [mouseForce]="18"
-            [cursorSize]="80"
-            [isViscous]="true"
-            [viscous]="30"
-            [iterationsViscous]="24"
-            [iterationsPoisson]="24"
-            [resolution]="0.35"
-            [isBounce]="false"
-            [autoDemo]="true"
-            [autoSpeed]="0.4"
-            [autoIntensity]="1.8"
-          ></app-liquid-ether>
+          <app-liquid-ether class="product-ether-canvas" [colors]="etherColors" [mouseForce]="18" [cursorSize]="80"
+            [isViscous]="true" [viscous]="30" [iterationsViscous]="24" [iterationsPoisson]="24" [resolution]="0.35"
+            [isBounce]="false" [autoDemo]="true" [autoSpeed]="0.4" [autoIntensity]="1.8">
+          </app-liquid-ether>
 
-          <div class="product-img-container" (click)="goToProduct(product.id)">
+          <div class="product-img-container" (click)="$event.stopPropagation(); onProductClick(product)">
             <ng-container *ngIf="product.images && product.images.length > 0; else placeholder">
               <img [src]="getProductImage(product)" [alt]="product.name" class="product-img"
                 (error)="handleImageError($event)" />
             </ng-container>
-
             <ng-template #placeholder>
               <div class="product-img-placeholder">
                 <i class="fas fa-tshirt"></i>
@@ -151,17 +134,13 @@
             </ng-template>
           </div>
 
-          <!-- Status Indicators -->
+          <!-- Status Indicators (from API) -->
           <div class="modern-indicators">
-            <span class="modern-badge sale" *ngIf="getDiscountPercent(product) > 0">
-              -{{ getDiscountPercent(product) }}%
+            <span class="modern-badge sale" *ngIf="product.discount_percent > 0">
+              -{{ product.discount_percent }}%
             </span>
-            <span class="modern-badge new" *ngIf="product.is_featured">
-              FEATURED
-            </span>
-            <span class="modern-badge out" *ngIf="!isInStock(product)">
-              OUT
-            </span>
+            <span class="modern-badge new" *ngIf="product.is_featured">FEATURED</span>
+            <span class="modern-badge out" *ngIf="!product.in_stock">OUT</span>
           </div>
 
           <!-- Quick Actions -->
@@ -169,34 +148,35 @@
             <button class="modern-quick-btn" (click)="$event.stopPropagation(); tryOnProduct(product)" title="Try On">
               <i class="fas fa-user"></i>
             </button>
-            <button class="modern-quick-btn" (click)="$event.stopPropagation(); toggleFavorite(product.id)"
-              title="Favorite">
-              <i [class]="isFavorite(product.id) ? 'fas fa-heart text-danger' : 'far fa-heart'"></i>
+            <button class="modern-quick-btn like-btn" [class.liked]="product.is_liked"
+              (click)="toggleLike(product, $event)" title="Like">
+              <i [class]="product.is_liked ? 'fas fa-heart' : 'far fa-heart'"></i>
+              <span class="likes-count" *ngIf="product.likes_count > 0">{{ product.likes_count }}</span>
             </button>
           </div>
         </div>
 
-        <!-- Product Content (compact – no description / material) -->
+        <!-- Product Content -->
         <div class="modern-product-content">
           <div class="modern-product-info">
-            <div class="modern-category">{{ getCategoryName(product) }}</div>
+            <div class="modern-category">{{ product.category?.name || '' }}</div>
             <h3 class="modern-product-name">{{ product.name }}</h3>
           </div>
 
-          <!-- Price & Actions -->
           <div class="modern-product-footer">
             <div class="modern-price-section">
               <div class="modern-price">
-                <span class="modern-current">${{ product.price | number : '1.2-2' }}</span>
-                <span class="modern-original" *ngIf="product.compare_price && product.compare_price > product.price">
-                  ${{ product.compare_price | number : '1.2-2' }}
+                <span class="modern-current">${{ product.price | number:'1.2-2' }}</span>
+                <span class="modern-original" *ngIf="product.compare_price">
+                  ${{ product.compare_price | number:'1.2-2' }}
                 </span>
               </div>
             </div>
-
-            <button class="modern-add-btn" (click)="$event.stopPropagation(); addToCart(product)"
-              [disabled]="!isInStock(product)" [title]="isInStock(product) ? 'Add to Cart' : 'Out of Stock'">
-              <i class="fas fa-plus"></i>
+            <button class="modern-add-btn"
+              (click)="$event.stopPropagation(); addToCart(product, $event)"
+              [disabled]="!product.in_stock || addingToCartId === product.id"
+              [title]="product.in_stock ? 'Add to Cart' : 'Out of Stock'">
+              <i [class]="addingToCartId === product.id ? 'fas fa-spinner fa-spin' : 'fas fa-plus'"></i>
             </button>
           </div>
         </div>
@@ -209,18 +189,19 @@
         <i class="fas fa-chevron-left"></i>
         <span class="pagination-nav-text"> PREV</span>
       </button>
-
       <div class="pagination-numbers">
         <button *ngFor="let p of pages" class="pagination-num-btn" [class.active]="currentPage === p"
-          (click)="goToPage(p)">
-          {{ p }}
-        </button>
+          (click)="goToPage(p)">{{ p }}</button>
       </div>
-
       <button class="pagination-nav-btn" [disabled]="currentPage === totalPages" (click)="goToPage(currentPage + 1)">
         <span class="pagination-nav-text">NEXT </span>
         <i class="fas fa-chevron-right"></i>
       </button>
     </div>
   </section>
+
+  <!-- TOAST NOTIFICATION -->
+  <div *ngIf="toastMessage" class="shop-toast" [class.error]="toastMessage && toastMessage.includes('error')">
+    {{ toastMessage }}
+  </div>
 </div>

@@ -1,14 +1,13 @@
-import { ApiProduct } from './api-product.model';
-import { ProductVariant } from './product-variant.model';
+import { Product } from './api.models';
+import { ProductVariant } from './api.models';
 
-/**
- * A cart item that carries the full variant context.
- * The cart is in-memory (no backend cart API yet).
- */
+
 export interface CartItem {
-  product: ApiProduct;
+  id: string;
+  product: Product | null;
   variant: ProductVariant | null;
-  /** Effective unit price: variant.price ?? product.price */
+  /** Effective unit price */
   unitPrice: number;
+  
   quantity: number;
 }

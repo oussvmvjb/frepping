@@ -1,76 +1,96 @@
-import { Injectable } from '@angular/core';
-import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
-import { Observable, throwError } from 'rxjs';
-import { catchError } from 'rxjs/operators';
-import { environment } from '../../environments/environment';
+import { Injectable } from "@angular/core";
+import { HttpClient, HttpParams } from "@angular/common/http";
+import { Observable, throwError } from "rxjs";
+import { catchError } from "rxjs/operators";
+import { environment } from "../../environments/environment";
 import {
-  ApiProduct,
-  ProductListResponse,
-  ProductQueryParams,
-} from '../models/api-product.model';
+  Product, ProductListResponse, ProductQueryParams, Pagination
+} from "../models/api.models";
+import { ErrorMapperService } from "./error-mapper.service";
 
-@Injectable({ providedIn: 'root' })
+@Injectable({ providedIn: "root" })
 export class ProductService {
   private readonly base = `${environment.apiUrl}/products`;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private errorMapper: ErrorMapperService) {}
 
-  /**
-   * GET /api/v1/products
-   * Public. Supports page, page_size, category_id, search, is_featured.
-   */
   getProducts(params: ProductQueryParams = {}): Observable<ProductListResponse> {
-    let httpParams = new HttpParams()
-      .set('page', String(params.page ?? 1))
-      .set('page_size', String(params.page_size ?? 20));
+    let p = new HttpParams()
+      .set("page", String(params.page ?? 1))
+      .set("page_size", String(params.page_size ?? 20));
 
-    if (params.category_id) {
-      httpParams = httpParams.set('category_id', params.category_id);
-    }
-    if (params.search && params.search.trim()) {
-      httpParams = httpParams.set('search', params.search.trim());
-    }
-    if (params.is_featured !== undefined && params.is_featured !== null) {
-      httpParams = httpParams.set('is_featured', String(params.is_featured));
-    }
+    if (params.category_id) p = p.set("category_id", params.category_id);
+    if (params.search?.trim()) p = p.set("search", params.search.trim());
+    if (params.is_featured !== undefined && params.is_featured !== null)
+      p = p.set("is_featured", String(params.is_featured));
+    if (params.sort) p = p.set("sort", params.sort);
+    if (params.min_price !== undefined && params.min_price !== null)
+      p = p.set("min_price", String(params.min_price));
+    if (params.max_price !== undefined && params.max_price !== null)
+      p = p.set("max_price", String(params.max_price));
+    if (params.in_stock_only) p = p.set("in_stock_only", "true");
 
-    return this.http
-      .get<ProductListResponse>(this.base, { params: httpParams })
-      .pipe(catchError(this.handleError));
+    return this.http.get<ProductListResponse>(this.base, { params: p }).pipe(
+      catchError(err => throwError(() => new Error(this.errorMapper.map(err))))
+    );
   }
 
-  /**
-   * GET /api/v1/products/:id
-   * Public. Returns full product with category, images, and variants.
-   */
-  getProductById(id: string): Observable<ApiProduct> {
-    return this.http
-      .get<ApiProduct>(`${this.base}/${id}`)
-      .pipe(catchError(this.handleError));
+  getProductById(id: string): Observable<Product> {
+    return this.http.get<Product>(`${this.base}/${id}`).pipe(
+      catchError(err => throwError(() => new Error(this.errorMapper.map(err))))
+    );
   }
 
-  /**
-   * GET /api/v1/products?is_featured=true
-   * Convenience wrapper for featured products.
-   */
   getFeaturedProducts(pageSize = 6): Observable<ProductListResponse> {
     return this.getProducts({ is_featured: true, page: 1, page_size: pageSize });
   }
 
-  /**
-   * GET /api/v1/products ordered by created_at DESC (most recent page).
-   * Used for "recent arrivals" display since the backend has no is_new field.
-   */
   getRecentProducts(pageSize = 4): Observable<ProductListResponse> {
-    return this.getProducts({ page: 1, page_size: pageSize });
+    return this.getProducts({ page: 1, page_size: pageSize, sort: "newest" });
   }
 
-  private handleError(error: HttpErrorResponse): Observable<never> {
-    let msg = 'An unexpected error occurred.';
-    if (error.status === 0) msg = 'Cannot reach the server. Is the backend running?';
-    else if (error.status === 404) msg = 'Product not found.';
-    else if (error.status === 422) msg = 'Invalid request parameters.';
-    else if (error.status >= 500) msg = 'Server error. Please try again later.';
-    return throwError(() => new Error(msg));
+  getMyProducts(page = 1, pageSize = 20): Observable<ProductListResponse> {
+    const p = new HttpParams().set("page", String(page)).set("page_size", String(pageSize));
+    return this.http.get<ProductListResponse>(`${this.base}/my`, { params: p }).pipe(
+      catchError(err => throwError(() => new Error(this.errorMapper.map(err))))
+    );
+  }
+
+  create(payload: any): Observable<Product> {
+    return this.http.post<Product>(this.base, payload).pipe(
+      catchError(err => throwError(() => new Error(this.errorMapper.map(err))))
+    );
+  }
+
+  update(id: string, payload: any): Observable<Product> {
+    return this.http.patch<Product>(`${this.base}/${id}`, payload).pipe(
+      catchError(err => throwError(() => new Error(this.errorMapper.map(err))))
+    );
+  }
+
+  remove(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.base}/${id}`).pipe(
+      catchError(err => throwError(() => new Error(this.errorMapper.map(err))))
+    );
+  }
+
+  /** GET /users/me/favorites */
+  getMyFavorites(page = 1, pageSize = 20): Observable<ProductListResponse> {
+    const p = new HttpParams().set("page", String(page)).set("page_size", String(pageSize));
+    return this.http.get<ProductListResponse>(`${environment.apiUrl}/users/me/favorites`, { params: p }).pipe(
+      catchError(err => throwError(() => new Error(this.errorMapper.map(err))))
+    );
+  }
+
+  /** Helper: primary image URL */
+  getPrimaryImage(product: Product): string {
+    if (!product.images?.length) return "assets/placeholder.jpg";
+    return product.images.find(i => i.is_primary)?.image_url ?? product.images[0].image_url;
+  }
+
+  /** Helper: effective price (variant override or base). Returns number. */
+  getEffectivePrice(product: Product, variant?: any): number {
+    if (variant?.price != null) return Number(variant.price);
+    return Number(product.price);
   }
 }

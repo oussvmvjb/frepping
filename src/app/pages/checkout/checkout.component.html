@@ -1,0 +1,843 @@
+<div class="checkout-page">
+  <div class="checkout-container">
+
+    <!-- PAGE HEADER -->
+    <div class="checkout-header">
+      <h1 class="page-title">CHECKOUT</h1>
+      <p class="page-subtitle">AUTHENTIC STREETWEAR CHECKOUT & DELIVERY DISPATCH</p>
+    </div>
+
+    <!-- STEPPER WIZARD -->
+    <div class="stepper-card">
+      <div class="stepper-nav">
+        <ng-container *ngFor="let step of steps; let i = index">
+          <div
+            class="step-item"
+            [class.active]="activeStep === i"
+            [class.completed]="activeStep > i"
+            (click)="goToStep(i)"
+          >
+            <div class="step-icon-wrap">
+              <i [class]="step.icon"></i>
+            </div>
+            <div class="step-info">
+              <span class="step-num">STEP 0{{ i + 1 }}</span>
+              <span class="step-title">{{ step.title }}</span>
+            </div>
+          </div>
+          <div *ngIf="i < steps.length - 1" class="step-connector" [class.active]="activeStep > i">
+            <i class="fas fa-chevron-right"></i>
+          </div>
+        </ng-container>
+      </div>
+    </div>
+
+    <!-- ERROR BANNER (e.g. stock or payment issue) -->
+    <div *ngIf="orderError" class="gta-alert error-alert mb-4">
+      <div class="alert-icon"><i class="fas fa-exclamation-triangle"></i></div>
+      <div class="alert-body">
+        <h4 class="alert-title">ORDER NOTICE</h4>
+        <p class="alert-text">{{ orderError }}</p>
+      </div>
+      <button class="alert-close-btn" (click)="orderError = null"><i class="fas fa-times"></i></button>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- STEP 1: CART -->
+    <!-- ========================================================================= -->
+    <div *ngIf="activeStep === 0" class="step-content">
+      <div class="step-grid">
+        <!-- Main Left Column -->
+        <div class="step-main">
+
+          <!-- OFFERS ALERT (DYNAMIC FROM BACKEND) -->
+          <div *ngIf="showOfferAlert && activePromos.length > 0" class="gta-alert offers-alert">
+            <div class="alert-icon">
+              <i class="fas fa-percent"></i>
+            </div>
+            <div class="alert-body">
+              <h4 class="alert-title">AVAILABLE OFFERS & PROMOTIONS</h4>
+              <p *ngFor="let promo of activePromos" class="alert-text text-green">
+                • <strong>{{ promo.code }}</strong>:
+                <span *ngIf="promo.discount_type === 'PERCENT'">{{ promo.discount_value }}% OFF</span>
+                <span *ngIf="promo.discount_type === 'FIXED'">${{ promo.discount_value }} OFF</span>
+                <span *ngIf="promo.min_order_amount"> on orders over ${{ promo.min_order_amount }}</span>
+              </p>
+            </div>
+            <button class="alert-close-btn" (click)="showOfferAlert = false" aria-label="Dismiss offer">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+
+          <!-- CART ITEMS LIST -->
+          <div class="panel-card">
+            <div class="panel-header">
+              <h2 class="panel-title">
+                <i class="fas fa-shopping-bag mr-2"></i>
+                MY SHOPPING BAG ({{ cartItems.length }} ITEMS)
+              </h2>
+            </div>
+
+            <div class="panel-body p-0">
+              <!-- REAL CART ITEMS -->
+              <ng-container *ngIf="cartItems.length > 0">
+                <div *ngFor="let item of cartItems" class="checkout-item-row">
+                  <div class="item-thumb">
+                    <img [src]="getItemImage(item)" [alt]="item.product?.name || 'Unavailable product'" (error)="$any($event.target).src='assets/bg/bg1.jpg'" />
+                  </div>
+                  <div class="item-details">
+                    <div class="item-top">
+                      <h3 class="item-name">{{ item.product?.name || 'Product unavailable' }}</h3>
+                      <button class="item-remove-btn" (click)="removeItem(item)" [disabled]="cartUpdatingId === item.id" title="Remove item">
+                        <i [class]="cartUpdatingId === item.id ? 'fas fa-spinner fa-spin' : 'fas fa-trash-alt'"></i>
+                      </button>
+                    </div>
+
+                    <div class="item-meta">
+                      <span class="seller-tag">Sold by: <strong class="text-green">{{ getSellerName(item) }}</strong></span>
+                      <span class="stock-badge" [class.in-stock]="item.product?.in_stock" [class.out-of-stock]="!item.product?.in_stock">
+                        {{ item.product?.in_stock ? 'IN STOCK' : 'UNAVAILABLE' }}
+                      </span>
+                    </div>
+
+                    <div *ngIf="item.variant" class="variant-pill">
+                      <span>Variant: {{ item.variant.size || item.variant.color || item.variant.sku || 'Standard' }}</span>
+                    </div>
+
+                    <div class="item-bottom">
+                      <!-- Quantity Adjuster -->
+                      <div class="qty-counter">
+                        <button class="qty-btn" (click)="updateQty(item, -1)" [disabled]="cartUpdatingId === item.id || item.quantity <= 1">-</button>
+                        <span class="qty-val">{{ item.quantity }}</span>
+                        <button class="qty-btn" (click)="updateQty(item, 1)" [disabled]="cartUpdatingId === item.id">+</button>
+                      </div>
+
+                      <div class="item-price-box">
+                        <span class="item-price">${{ getItemLineTotal(item) | number:'1.2-2' }}</span>
+                        <span *ngIf="hasComparePrice(item)" class="item-old-price">
+                          ${{ getItemCompareTotal(item) | number:'1.2-2' }}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </ng-container>
+
+              <!-- REAL EMPTY STATE -->
+              <div *ngIf="!loadingCart && cartItems.length === 0" class="empty-cart-box text-center p-8">
+                <i class="fas fa-shopping-bag text-4xl text-muted mb-3"></i>
+                <h3 class="text-white text-lg font-bold">YOUR BAG IS EMPTY</h3>
+                <p class="text-muted text-sm mt-1">Explore our exclusive streetwear catalog and drop something in.</p>
+                <a routerLink="/shop" class="btn-gta-primary inline-block mt-4">BROWSE SHOP</a>
+              </div>
+
+              <!-- LOADING STATE -->
+              <div *ngIf="loadingCart" class="text-center p-8 text-muted">
+                <i class="fas fa-spinner fa-spin text-2xl"></i>
+                <p class="mt-2 text-sm">FETCHING BAG DATA...</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- BROWSE MORE BANNER -->
+          <a routerLink="/shop" class="browse-more-banner">
+            <span><i class="fas fa-plus-circle mr-2"></i> Add more exclusive streetwear drops from shop</span>
+            <i class="fas fa-arrow-right"></i>
+          </a>
+        </div>
+
+        <!-- Right Summary Column -->
+        <div class="step-sidebar">
+          <div class="panel-card order-summary-card">
+            <div class="panel-header">
+              <h3 class="panel-title">OFFERS & PROMO</h3>
+            </div>
+            <div class="panel-body">
+              <!-- Promo Input -->
+              <div class="promo-box">
+                <input
+                  type="text"
+                  [(ngModel)]="promoCodeInput"
+                  placeholder="ENTER PROMO CODE"
+                  class="gta-input"
+                  [disabled]="promoSubmitting || !!cart?.promo_code"
+                  (keyup.enter)="applyPromo()"
+                />
+                <button *ngIf="!cart?.promo_code" class="btn-gta-sm" [disabled]="promoSubmitting" (click)="applyPromo()">
+                  <i *ngIf="promoSubmitting" class="fas fa-spinner fa-spin mr-1"></i> APPLY
+                </button>
+                <button *ngIf="cart?.promo_code" class="btn-gta-sm btn-danger" [disabled]="promoSubmitting" (click)="removePromo()">
+                  <i *ngIf="promoSubmitting" class="fas fa-spinner fa-spin mr-1"></i> REMOVE
+                </button>
+              </div>
+              <div *ngIf="promoSuccess" class="promo-feedback success">{{ promoSuccess }}</div>
+              <div *ngIf="promoError" class="promo-feedback error">{{ promoError }}</div>
+
+              <!-- Gift Wrap Toggle -->
+              <div class="gift-wrap-box">
+                <div class="gift-wrap-info">
+                  <div class="gift-wrap-icon"><i class="fas fa-gift"></i></div>
+                  <div>
+                    <h5 class="gift-title">Buying a gift for a homie?</h5>
+                    <p class="gift-desc">Custom street packaging & personalized tag</p>
+                  </div>
+                </div>
+                <label class="gta-switch">
+                  <input
+                    type="checkbox"
+                    [checked]="hasGiftWrap"
+                    [disabled]="giftWrapLoading"
+                    (change)="onGiftWrapToggle($any($event.target).checked)"
+                  />
+                  <span class="slider"></span>
+                </label>
+              </div>
+            </div>
+
+            <div class="panel-divider"></div>
+
+            <div class="panel-header">
+              <h3 class="panel-title">PRICE DETAILS</h3>
+            </div>
+            <div class="panel-body">
+              <div class="price-rows">
+                <div class="price-row">
+                  <span>Bag Total</span>
+                  <span>${{ subtotalAmount | number:'1.2-2' }}</span>
+                </div>
+                <div *ngIf="promoDiscountAmount > 0" class="price-row text-green">
+                  <span>Coupon Discount ({{ cart?.promo_code }})</span>
+                  <span>-${{ promoDiscountAmount | number:'1.2-2' }}</span>
+                </div>
+                <div *ngIf="hasGiftWrap" class="price-row">
+                  <span>Gift Packaging</span>
+                  <span>+${{ giftWrapCostAmount | number:'1.2-2' }}</span>
+                </div>
+                <div class="price-row">
+                  <span>Delivery Charges</span>
+                  <div class="flex items-center gap-2">
+                    <span class="badge-free">CALCULATED AT NEXT STEP</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel-divider"></div>
+
+            <div class="panel-body total-box">
+              <div class="price-row total-row">
+                <span class="total-label">TOTAL AMOUNT</span>
+                <span class="total-value">${{ totalAmount | number:'1.2-2' }}</span>
+              </div>
+              <button
+                class="btn-gta-primary w-full mt-4"
+                [disabled]="cartItems.length === 0"
+                (click)="nextStep()"
+              >
+                <span>PROCEED TO ADDRESS</span>
+                <i class="fas fa-arrow-right ml-2"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- STEP 2: ADDRESS & DELIVERY SPEED -->
+    <!-- ========================================================================= -->
+    <div *ngIf="activeStep === 1" class="step-content">
+      <div class="step-grid">
+        <div class="step-main">
+          <!-- ADDRESS SELECTION -->
+          <div class="panel-card">
+            <div class="panel-header flex justify-between items-center">
+              <h2 class="panel-title"><i class="fas fa-map-marker-alt mr-2"></i> SELECT DELIVERY ADDRESS</h2>
+              <button class="btn-gta-sm" (click)="openAddAddressModal()">
+                <i class="fas fa-plus mr-1"></i> ADD NEW ADDRESS
+              </button>
+            </div>
+
+            <div class="panel-body">
+              <div *ngIf="loadingAddresses" class="text-center p-6 text-muted">
+                <i class="fas fa-spinner fa-spin"></i> Loading addresses...
+              </div>
+
+              <div *ngIf="!loadingAddresses && addresses.length === 0" class="empty-addr-box p-6 text-center text-muted">
+                <p>No addresses found on your account.</p>
+                <button class="btn-gta-sm mt-3" (click)="openAddAddressModal()">Add Address Now</button>
+              </div>
+
+              <div *ngIf="!loadingAddresses && addresses.length > 0" class="addresses-grid">
+                <div
+                  *ngFor="let addr of addresses"
+                  class="address-card"
+                  [class.selected]="selectedAddressId === addr.id"
+                  (click)="selectAddress(addr.id)"
+                >
+                  <div class="address-header">
+                    <div class="flex items-center gap-2">
+                      <div class="gta-radio" [class.checked]="selectedAddressId === addr.id"></div>
+                      <h4 class="address-name">{{ addr.full_name }}</h4>
+                    </div>
+                    <span class="addr-type-pill" [class.office]="addr.address_type === 'office'">
+                      {{ addr.address_type | uppercase }}
+                    </span>
+                  </div>
+
+                  <p class="address-text">
+                    {{ addr.address_line1 }}<br />
+                    {{ addr.city }}, {{ addr.state }} {{ addr.postal_code }} ({{ addr.country }})<br />
+                    <span class="text-green"><i class="fas fa-phone-alt mr-1"></i> {{ addr.phone }}</span>
+                  </p>
+
+                  <div class="address-actions">
+                    <button *ngIf="!addr.is_default" class="link-btn text-green" (click)="setDefaultAddress(addr.id, $event)">Set Default</button>
+                    <span *ngIf="addr.is_default" class="text-muted text-xs mr-2">[Default]</span>
+                    <button class="link-btn text-danger" (click)="removeAddress(addr.id, $event)">Remove</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- DELIVERY SPEED SELECTION -->
+          <div class="panel-card mt-6">
+            <div class="panel-header">
+              <h2 class="panel-title"><i class="fas fa-shipping-fast mr-2"></i> CHOOSE DELIVERY SPEED</h2>
+            </div>
+
+            <div class="panel-body">
+              <div *ngIf="loadingDelivery" class="text-center p-6 text-muted">
+                <i class="fas fa-spinner fa-spin"></i> Loading shipping options...
+              </div>
+
+              <div *ngIf="!loadingDelivery" class="delivery-grid">
+                <div
+                  *ngFor="let opt of deliveryOptions"
+                  class="delivery-card"
+                  [class.selected]="selectedDeliveryId === opt.id"
+                  (click)="selectDelivery(opt.id)"
+                >
+                  <div class="delivery-badge" [class.free]="+opt.price === 0">{{ opt.badge || (+opt.price === 0 ? 'FREE' : ('$' + opt.price)) }}</div>
+                  <div class="delivery-icon">
+                    <i [class]="opt.icon || 'fas fa-truck'"></i>
+                  </div>
+                  <h4 class="delivery-title">{{ opt.title }}</h4>
+                  <p class="delivery-desc">{{ opt.description }}</p>
+                  <span class="delivery-time text-green">{{ opt.estimated_label }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="step-actions-row">
+            <button class="btn-gta-secondary" (click)="prevStep()">
+              <i class="fas fa-arrow-left mr-2"></i> BACK TO BAG
+            </button>
+            <button
+              class="btn-gta-primary"
+              [disabled]="!selectedAddressId || !selectedDeliveryId"
+              (click)="nextStep()"
+            >
+              <span>PROCEED TO PAYMENT</span>
+              <i class="fas fa-arrow-right ml-2"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Right Summary Column -->
+        <div class="step-sidebar">
+          <div class="panel-card">
+            <div class="panel-header">
+              <h3 class="panel-title">ESTIMATED DISPATCH</h3>
+            </div>
+            <div class="panel-body">
+              <div class="estimated-item">
+                <i class="fas fa-box text-green text-xl mr-3"></i>
+                <div>
+                  <h5 class="est-name">Streetwear Drop Package</h5>
+                  <p class="est-date">Est. Delivery: <strong>{{ preview?.estimated_delivery || selectedDelivery?.estimated_label || 'Calculated at dispatch' }}</strong></p>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel-divider"></div>
+
+            <div class="panel-header">
+              <h3 class="panel-title">PRICE DETAILS</h3>
+            </div>
+            <div class="panel-body">
+              <div class="price-rows">
+                <div class="price-row">
+                  <span>Order Total</span>
+                  <span>${{ subtotalAmount | number:'1.2-2' }}</span>
+                </div>
+                <div *ngIf="promoDiscountAmount > 0" class="price-row text-green">
+                  <span>Coupon Discount</span>
+                  <span>-${{ promoDiscountAmount | number:'1.2-2' }}</span>
+                </div>
+                <div class="price-row">
+                  <span>Delivery Speed</span>
+                  <span [class.text-green]="deliveryCostAmount === 0">
+                    {{ deliveryCostAmount === 0 ? 'FREE' : ('$' + (deliveryCostAmount | number:'1.2-2')) }}
+                  </span>
+                </div>
+                <div *ngIf="hasGiftWrap" class="price-row">
+                  <span>Gift Packaging</span>
+                  <span>+${{ giftWrapCostAmount | number:'1.2-2' }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel-divider"></div>
+
+            <div class="panel-body total-box">
+              <div class="price-row total-row">
+                <span class="total-label">TOTAL AMOUNT</span>
+                <span class="total-value">${{ totalAmount | number:'1.2-2' }}</span>
+              </div>
+              <button
+                class="btn-gta-primary w-full mt-4"
+                [disabled]="!selectedAddressId || !selectedDeliveryId"
+                (click)="nextStep()"
+              >
+                <span>CONTINUE TO PAYMENT</span>
+                <i class="fas fa-arrow-right ml-2"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- STEP 3: PAYMENT -->
+    <!-- ========================================================================= -->
+    <div *ngIf="activeStep === 2" class="step-content">
+      <div class="step-grid">
+        <div class="step-main">
+          <div class="panel-card">
+            <!-- Payment Tabs -->
+            <div class="payment-tabs-header">
+              <button
+                class="pay-tab"
+                [class.active]="paymentMethod === 'CARD'"
+                (click)="paymentMethod = 'CARD'"
+              >
+                <i class="fas fa-credit-card mr-2"></i> CREDIT / DEBIT CARD
+              </button>
+              <button
+                class="pay-tab"
+                [class.active]="paymentMethod === 'COD'"
+                (click)="paymentMethod = 'COD'"
+              >
+                <i class="fas fa-money-bill-wave mr-2"></i> CASH ON DELIVERY
+              </button>
+              <button
+                class="pay-tab"
+                [class.active]="paymentMethod === 'GIFT_CARD'"
+                (click)="paymentMethod = 'GIFT_CARD'"
+              >
+                <i class="fas fa-gift mr-2"></i> GIFT CARD
+              </button>
+            </div>
+
+            <div class="panel-body p-6">
+              <!-- CREDIT CARD FORM -->
+              <div *ngIf="paymentMethod === 'CARD'" class="card-payment-form">
+                <!-- SAVED CARDS IF PRESENT -->
+                <div *ngIf="savedCards.length > 0" class="saved-cards-section mb-6">
+                  <h4 class="text-white text-sm font-bold mb-3">SELECT A SAVED CARD</h4>
+                  <div class="saved-cards-list flex flex-col gap-2">
+                    <div
+                      *ngFor="let sc of savedCards"
+                      class="saved-card-row p-3 rounded flex items-center justify-between border cursor-pointer"
+                      [class.border-green]="selectedSavedCardId === sc.id"
+                      (click)="selectedSavedCardId = sc.id"
+                    >
+                      <div class="flex items-center gap-3">
+                        <div class="gta-radio" [class.checked]="selectedSavedCardId === sc.id"></div>
+                        <i class="fas fa-credit-card text-green"></i>
+                        <span class="text-white font-medium">{{ sc.brand }} •••• {{ sc.last4 }}</span>
+                        <span class="text-muted text-xs">Exp {{ sc.exp_month }}/{{ sc.exp_year }}</span>
+                      </div>
+                      <button class="link-btn text-danger text-xs" (click)="deleteSavedCard(sc.id, $event)">Delete</button>
+                    </div>
+                    <div
+                      class="saved-card-row p-3 rounded flex items-center gap-3 border cursor-pointer"
+                      [class.border-green]="selectedSavedCardId === null"
+                      (click)="selectedSavedCardId = null"
+                    >
+                      <div class="gta-radio" [class.checked]="selectedSavedCardId === null"></div>
+                      <span class="text-white text-sm font-medium">Use a new card</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- NEW CARD INPUTS (WHEN NO SAVED CARD SELECTED) -->
+                <ng-container *ngIf="selectedSavedCardId === null">
+                  <div class="form-row">
+                    <div class="form-group w-full">
+                      <label>CARD NUMBER</label>
+                      <div class="input-with-icon">
+                        <i class="fas fa-credit-card input-icon"></i>
+                        <input
+                          type="text"
+                          [(ngModel)]="cardDetails.number"
+                          placeholder="4532 •••• •••• 8921"
+                          class="gta-input"
+                          maxlength="19"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="form-row mt-4">
+                    <div class="form-group flex-2">
+                      <label>CARDHOLDER NAME</label>
+                      <input
+                        type="text"
+                        [(ngModel)]="cardDetails.name"
+                        placeholder="NAME ON CARD"
+                        class="gta-input"
+                      />
+                    </div>
+                    <div class="form-group flex-1">
+                      <label>EXPIRY (MM/YY)</label>
+                      <input
+                        type="text"
+                        [(ngModel)]="cardDetails.expiry"
+                        placeholder="08/28"
+                        maxlength="5"
+                        class="gta-input"
+                      />
+                    </div>
+                    <div class="form-group flex-1">
+                      <label>CVV / CVC</label>
+                      <input
+                        type="password"
+                        [(ngModel)]="cardDetails.cvv"
+                        maxlength="4"
+                        placeholder="•••"
+                        class="gta-input"
+                      />
+                    </div>
+                  </div>
+
+                  <div class="form-row mt-4 items-center justify-between">
+                    <label class="gta-checkbox-label">
+                      <input type="checkbox" [(ngModel)]="cardDetails.saveCard" />
+                      <span class="custom-checkbox"></span>
+                      <span>Save card details for instant checkout on next drops</span>
+                    </label>
+                  </div>
+                </ng-container>
+
+                <div class="form-row mt-6 gap-4">
+                  <button class="btn-gta-primary" [disabled]="submittingOrder" (click)="placeOrder()">
+                    <i *ngIf="submittingOrder" class="fas fa-spinner fa-spin mr-2"></i>
+                    <span>PAY ${{ totalAmount | number:'1.2-2' }} & CONFIRM</span>
+                    <i *ngIf="!submittingOrder" class="fas fa-lock ml-2"></i>
+                  </button>
+                  <button
+                    class="btn-gta-secondary"
+                    *ngIf="selectedSavedCardId === null"
+                    (click)="cardDetails = {number:'', name:'', expiry:'', cvv:'', saveCard:true}"
+                  >
+                    RESET
+                  </button>
+                </div>
+              </div>
+
+              <!-- CASH ON DELIVERY -->
+              <div *ngIf="paymentMethod === 'COD'" class="cod-panel">
+                <div class="cod-box">
+                  <div class="cod-icon"><i class="fas fa-hand-holding-usd"></i></div>
+                  <div>
+                    <h4 class="cod-title">CASH ON DELIVERY (COD)</h4>
+                    <p class="cod-desc">
+                      Pay in cash when your courier drop reaches your doorstep. Please ensure you have exact change ready.
+                    </p>
+                  </div>
+                </div>
+                <button class="btn-gta-primary mt-6" [disabled]="submittingOrder" (click)="placeOrder()">
+                  <i *ngIf="submittingOrder" class="fas fa-spinner fa-spin mr-2"></i>
+                  <span>CONFIRM ORDER (PAY ON DELIVERY)</span>
+                  <i *ngIf="!submittingOrder" class="fas fa-check ml-2"></i>
+                </button>
+              </div>
+
+              <!-- GIFT CARD -->
+              <div *ngIf="paymentMethod === 'GIFT_CARD'" class="giftcard-panel">
+                <h4 class="text-green mb-4 font-bold tracking-wide">ENTER FREPPING VOUCHER / GIFT CARD</h4>
+                <div class="form-row">
+                  <div class="form-group flex-2">
+                    <label>GIFT CARD NUMBER</label>
+                    <input
+                      type="text"
+                      [(ngModel)]="giftCard.number"
+                      placeholder="FRP-GC-XXXX-XXXX"
+                      class="gta-input"
+                    />
+                  </div>
+                  <div class="form-group flex-1">
+                    <label>PIN</label>
+                    <input
+                      type="password"
+                      [(ngModel)]="giftCard.pin"
+                      placeholder="••••"
+                      class="gta-input"
+                    />
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-3 mt-4">
+                  <button class="btn-gta-sm" [disabled]="giftCard.checking" (click)="checkGiftCardBalance()">
+                    <i *ngIf="giftCard.checking" class="fas fa-spinner fa-spin mr-1"></i> CHECK BALANCE
+                  </button>
+                  <span *ngIf="giftCard.checked && giftCard.balance" class="text-green text-sm font-bold">
+                    Balance Available: ${{ giftCard.balance }}
+                  </span>
+                  <span *ngIf="giftCard.error" class="text-danger text-sm">
+                    {{ giftCard.error }}
+                  </span>
+                </div>
+
+                <button class="btn-gta-primary mt-6" [disabled]="submittingOrder" (click)="placeOrder()">
+                  <i *ngIf="submittingOrder" class="fas fa-spinner fa-spin mr-2"></i>
+                  <span>REDEEM & COMPLETE PURCHASE</span>
+                  <i *ngIf="!submittingOrder" class="fas fa-gift ml-2"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="step-actions-row">
+            <button class="btn-gta-secondary" (click)="prevStep()">
+              <i class="fas fa-arrow-left mr-2"></i> BACK TO ADDRESS
+            </button>
+          </div>
+        </div>
+
+        <!-- Right Summary Column -->
+        <div class="step-sidebar">
+          <div class="panel-card">
+            <div class="panel-header">
+              <h3 class="panel-title">DELIVERING TO</h3>
+            </div>
+            <div class="panel-body">
+              <div *ngIf="selectedAddress" class="deliver-to-summary">
+                <div class="flex items-center justify-between mb-2">
+                  <strong class="text-white">{{ selectedAddress.full_name }}</strong>
+                  <span class="badge-free">{{ selectedAddress.address_type | uppercase }}</span>
+                </div>
+                <p class="text-muted text-sm">
+                  {{ selectedAddress.address_line1 }}, {{ selectedAddress.city }} ({{ selectedAddress.postal_code }})
+                </p>
+                <button class="link-btn text-green mt-2 text-sm" (click)="goToStep(1)">
+                  Change Address
+                </button>
+              </div>
+            </div>
+
+            <div class="panel-divider"></div>
+
+            <div class="panel-header">
+              <h3 class="panel-title">FINAL BREAKDOWN</h3>
+            </div>
+            <div class="panel-body">
+              <div class="price-rows">
+                <div class="price-row">
+                  <span>Bag Subtotal</span>
+                  <span>${{ subtotalAmount | number:'1.2-2' }}</span>
+                </div>
+                <div *ngIf="promoDiscountAmount > 0" class="price-row text-green">
+                  <span>Discount</span>
+                  <span>-${{ promoDiscountAmount | number:'1.2-2' }}</span>
+                </div>
+                <div class="price-row">
+                  <span>Shipping</span>
+                  <span [class.text-green]="deliveryCostAmount === 0">
+                    {{ deliveryCostAmount === 0 ? 'FREE' : ('$' + (deliveryCostAmount | number:'1.2-2')) }}
+                  </span>
+                </div>
+                <div *ngIf="hasGiftWrap" class="price-row">
+                  <span>Gift Packaging</span>
+                  <span>+${{ giftWrapCostAmount | number:'1.2-2' }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel-divider"></div>
+
+            <div class="panel-body total-box">
+              <div class="price-row total-row">
+                <span class="total-label">GRAND TOTAL</span>
+                <span class="total-value">${{ totalAmount | number:'1.2-2' }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- STEP 4: CONFIRMATION -->
+    <!-- ========================================================================= -->
+    <div *ngIf="activeStep === 3 && lastOrder" class="step-content confirmation-step">
+      <div class="panel-card confirmation-hero">
+        <div class="confirm-badge-icon">
+          <i class="fas fa-check"></i>
+        </div>
+        <h2 class="confirm-title">ORDER CONFIRMED! 🔥</h2>
+        <p class="confirm-order-id">ORDER ID: <span>#{{ lastOrder.order_number }}</span></p>
+        <p class="confirm-text">
+          We have dispatched your order details to <strong class="text-green">{{ userEmail }}</strong>. Your tracking code will activate upon courier pick up.
+        </p>
+        <div class="confirm-meta-row">
+          <span><i class="far fa-clock mr-1"></i> Time Placed: {{ lastOrder.created_at | date:'medium' }}</span>
+          <span><i class="fas fa-shield-alt mr-1"></i> Payment Status: <strong>{{ lastOrder.payment_status }}</strong></span>
+        </div>
+      </div>
+
+      <!-- 3 Columns Summary -->
+      <div class="confirmation-info-grid mt-6">
+        <div class="panel-card">
+          <div class="panel-header">
+            <h4 class="panel-title"><i class="fas fa-map-pin mr-2 text-green"></i> SHIPPING ADDRESS</h4>
+          </div>
+          <div class="panel-body">
+            <strong class="text-white">{{ selectedAddress?.full_name || 'Delivery Customer' }}</strong>
+            <p class="text-muted mt-1">
+              {{ lastOrder.shipping_address_line1 }}<br />
+              {{ lastOrder.shipping_city }}, {{ lastOrder.shipping_state }} {{ lastOrder.shipping_postal_code }}<br />
+              {{ lastOrder.shipping_country }}
+            </p>
+          </div>
+        </div>
+
+        <div class="panel-card">
+          <div class="panel-header">
+            <h4 class="panel-title"><i class="fas fa-credit-card mr-2 text-green"></i> PAYMENT DETAILS</h4>
+          </div>
+          <div class="panel-body">
+            <strong class="text-white">
+              {{ lastOrder.payment_method }}
+            </strong>
+            <p class="text-muted mt-1">
+              Billing: {{ selectedAddress?.full_name || 'Customer' }}<br />
+              Status: <span class="text-green font-bold">{{ lastOrder.payment_status }}</span><br />
+              Total Billed: <strong class="text-green">${{ (+lastOrder.total) | number:'1.2-2' }}</strong>
+            </p>
+          </div>
+        </div>
+
+        <div class="panel-card">
+          <div class="panel-header">
+            <h4 class="panel-title"><i class="fas fa-truck mr-2 text-green"></i> SHIPPING METHOD</h4>
+          </div>
+          <div class="panel-body">
+            <strong class="text-white">{{ lastOrder.delivery_title || 'Standard Dispatch' }}</strong>
+            <p class="text-muted mt-1">
+              Estimated Delivery: <strong class="text-green">{{ lastOrder.estimated_delivery || '2-4 Days' }}</strong><br />
+              Tracking: <span class="text-white">{{ lastOrder.tracking_number || 'Pending courier scan' }}</span>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Order Summary & Actions -->
+      <div class="confirmation-actions mt-8 flex justify-center gap-4">
+        <button class="btn-gta-primary" (click)="continueShopping()">
+          <i class="fas fa-shopping-bag mr-2"></i> CONTINUE SHOPPING
+        </button>
+        <button class="btn-gta-secondary" (click)="goToOrders()">
+          <i class="fas fa-user mr-2"></i> VIEW IN PROFILE
+        </button>
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- ADD ADDRESS MODAL -->
+    <!-- ========================================================================= -->
+    <div *ngIf="showAddAddressModal" class="modal-overlay" (click)="closeAddAddressModal()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3 class="modal-title">ADD NEW DELIVERY ADDRESS</h3>
+          <button class="modal-close" (click)="closeAddAddressModal()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+          <div *ngIf="addressError" class="gta-alert error-alert mb-3">
+            <div class="alert-body"><p class="alert-text">{{ addressError }}</p></div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group w-full">
+              <label>FULL NAME / RECIPIENT *</label>
+              <input type="text" [(ngModel)]="newAddress.full_name" placeholder="Name" class="gta-input" />
+            </div>
+          </div>
+          <div class="form-row mt-3">
+            <div class="form-group w-full">
+              <label>STREET ADDRESS *</label>
+              <input type="text" [(ngModel)]="newAddress.address_line1" placeholder="123 Street Ave, Apt 4" class="gta-input" />
+            </div>
+          </div>
+          <div class="form-row mt-3">
+            <div class="form-group flex-1">
+              <label>CITY *</label>
+              <input type="text" [(ngModel)]="newAddress.city" placeholder="City" class="gta-input" />
+            </div>
+            <div class="form-group flex-1">
+              <label>STATE / PROVINCE</label>
+              <input type="text" [(ngModel)]="newAddress.state" placeholder="State" class="gta-input" />
+            </div>
+            <div class="form-group flex-1">
+              <label>POSTAL CODE *</label>
+              <input type="text" [(ngModel)]="newAddress.postal_code" placeholder="Zip" class="gta-input" />
+            </div>
+          </div>
+          <div class="form-row mt-3">
+            <div class="form-group flex-1">
+              <label>COUNTRY *</label>
+              <input type="text" [(ngModel)]="newAddress.country" placeholder="US" class="gta-input" />
+            </div>
+            <div class="form-group flex-1">
+              <label>PHONE NUMBER *</label>
+              <input type="text" [(ngModel)]="newAddress.phone" placeholder="+1 555 123 4567" class="gta-input" />
+            </div>
+          </div>
+          <div class="form-row mt-3">
+            <div class="form-group w-full">
+              <label>ADDRESS TYPE</label>
+              <div class="flex gap-4 mt-1">
+                <label class="radio-label">
+                  <input type="radio" [(ngModel)]="newAddress.address_type" value="home" name="addrType" /> Home
+                </label>
+                <label class="radio-label">
+                  <input type="radio" [(ngModel)]="newAddress.address_type" value="office" name="addrType" /> Office
+                </label>
+                <label class="radio-label">
+                  <input type="radio" [(ngModel)]="newAddress.address_type" value="other" name="addrType" /> Other
+                </label>
+              </div>
+            </div>
+          </div>
+          <div class="form-row mt-3">
+            <label class="gta-checkbox-label">
+              <input type="checkbox" [(ngModel)]="newAddress.is_default" />
+              <span class="custom-checkbox"></span>
+              <span>Set as default delivery address</span>
+            </label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-gta-secondary" (click)="closeAddAddressModal()">CANCEL</button>
+          <button class="btn-gta-primary" (click)="saveNewAddress()">SAVE ADDRESS</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>

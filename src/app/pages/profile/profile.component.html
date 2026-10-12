@@ -1,1 +1,529 @@
-<p>profile works!</p>
+<div class="profile-page">
+  <div class="profile-container">
+
+    <!-- PROFILE HEADER -->
+    <div class="profile-header">
+      <div class="user-hero-card">
+        <div class="user-avatar-wrap">
+          <div class="user-avatar">
+            {{ user?.first_name ? user?.first_name?.substring(0, 1)?.toUpperCase() : (user?.email?.substring(0, 1)?.toUpperCase() || 'U') }}
+          </div>
+          <div class="status-indicator"></div>
+        </div>
+        <div class="user-meta">
+          <h1 class="user-name">
+            {{ (user?.first_name || user?.last_name) ? ((user?.first_name || '') + ' ' + (user?.last_name || '')) : (user?.email?.split('@')?.[0] | uppercase) }}
+          </h1>
+          <p class="user-email text-muted">{{ user?.email }}</p>
+          <div class="badge-row mt-2">
+            <span class="role-badge">{{ user?.role }}</span>
+            <span class="status-badge" [class.active]="user?.is_active">
+              {{ user?.is_active ? 'ACTIVE AGENT' : 'INACTIVE' }}
+            </span>
+          </div>
+        </div>
+        <div class="hero-actions">
+          <button class="btn-logout" (click)="logout()">
+            <i class="fas fa-sign-out-alt mr-2"></i> LOGOUT
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN PROFILE GRID -->
+    <div class="profile-layout mt-6">
+
+      <!-- LEFT SIDEBAR TABS -->
+      <aside class="profile-nav-card">
+        <nav class="profile-nav">
+          <button class="nav-item" [class.active]="activeTab === 'profile'" (click)="switchTab('profile')">
+            <i class="fas fa-id-card"></i>
+            <span>PERSONAL INFO</span>
+          </button>
+          <button class="nav-item" [class.active]="activeTab === 'password'" (click)="switchTab('password')">
+            <i class="fas fa-lock"></i>
+            <span>SECURITY / PASSWORD</span>
+          </button>
+          <button class="nav-item" [class.active]="activeTab === 'orders'" (click)="switchTab('orders')">
+            <i class="fas fa-box"></i>
+            <span>MY ORDERS</span>
+          </button>
+          <button class="nav-item" [class.active]="activeTab === 'favorites'" (click)="switchTab('favorites')">
+            <i class="fas fa-heart"></i>
+            <span>SAVED DROPS</span>
+          </button>
+          <button class="nav-item" [class.active]="activeTab === 'addresses'" (click)="switchTab('addresses')">
+            <i class="fas fa-map-marker-alt"></i>
+            <span>ADDRESSES</span>
+          </button>
+          <button class="nav-item" [class.active]="activeTab === 'cards'" (click)="switchTab('cards')">
+            <i class="fas fa-credit-card"></i>
+            <span>SAVED CARDS</span>
+          </button>
+        </nav>
+      </aside>
+
+      <!-- RIGHT CONTENT AREA -->
+      <main class="profile-content">
+
+        <!-- =================================================================== -->
+        <!-- TAB 1: PROFILE INFO -->
+        <!-- =================================================================== -->
+        <div *ngIf="activeTab === 'profile'" class="tab-panel">
+          <div class="panel-card">
+            <div class="panel-header">
+              <h2 class="panel-title"><i class="fas fa-user-edit mr-2 text-green"></i> PROFILE INFORMATION</h2>
+              <span class="text-muted text-xs">Manage personal identity details</span>
+            </div>
+            <div class="panel-body">
+              <div *ngIf="profileSuccess" class="gta-alert success-alert mb-4">
+                <div class="alert-icon"><i class="fas fa-check"></i></div>
+                <div class="alert-body"><p class="alert-text">{{ profileSuccess }}</p></div>
+              </div>
+              <div *ngIf="profileError" class="gta-alert error-alert mb-4">
+                <div class="alert-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                <div class="alert-body"><p class="alert-text">{{ profileError }}</p></div>
+              </div>
+
+              <form (ngSubmit)="saveProfile()">
+                <div class="form-row">
+                  <div class="form-group flex-1">
+                    <label>FIRST NAME</label>
+                    <input type="text" [(ngModel)]="profileForm.first_name" name="firstName" placeholder="First Name" class="gta-input" />
+                  </div>
+                  <div class="form-group flex-1">
+                    <label>LAST NAME</label>
+                    <input type="text" [(ngModel)]="profileForm.last_name" name="lastName" placeholder="Last Name" class="gta-input" />
+                  </div>
+                </div>
+
+                <div class="form-row mt-4">
+                  <div class="form-group flex-1">
+                    <label>PHONE NUMBER</label>
+                    <input type="text" [(ngModel)]="profileForm.phone" name="phone" placeholder="+1 555 123 4567" class="gta-input" />
+                  </div>
+                  <div class="form-group flex-1">
+                    <label>EMAIL ADDRESS (READ-ONLY)</label>
+                    <input type="email" [value]="user?.email" disabled class="gta-input disabled" />
+                  </div>
+                </div>
+
+                <div class="form-actions mt-6">
+                  <button type="submit" class="btn-gta-primary" [disabled]="profileSaving">
+                    <i *ngIf="profileSaving" class="fas fa-spinner fa-spin mr-2"></i>
+                    <span>SAVE CHANGES</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- TAB 2: PASSWORD -->
+        <!-- =================================================================== -->
+        <div *ngIf="activeTab === 'password'" class="tab-panel">
+          <div class="panel-card">
+            <div class="panel-header">
+              <h2 class="panel-title"><i class="fas fa-shield-alt mr-2 text-green"></i> CHANGE PASSWORD</h2>
+              <span class="text-muted text-xs">Ensure your account security key is updated</span>
+            </div>
+            <div class="panel-body">
+              <div *ngIf="passwordSuccess" class="gta-alert success-alert mb-4">
+                <div class="alert-icon"><i class="fas fa-check"></i></div>
+                <div class="alert-body"><p class="alert-text">{{ passwordSuccess }}</p></div>
+              </div>
+              <div *ngIf="passwordError" class="gta-alert error-alert mb-4">
+                <div class="alert-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                <div class="alert-body"><p class="alert-text">{{ passwordError }}</p></div>
+              </div>
+
+              <form (ngSubmit)="changePassword()">
+                <div class="form-group mb-4">
+                  <label>CURRENT PASSWORD</label>
+                  <input type="password" [(ngModel)]="passwordForm.current_password" name="currPass" placeholder="••••••••" class="gta-input" />
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group flex-1">
+                    <label>NEW PASSWORD</label>
+                    <input type="password" [(ngModel)]="passwordForm.new_password" name="newPass" placeholder="••••••••" class="gta-input" />
+                  </div>
+                  <div class="form-group flex-1">
+                    <label>CONFIRM NEW PASSWORD</label>
+                    <input type="password" [(ngModel)]="passwordForm.confirm_password" name="confirmPass" placeholder="••••••••" class="gta-input" />
+                  </div>
+                </div>
+
+                <div class="form-actions mt-6">
+                  <button type="submit" class="btn-gta-primary" [disabled]="passwordSaving">
+                    <i *ngIf="passwordSaving" class="fas fa-spinner fa-spin mr-2"></i>
+                    <span>UPDATE PASSWORD</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- TAB 3: ORDERS -->
+        <!-- =================================================================== -->
+        <div *ngIf="activeTab === 'orders'" class="tab-panel">
+          <div class="panel-card">
+            <div class="panel-header flex justify-between items-center">
+              <div>
+                <h2 class="panel-title"><i class="fas fa-box mr-2 text-green"></i> ORDER HISTORY</h2>
+                <span class="text-muted text-xs">Track street drops, payments & delivery dispatch</span>
+              </div>
+              <span class="badge-total">{{ totalOrders }} ORDERS</span>
+            </div>
+
+            <!-- STATUS FILTER BAR -->
+            <div class="status-filter-bar">
+              <button
+                *ngFor="let s of ['ALL', 'PENDING', 'PAID', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED']"
+                class="filter-pill"
+                [class.active]="selectedOrderStatus === s"
+                (click)="filterOrdersByStatus($any(s))"
+              >
+                {{ s }}
+              </button>
+            </div>
+
+            <div class="panel-body">
+              <div *ngIf="orderActionMsg" class="gta-alert info-alert mb-4">
+                <div class="alert-icon"><i class="fas fa-info-circle"></i></div>
+                <div class="alert-body"><p class="alert-text">{{ orderActionMsg }}</p></div>
+              </div>
+
+              <!-- LOADING STATE -->
+              <div *ngIf="loadingOrders" class="text-center p-8 text-muted">
+                <i class="fas fa-spinner fa-spin text-2xl"></i>
+                <p class="mt-2 text-sm">LOADING ORDERS...</p>
+              </div>
+
+              <!-- EMPTY ORDERS -->
+              <div *ngIf="!loadingOrders && orders.length === 0" class="empty-state-box text-center p-8">
+                <i class="fas fa-box-open text-4xl text-muted mb-3"></i>
+                <h3 class="text-white text-lg font-bold">NO ORDERS FOUND</h3>
+                <p class="text-muted text-sm mt-1">You haven't placed any streetwear drops in this status yet.</p>
+                <a routerLink="/shop" class="btn-gta-sm inline-block mt-4">GO TO SHOP</a>
+              </div>
+
+              <!-- ORDERS LIST -->
+              <div *ngIf="!loadingOrders && orders.length > 0" class="orders-list">
+                <div *ngFor="let o of orders" class="order-card-row mb-4">
+                  <div class="order-card-header flex justify-between items-center">
+                    <div>
+                      <span class="order-num font-bold text-white">#{{ o.order_number }}</span>
+                      <span class="order-date text-muted text-xs ml-3">{{ o.created_at | date:'medium' }}</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <span class="status-badge status-{{ o.status.toLowerCase() }}">{{ o.status }}</span>
+                      <span class="pay-badge">{{ o.payment_status }}</span>
+                    </div>
+                  </div>
+
+                  <div class="order-card-body mt-3 flex justify-between items-center">
+                    <div class="order-items-summary">
+                      <span class="text-muted text-xs">{{ o.items.length }} ITEMS • </span>
+                      <span class="text-white text-sm font-medium">
+                        {{ o.items[0].product_name }}<span *ngIf="o.items.length > 1"> + {{ o.items.length - 1 }} more</span>
+                      </span>
+                    </div>
+                    <div class="order-total-price">
+                      <span class="text-muted text-xs">TOTAL: </span>
+                      <strong class="text-green text-base">${{ (+o.total) | number:'1.2-2' }}</strong>
+                    </div>
+                  </div>
+
+                  <div class="order-card-footer mt-3 flex justify-between items-center pt-3 border-t border-gray-800">
+                    <span class="text-muted text-xs">
+                      Tracking: <strong class="text-white">{{ o.tracking_number || 'Pending courier scan' }}</strong>
+                    </span>
+                    <div class="flex gap-2">
+                      <button class="btn-gta-xs" (click)="viewOrderDetail(o)">DETAILS</button>
+                      <button
+                        *ngIf="canCancelOrder(o)"
+                        class="btn-gta-xs btn-danger"
+                        [disabled]="cancellingOrderId === o.id"
+                        (click)="cancelOrder(o, $event)"
+                      >
+                        <i *ngIf="cancellingOrderId === o.id" class="fas fa-spinner fa-spin mr-1"></i>
+                        CANCEL
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- PAGINATION -->
+                <div *ngIf="totalOrderPages > 1" class="orders-pagination flex justify-center gap-2 mt-6">
+                  <button class="btn-gta-xs" [disabled]="ordersPage === 1" (click)="loadOrders(ordersPage - 1)">PREV</button>
+                  <span class="text-muted text-xs flex items-center px-2">PAGE {{ ordersPage }} OF {{ totalOrderPages }}</span>
+                  <button class="btn-gta-xs" [disabled]="ordersPage === totalOrderPages" (click)="loadOrders(ordersPage + 1)">NEXT</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- TAB 4: FAVORITES -->
+        <!-- =================================================================== -->
+        <div *ngIf="activeTab === 'favorites'" class="tab-panel">
+          <div class="panel-card">
+            <div class="panel-header flex justify-between items-center">
+              <div>
+                <h2 class="panel-title"><i class="fas fa-heart mr-2 text-green"></i> SAVED STREETWEAR DROPS</h2>
+                <span class="text-muted text-xs">Your curated collection of favorited pieces</span>
+              </div>
+              <span class="badge-total">{{ totalFavorites }} ITEMS</span>
+            </div>
+
+            <div class="panel-body">
+              <div *ngIf="loadingFavorites" class="text-center p-8 text-muted">
+                <i class="fas fa-spinner fa-spin text-2xl"></i>
+                <p class="mt-2 text-sm">FETCHING SAVED DROPS...</p>
+              </div>
+
+              <div *ngIf="!loadingFavorites && favorites.length === 0" class="empty-state-box text-center p-8">
+                <i class="far fa-heart text-4xl text-muted mb-3"></i>
+                <h3 class="text-white text-lg font-bold">NO FAVORITES YET</h3>
+                <p class="text-muted text-sm mt-1">Tap the heart icon on any drop in the shop to save it here.</p>
+                <a routerLink="/shop" class="btn-gta-sm inline-block mt-4">DISCOVER DROPS</a>
+              </div>
+
+              <div *ngIf="!loadingFavorites && favorites.length > 0" class="favorites-grid">
+                <div *ngFor="let p of favorites" class="fav-card" [routerLink]="['/product', p.id]">
+                  <div class="fav-img-wrap">
+                    <img [src]="p.images.length > 0 ? p.images[0].image_url : 'assets/bg/bg1.jpg'" [alt]="p.name" />
+                    <button class="unlike-btn" (click)="unlikeProduct(p.id, $event)" title="Remove from favorites">
+                      <i class="fas fa-heart text-red"></i>
+                    </button>
+                  </div>
+                  <div class="fav-meta p-3">
+                    <span class="text-muted text-xs">{{ p.category?.name || 'FREPPING' }}</span>
+                    <h4 class="fav-name text-white font-bold text-sm truncate">{{ p.name }}</h4>
+                    <div class="fav-price-row mt-1 flex justify-between items-center">
+                      <span class="text-green font-bold">${{ (+p.price) | number:'1.2-2' }}</span>
+                      <span class="text-xs" [class.text-green]="p.in_stock" [class.text-danger]="!p.in_stock">
+                        {{ p.in_stock ? 'IN STOCK' : 'OUT' }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- TAB 5: ADDRESSES -->
+        <!-- =================================================================== -->
+        <div *ngIf="activeTab === 'addresses'" class="tab-panel">
+          <div class="panel-card">
+            <div class="panel-header flex justify-between items-center">
+              <div>
+                <h2 class="panel-title"><i class="fas fa-map-marker-alt mr-2 text-green"></i> SHIPPING ADDRESSES</h2>
+                <span class="text-muted text-xs">Saved addresses for instant dispatch</span>
+              </div>
+              <button class="btn-gta-sm" (click)="openAddAddressModal()">
+                <i class="fas fa-plus mr-1"></i> ADD ADDRESS
+              </button>
+            </div>
+
+            <div class="panel-body">
+              <div *ngIf="loadingAddresses" class="text-center p-8 text-muted">
+                <i class="fas fa-spinner fa-spin text-2xl"></i>
+              </div>
+
+              <div *ngIf="!loadingAddresses && addresses.length === 0" class="empty-state-box text-center p-8">
+                <i class="fas fa-map-pin text-4xl text-muted mb-3"></i>
+                <h3 class="text-white text-lg font-bold">NO ADDRESSES SAVED</h3>
+                <p class="text-muted text-sm mt-1">Add your shipping destination to speed up checkout.</p>
+                <button class="btn-gta-sm mt-3" (click)="openAddAddressModal()">ADD ADDRESS NOW</button>
+              </div>
+
+              <div *ngIf="!loadingAddresses && addresses.length > 0" class="addresses-grid">
+                <div *ngFor="let a of addresses" class="address-item-card" [class.is-default]="a.is_default">
+                  <div class="addr-header flex justify-between items-center">
+                    <h4 class="text-white font-bold">{{ a.full_name }}</h4>
+                    <span class="badge-type">{{ a.address_type | uppercase }}</span>
+                  </div>
+                  <p class="addr-body text-muted text-sm mt-2">
+                    {{ a.address_line1 }}<br />
+                    {{ a.city }}, {{ a.state }} {{ a.postal_code }}<br />
+                    {{ a.country }}<br />
+                    <span class="text-green"><i class="fas fa-phone-alt mr-1"></i> {{ a.phone }}</span>
+                  </p>
+                  <div class="addr-actions mt-3 pt-3 border-t border-gray-800 flex justify-between items-center">
+                    <button *ngIf="!a.is_default" class="link-btn text-green text-xs" (click)="setDefaultAddress(a.id)">
+                      Set as default
+                    </button>
+                    <span *ngIf="a.is_default" class="text-green text-xs font-bold">[DEFAULT]</span>
+                    <button class="link-btn text-danger text-xs" (click)="deleteAddress(a.id)">Delete</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- TAB 6: SAVED CARDS -->
+        <!-- =================================================================== -->
+        <div *ngIf="activeTab === 'cards'" class="tab-panel">
+          <div class="panel-card">
+            <div class="panel-header">
+              <h2 class="panel-title"><i class="fas fa-credit-card mr-2 text-green"></i> SAVED PAYMENT METHODS</h2>
+              <span class="text-muted text-xs">Tokenized payment cards securely stored</span>
+            </div>
+
+            <div class="panel-body">
+              <div *ngIf="loadingCards" class="text-center p-8 text-muted">
+                <i class="fas fa-spinner fa-spin text-2xl"></i>
+              </div>
+
+              <div *ngIf="!loadingCards && cards.length === 0" class="empty-state-box text-center p-8">
+                <i class="fas fa-credit-card text-4xl text-muted mb-3"></i>
+                <h3 class="text-white text-lg font-bold">NO SAVED CARDS</h3>
+                <p class="text-muted text-sm mt-1">Cards are securely tokenized and saved during checkout when requested.</p>
+              </div>
+
+              <div *ngIf="!loadingCards && cards.length > 0" class="cards-list flex flex-col gap-3">
+                <div *ngFor="let c of cards" class="card-item-row p-4 rounded flex justify-between items-center border border-gray-800">
+                  <div class="flex items-center gap-3">
+                    <i class="fas fa-credit-card text-green text-xl"></i>
+                    <div>
+                      <h4 class="text-white font-bold">{{ c.brand }} •••• {{ c.last4 }}</h4>
+                      <p class="text-muted text-xs">Expires {{ c.exp_month }}/{{ c.exp_year }}</p>
+                    </div>
+                  </div>
+                  <button class="btn-gta-xs btn-danger" (click)="deleteCard(c.id)">REMOVE</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+
+    <!-- ORDER DETAIL MODAL -->
+    <div *ngIf="selectedOrderDetail" class="modal-overlay" (click)="closeOrderDetail()">
+      <div class="modal-card order-modal" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3 class="modal-title">ORDER #{{ selectedOrderDetail.order_number }}</h3>
+          <button class="modal-close" (click)="closeOrderDetail()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+          <div class="flex justify-between items-center mb-4">
+            <span class="status-badge status-{{ selectedOrderDetail.status.toLowerCase() }}">{{ selectedOrderDetail.status }}</span>
+            <span class="text-muted text-xs">Placed: {{ selectedOrderDetail.created_at | date:'medium' }}</span>
+          </div>
+
+          <div class="order-modal-items border-t border-b border-gray-800 py-3 my-3">
+            <div *ngFor="let item of selectedOrderDetail.items" class="flex justify-between items-center py-2">
+              <div>
+                <h5 class="text-white text-sm font-bold">{{ item.product_name }}</h5>
+                <span class="text-muted text-xs">{{ item.variant_label || 'Standard' }} • Qty: {{ item.quantity }}</span>
+              </div>
+              <strong class="text-green text-sm">${{ (+item.line_total) | number:'1.2-2' }}</strong>
+            </div>
+          </div>
+
+          <div class="order-modal-totals text-sm space-y-1">
+            <div class="flex justify-between text-muted">
+              <span>Subtotal:</span>
+              <span>${{ (+selectedOrderDetail.subtotal) | number:'1.2-2' }}</span>
+            </div>
+            <div *ngIf="(+selectedOrderDetail.promo_discount) > 0" class="flex justify-between text-green">
+              <span>Promo Discount:</span>
+              <span>-${{ (+selectedOrderDetail.promo_discount) | number:'1.2-2' }}</span>
+            </div>
+            <div class="flex justify-between text-muted">
+              <span>Shipping ({{ selectedOrderDetail.delivery_title || 'Standard' }}):</span>
+              <span>${{ (+selectedOrderDetail.delivery_cost) | number:'1.2-2' }}</span>
+            </div>
+            <div class="flex justify-between text-white font-bold pt-2 border-t border-gray-800">
+              <span>Total:</span>
+              <span class="text-green">${{ (+selectedOrderDetail.total) | number:'1.2-2' }}</span>
+            </div>
+          </div>
+
+          <div class="shipping-snapshot mt-4 p-3 rounded bg-gray-900 border border-gray-800 text-xs">
+            <strong class="text-white">Shipping To:</strong>
+            <p class="text-muted mt-1">
+              {{ selectedOrderDetail.shipping_address_line1 }}, {{ selectedOrderDetail.shipping_city }} {{ selectedOrderDetail.shipping_postal_code }} ({{ selectedOrderDetail.shipping_country }})<br />
+              Tracking: <span class="text-white">{{ selectedOrderDetail.tracking_number || 'Pending' }}</span>
+            </p>
+          </div>
+        </div>
+        <div class="modal-footer flex justify-between">
+          <button
+            *ngIf="canCancelOrder(selectedOrderDetail)"
+            class="btn-gta-sm btn-danger"
+            (click)="cancelOrder(selectedOrderDetail)"
+          >
+            CANCEL ORDER
+          </button>
+          <button class="btn-gta-secondary ml-auto" (click)="closeOrderDetail()">CLOSE</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ADD ADDRESS MODAL -->
+    <div *ngIf="showAddAddressModal" class="modal-overlay" (click)="showAddAddressModal = false">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3 class="modal-title">ADD SHIPPING ADDRESS</h3>
+          <button class="modal-close" (click)="showAddAddressModal = false"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+          <div *ngIf="addressError" class="gta-alert error-alert mb-3">
+            <div class="alert-body"><p class="alert-text">{{ addressError }}</p></div>
+          </div>
+
+          <div class="form-group mb-3">
+            <label>FULL NAME *</label>
+            <input type="text" [(ngModel)]="newAddress.full_name" placeholder="Recipient Name" class="gta-input" />
+          </div>
+          <div class="form-group mb-3">
+            <label>STREET ADDRESS *</label>
+            <input type="text" [(ngModel)]="newAddress.address_line1" placeholder="123 Street Ave" class="gta-input" />
+          </div>
+          <div class="form-row mb-3">
+            <div class="form-group flex-1">
+              <label>CITY *</label>
+              <input type="text" [(ngModel)]="newAddress.city" placeholder="City" class="gta-input" />
+            </div>
+            <div class="form-group flex-1">
+              <label>STATE</label>
+              <input type="text" [(ngModel)]="newAddress.state" placeholder="State" class="gta-input" />
+            </div>
+            <div class="form-group flex-1">
+              <label>ZIP *</label>
+              <input type="text" [(ngModel)]="newAddress.postal_code" placeholder="Zip" class="gta-input" />
+            </div>
+          </div>
+          <div class="form-row mb-3">
+            <div class="form-group flex-1">
+              <label>COUNTRY *</label>
+              <input type="text" [(ngModel)]="newAddress.country" placeholder="US" class="gta-input" />
+            </div>
+            <div class="form-group flex-1">
+              <label>PHONE *</label>
+              <input type="text" [(ngModel)]="newAddress.phone" placeholder="+1 555 123 4567" class="gta-input" />
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-gta-secondary" (click)="showAddAddressModal = false">CANCEL</button>
+          <button class="btn-gta-primary" (click)="saveAddress()">SAVE ADDRESS</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>

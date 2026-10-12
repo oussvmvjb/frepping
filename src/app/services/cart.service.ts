@@ -1,90 +1,207 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
-import { CartItem } from '../models/cart-item';
-import { ApiProduct, getEffectivePrice } from '../models/api-product.model';
-import { ProductVariant } from '../models/product-variant.model';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { BehaviorSubject, Observable, throwError, of } from 'rxjs';
+import { catchError, tap, switchMap } from 'rxjs/operators';
+import { environment } from '../../environments/environment';
+import {
+  Cart, AddCartItemRequest, UpdateCartItemRequest, GuestCartEntry
+} from '../models/api.models';
+import { ErrorMapperService } from './error-mapper.service';
+
+import { map } from 'rxjs/operators';
+
+const GUEST_CART_KEY = 'frepping_guest_cart';
 
 @Injectable({ providedIn: 'root' })
 export class CartService {
-  private cartSubject = new BehaviorSubject<CartItem[]>([]);
-  cartItems$ = this.cartSubject.asObservable();
+  private readonly base = `${environment.apiUrl}/cart`;
 
-  // ─── Read ─────────────────────────────────────────────────────────────────
+  private cartSubject = new BehaviorSubject<Cart | null>(null);
+  /** Full server-side cart. null = not loaded yet. */
+  cart$ = this.cartSubject.asObservable();
 
-  getCartItems(): CartItem[] {
+  itemCount$ = this.cart$.pipe(
+    map(cart => (cart?.items ?? []).reduce((count, item) => count + item.quantity, 0))
+  );
+
+  /** Compatibility stream for components expecting cartItems$ */
+  cartItems$ = this.cart$.pipe(
+    map(cart => (cart?.items ?? []).map(item => ({
+      id: item.id,
+      product: item.product,
+      variant: item.variant,
+      quantity: item.quantity,
+      unitPrice: Number(item.unit_price) || 0
+    })))
+  );
+
+  constructor(private http: HttpClient, private errorMapper: ErrorMapperService) {}
+
+  /** GET /cart */
+  load(): Observable<Cart> {
+    return this.http.get<Cart>(this.base).pipe(
+      tap(cart => this.cartSubject.next(cart)),
+      catchError(err => throwError(() => new Error(this.errorMapper.map(err))))
+    );
+  }
+
+  /** POST /cart/items */
+  addItem(req: AddCartItemRequest): Observable<Cart> {
+    return this.http.post<Cart>(`${this.base}/items`, req).pipe(
+      tap(cart => this.cartSubject.next(cart)),
+      catchError(err => throwError(() => new Error(this.errorMapper.map(err))))
+    );
+  }
+
+  /** PATCH /cart/items/:id */
+  updateQty(itemId: string, quantity: number): Observable<Cart> {
+    const req: UpdateCartItemRequest = { quantity };
+    return this.http.patch<Cart>(`${this.base}/items/${itemId}`, req).pipe(
+      tap(cart => this.cartSubject.next(cart)),
+      catchError(err => throwError(() => new Error(this.errorMapper.map(err))))
+    );
+  }
+
+  /** DELETE /cart/items/:id */
+  removeItem(itemId: string): Observable<Cart> {
+    return this.http.delete<Cart>(`${this.base}/items/${itemId}`).pipe(
+      tap(cart => this.cartSubject.next(cart)),
+      catchError(err => throwError(() => new Error(this.errorMapper.map(err))))
+    );
+  }
+
+  /** DELETE /cart */
+  clear(): Observable<void> {
+    return this.http.delete<void>(this.base).pipe(
+      tap(() => this.cartSubject.next(null)),
+      catchError(err => throwError(() => new Error(this.errorMapper.map(err))))
+    );
+  }
+
+  /** POST /cart/promo */
+  applyPromo(code: string): Observable<Cart> {
+    return this.http.post<Cart>(`${this.base}/promo`, { code }).pipe(
+      tap(cart => this.cartSubject.next(cart)),
+      catchError(err => throwError(() => new Error(this.errorMapper.map(err))))
+    );
+  }
+
+  /** DELETE /cart/promo */
+  removePromo(): Observable<Cart> {
+    return this.http.delete<Cart>(`${this.base}/promo`).pipe(
+      tap(cart => this.cartSubject.next(cart)),
+      catchError(err => throwError(() => new Error(this.errorMapper.map(err))))
+    );
+  }
+
+  /** PATCH /cart/gift-wrap */
+  setGiftWrap(enabled: boolean): Observable<Cart> {
+    return this.http.patch<Cart>(`${this.base}/gift-wrap`, { enabled }).pipe(
+      tap(cart => this.cartSubject.next(cart)),
+      catchError(err => throwError(() => new Error(this.errorMapper.map(err))))
+    );
+  }
+
+  get currentCart(): Cart | null {
     return this.cartSubject.value;
   }
 
-  getTotalItems(): number {
-    return this.cartSubject.value.reduce((sum, item) => sum + item.quantity, 0);
+  get itemCount(): number {
+    return (this.cartSubject.value?.items ?? []).reduce((s, i) => s + i.quantity, 0);
   }
 
-  getSubtotal(): number {
-    return this.cartSubject.value.reduce(
-      (sum, item) => sum + item.unitPrice * item.quantity,
-      0
-    );
+  // --- Guest cart (unauthenticated) -----------------------------------------
+
+  getGuestCart(): GuestCartEntry[] {
+    try {
+      return JSON.parse(localStorage.getItem(GUEST_CART_KEY) ?? '[]');
+    } catch { return []; }
   }
 
-  // ─── Write ────────────────────────────────────────────────────────────────
-
-  /**
-   * Add a product (with optional selected variant) to the cart.
-   * If the same product+variant combination already exists, increments quantity.
-   * Variant uniqueness is determined by variant.id when present, otherwise product.id.
-   */
-  addToCart(
-    product: ApiProduct,
-    quantity = 1,
-    variant: ProductVariant | null = null
-  ): void {
-    const items = [...this.getCartItems()];
-    const existingIdx = items.findIndex(
-      (item) =>
-        item.product.id === product.id &&
-        (variant ? item.variant?.id === variant.id : item.variant === null)
+  addGuestItem(entry: GuestCartEntry): void {
+    const items = this.getGuestCart();
+    const idx = items.findIndex(
+      i => i.product_id === entry.product_id && i.variant_id === entry.variant_id
     );
-
-    if (existingIdx > -1) {
-      items[existingIdx] = {
-        ...items[existingIdx],
-        quantity: items[existingIdx].quantity + quantity,
-      };
+    if (idx >= 0) {
+      items[idx].quantity += entry.quantity;
     } else {
-      items.push({
-        product,
-        variant,
-        unitPrice: getEffectivePrice(product, variant),
-        quantity,
+      items.push(entry);
+    }
+    localStorage.setItem(GUEST_CART_KEY, JSON.stringify(items));
+  }
+
+  clearGuestCart(): void {
+    localStorage.removeItem(GUEST_CART_KEY);
+  }
+
+  /** On login: push all guest items to server cart then clear localStorage. */
+  flushGuestCart(): Observable<Cart | null> {
+    const items = this.getGuestCart();
+    if (items.length === 0) return this.load();
+
+    const chain = items.reduce(
+      (obs: Observable<any>, entry) =>
+        obs.pipe(switchMap(() => this.addItem({ product_id: entry.product_id, variant_id: entry.variant_id, quantity: entry.quantity }))),
+      this.load()
+    );
+
+    return chain.pipe(
+      tap(() => this.clearGuestCart()),
+      catchError(() => this.load())
+    );
+  }
+
+  /** Legacy / convenient wrapper for adding to cart */
+  addToCart(product: any, quantity = 1, variant: any = null): void {
+    const isLoggedIn = !!localStorage.getItem('access_token');
+    const pid = product?.id;
+    const vid = variant?.id ?? null;
+    if (!pid) return;
+
+    if (!isLoggedIn) {
+      this.addGuestItem({ product_id: pid, variant_id: vid, quantity });
+    } else {
+      this.addItem({ product_id: pid, variant_id: vid, quantity }).subscribe({
+        error: () => {}
       });
     }
-    this.cartSubject.next(items);
+  }
+
+  removeFromCart(productId: string, variantId?: string | null): void {
+    const cart = this.cartSubject.value;
+    if (cart) {
+      const item = cart.items.find(i => i.product_id === productId && (!variantId || i.variant_id === variantId));
+      if (item) {
+        this.removeItem(item.id).subscribe({ error: () => {} });
+        return;
+      }
+    }
+    const guest = this.getGuestCart().filter(i => !(i.product_id === productId && (!variantId || i.variant_id === variantId)));
+    localStorage.setItem(GUEST_CART_KEY, JSON.stringify(guest));
   }
 
   updateQuantity(productId: string, variantId: string | null, quantity: number): void {
-    const valid = Math.max(1, Math.floor(Number(quantity)));
-    const items = this.getCartItems().map((item) => {
-      const sameProduct = item.product.id === productId;
-      const sameVariant = variantId
-        ? item.variant?.id === variantId
-        : item.variant === null;
-      return sameProduct && sameVariant ? { ...item, quantity: valid } : item;
-    });
-    this.cartSubject.next(items);
-  }
-
-  removeFromCart(productId: string, variantId: string | null = null): void {
-    const items = this.getCartItems().filter((item) => {
-      const sameProduct = item.product.id === productId;
-      const sameVariant = variantId
-        ? item.variant?.id === variantId
-        : item.variant === null;
-      return !(sameProduct && sameVariant);
-    });
-    this.cartSubject.next(items);
+    const cart = this.cartSubject.value;
+    if (cart) {
+      const item = cart.items.find(i => i.product_id === productId && (!variantId || i.variant_id === variantId));
+      if (item) {
+        this.updateQty(item.id, quantity).subscribe({ error: () => {} });
+        return;
+      }
+    }
+    const guest = this.getGuestCart();
+    const idx = guest.findIndex(i => i.product_id === productId && (!variantId || i.variant_id === variantId));
+    if (idx >= 0) {
+      guest[idx].quantity = quantity;
+      localStorage.setItem(GUEST_CART_KEY, JSON.stringify(guest));
+    }
   }
 
   clearCart(): void {
-    this.cartSubject.next([]);
+    this.clearGuestCart();
+    if (this.cartSubject.value) {
+      this.clear().subscribe({ error: () => {} });
+    }
   }
 }

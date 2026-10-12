@@ -11,9 +11,9 @@ export interface ApiProduct {
   name: string;
   slug: string;
   description: string | null;
-  price: number;
+  price: string | number;
   /** Original/compare price for strike-through display. null = no discount shown. */
-  compare_price: number | null;
+  compare_price: string | number | null;
   material: string | null;
   is_active: boolean;
   is_featured: boolean;
@@ -23,6 +23,10 @@ export interface ApiProduct {
   category: Category | null;
   images: ProductImage[];
   variants: ProductVariant[];
+  likes_count?: number;
+  is_liked?: boolean;
+  in_stock?: boolean;
+  discount_percent?: number;
   created_at: string;
   updated_at: string;
 }
@@ -59,8 +63,10 @@ export function getEffectivePrice(product: ApiProduct, variant?: ProductVariant 
 /**
  * Returns the primary image URL, or the first image, or null.
  */
-export function getPrimaryImage(product: ApiProduct): string | null {
-  if (!product.images || product.images.length === 0) return null;
+export function getPrimaryImage(
+  product: { images?: Array<{ is_primary: boolean; image_url: string }> | null } | null | undefined
+): string | null {
+  if (!product?.images?.length) return null;
   const primary = product.images.find(img => img.is_primary);
   return primary ? primary.image_url : product.images[0].image_url;
 }
