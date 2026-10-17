@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
 import { Subject } from 'rxjs';
 import { takeUntil, finalize } from 'rxjs/operators';
@@ -9,6 +9,7 @@ import { ApiProduct, getPrimaryImage, getDiscountPercent, isProductInStock } fro
 import { Category } from '../../models/category.model';
 import { FlexCarouselItem } from '../../components/flex-carousel/flex-carousel.component';
 import { DriftItem } from '../../shared/drift-wall/drift-wall.component';
+import { ModelViewerComponent } from '../../components/model-viewer/model-viewer.component';
 
 @Component({
   selector: 'app-home',
@@ -30,6 +31,38 @@ export class HomeComponent implements OnInit, OnDestroy {
   isLoadingCategories = false;
   featuredError: string | null = null;
   arrivalsError: string | null = null;
+
+  // ── 3D Fitting Room Banner ───────────────────────────────────────────────
+  @ViewChild('bannerViewer') bannerViewer?: ModelViewerComponent;
+  bannerModelPath = 'assets/3dmodel/new/Meshy_AI_Prism_Glow_Bomber_1017114106_texture.glb';
+  bannerRotating = true;
+  bannerColorIndex = 0;
+  bannerColors = [
+    { name: 'Original', hex: 0xffffff },
+    { name: 'Cyber Neon', hex: 0x39ff14 },
+    { name: 'Electric Cyan', hex: 0x00e5ff },
+    { name: 'Hyper Pink', hex: 0xff007f },
+    { name: 'Liquid Gold', hex: 0xffd700 }
+  ];
+
+  toggleBannerRotation(): void {
+    this.bannerRotating = !this.bannerRotating;
+  }
+
+  resetBannerView(): void {
+    if (this.bannerViewer) {
+      this.bannerViewer.resetCamera();
+    }
+    this.bannerRotating = true;
+  }
+
+  cycleBannerColor(): void {
+    this.bannerColorIndex = (this.bannerColorIndex + 1) % this.bannerColors.length;
+    const selected = this.bannerColors[this.bannerColorIndex];
+    if (this.bannerViewer) {
+      this.bannerViewer.changeColor(selected.hex);
+    }
+  }
 
   // Slider state (REMOVED – FlexCarousel manages this internally)
   // currentSlide / sliderInterval removed

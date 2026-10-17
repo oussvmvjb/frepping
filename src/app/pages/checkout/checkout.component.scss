@@ -78,9 +78,10 @@
   gap: 15px;
 
   @media (max-width: 768px) {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 12px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 10px minmax(0, 1fr) 10px minmax(0, 1fr) 10px minmax(0, 1fr);
+    align-items: start;
+    gap: 0;
   }
 }
 
@@ -92,6 +93,14 @@
   transition: all 0.25s ease;
   padding: 8px 14px;
   border-radius: 6px;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+    padding: 2px 0;
+    text-align: center;
+  }
 
   &:hover {
     background: rgba(57, 255, 20, 0.06);
@@ -135,6 +144,13 @@
   font-size: 18px;
   transition: all 0.25s ease;
   flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
+    font-size: 13px;
+  }
 }
 
 .step-info {
@@ -147,6 +163,10 @@
     color: #66786c;
     text-transform: uppercase;
     font-weight: 600;
+
+    @media (max-width: 768px) {
+      display: none;
+    }
   }
 
   .step-title {
@@ -155,6 +175,12 @@
     letter-spacing: 1px;
     text-transform: uppercase;
     transition: color 0.2s;
+
+    @media (max-width: 768px) {
+      font-size: 9px;
+      letter-spacing: 0;
+      white-space: nowrap;
+    }
   }
 }
 
@@ -167,7 +193,15 @@
   }
 
   @media (max-width: 768px) {
-    display: none;
+    align-self: start;
+    height: 0;
+    margin-top: 16px;
+    border-top: 1px solid currentColor;
+    font-size: 0;
+
+    i {
+      display: none;
+    }
   }
 }
 
@@ -1085,6 +1119,62 @@
   padding: 14px 20px;
   border-top: 1px solid #1f2f23;
   background: rgba(0, 0, 0, 0.4);
+}
+
+@media (max-width: 600px) {
+  .modal-overlay {
+    align-items: center;
+    padding: 10px;
+  }
+
+  .modal-card {
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 20px);
+    max-height: calc(100dvh - 20px);
+  }
+
+  .modal-header {
+    padding: 12px 14px;
+
+    .modal-title {
+      font-size: 14px;
+    }
+  }
+
+  .modal-body {
+    overflow-y: auto;
+    padding: 14px;
+
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .form-group.w-full,
+    .gta-checkbox-label {
+      grid-column: 1 / -1;
+    }
+
+    .gta-input {
+      padding: 9px 10px;
+      font-size: 14px;
+    }
+  }
+
+  .modal-footer {
+    gap: 8px;
+    padding: 10px 14px;
+
+    .btn-gta-primary,
+    .btn-gta-secondary {
+      flex: 1;
+      padding: 10px 8px;
+      font-size: 12px;
+      letter-spacing: 1px;
+    }
+  }
 }
 
 .gta-radio-label {

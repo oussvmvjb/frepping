@@ -1,1 +1,215 @@
-<p>try-on works!</p>
+<div class="try-on-page">
+  <!-- Top Banner / Header -->
+  <div class="try-on-header">
+    <div class="header-badge">
+      <i class="fas fa-vr-cardboard"></i>
+      <span>EXCLUSIVE FEATURE &bull; 3D VIRTUAL FITTING ROOM</span>
+    </div>
+    <h1 class="header-title">
+      CYBER <span class="highlight">3D WARDROBE</span>
+    </h1>
+    <p class="header-subtitle">
+      Explore high-definition 3D streetwear models in real-time. Rotate 360&deg;, inspect textures, customize neon tints, and find your perfect fit.
+    </p>
+  </div>
+
+  <!-- Main Content Grid -->
+  <div class="try-on-grid">
+    <!-- LEFT: 3D Stage (Matching Home Page Style) -->
+    <div class="stage-column">
+      <div class="banner-preview">
+        <div class="preview-container">
+          <!-- Header Bar Inside Card -->
+          <div class="preview-header">
+            <div class="preview-header-left">
+              <span class="live-dot"></span>
+              <span class="preview-model-tag">{{ activeModel.name | uppercase }}</span>
+            </div>
+            <span class="preview-format-pill">3D INTERACTIVE</span>
+          </div>
+
+          <!-- 3D Model Viewport -->
+          <div class="preview-model">
+            <app-model-viewer
+              *ngIf="!isModelSwitching"
+              #tryOnViewer
+              [modelPath]="activeModel.path"
+              [autoRotate]="isRotating"
+              [autoScale]="true"
+              [targetSize]="activeModel.targetSize">
+            </app-model-viewer>
+
+            <div *ngIf="isModelSwitching" class="switching-placeholder">
+              <div class="switching-spinner"></div>
+              <span>SWITCHING 3D MODEL...</span>
+            </div>
+
+            <!-- Floating Controls Overlay -->
+            <div class="preview-controls">
+              <button
+                type="button"
+                class="control-btn"
+                [class.active]="isRotating"
+                (click)="toggleRotation()"
+                title="Toggle 360° Rotation">
+                <i class="fas fa-rotate"></i>
+                <span class="control-tooltip">{{ isRotating ? 'Pause Rotation' : 'Auto Rotate' }}</span>
+              </button>
+              <button
+                type="button"
+                class="control-btn"
+                (click)="resetCamera()"
+                title="Reset View / Camera">
+                <i class="fas fa-expand-alt"></i>
+                <span class="control-tooltip">Reset Camera</span>
+              </button>
+              <button
+                type="button"
+                class="control-btn"
+                (click)="cycleColor()"
+                title="Cycle Neon Tint">
+                <i class="fas fa-palette"></i>
+                <span class="control-tooltip">{{ colorways[activeColorIndex].name }}</span>
+              </button>
+            </div>
+
+            <!-- Interactive Hint Badge -->
+            <div class="preview-hint">
+              <i class="fas fa-hand-pointer"></i>
+              <span>DRAG TO ROTATE &bull; SCROLL TO ZOOM</span>
+            </div>
+
+            <!-- Model Badge Tag -->
+            <div class="model-badge-floating">
+              <i [class]="activeModel.icon"></i>
+              <span>{{ activeModel.badge }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Feature Highlights -->
+     
+    </div>
+
+    <!-- RIGHT: Wardrobe Selector & Garment Controls -->
+    <div class="controls-column">
+      <!-- Wardrobe Model Switcher -->
+      <div class="section-card wardrobe-section">
+        <div class="section-card-title">
+          <i class="fas fa-layer-group"></i>
+          <span>SELECT 3D GARMENT</span>
+        </div>
+        <div class="models-list">
+          <button
+            type="button"
+            *ngFor="let m of tryOnModels"
+            class="model-card"
+            [class.active]="m.id === activeModel.id"
+            (click)="selectModel(m)">
+            <div class="model-card-icon">
+              <i [class]="m.icon"></i>
+            </div>
+            <div class="model-card-info">
+              <div class="model-card-header">
+                <span class="model-card-name">{{ m.name }}</span>
+                <span class="model-card-price">${{ m.price.toFixed(2) }}</span>
+              </div>
+              <div class="model-card-meta">
+                <span class="model-card-cat">{{ m.category }}</span>
+                <span class="model-card-badge">{{ m.badge }}</span>
+              </div>
+            </div>
+            <div class="model-card-check" *ngIf="m.id === activeModel.id">
+              <i class="fas fa-check"></i>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Garment Details & Color Customizer -->
+      <div class="section-card details-section">
+        <div class="product-info-header">
+          <span class="product-category-tag">{{ activeModel.category }}</span>
+          <h2 class="product-title">{{ activeModel.name }}</h2>
+          <div class="product-price">${{ activeModel.price.toFixed(2) }}</div>
+        </div>
+
+        <p class="product-description">{{ activeModel.description }}</p>
+
+        <!-- Color Customization Swatches -->
+        <div class="option-group">
+          <div class="option-label">
+            <span>NEON COLORWAY:</span>
+            <span class="active-option-value">{{ colorways[activeColorIndex].name }}</span>
+          </div>
+          <div class="color-swatches">
+            <button
+              type="button"
+              *ngFor="let c of colorways; let i = index"
+              class="color-swatch-btn"
+              [class.active]="activeColorIndex === i"
+              [style.--swatch-color]="c.css"
+              (click)="setColor(c, i)"
+              [title]="c.name">
+              <span class="swatch-circle" [style.background-color]="c.css"></span>
+              <span class="swatch-name">{{ c.name }}</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Size Selection -->
+        <div class="option-group">
+          <div class="option-label">
+            <span>SELECT SIZE:</span>
+            <span class="active-option-value">{{ selectedSize }}</span>
+          </div>
+          <div class="size-pills">
+            <button
+              type="button"
+              *ngFor="let s of sizes"
+              class="size-pill-btn"
+              [class.active]="selectedSize === s"
+              (click)="selectSize(s)">
+              {{ s }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Specifications Breakdown -->
+        <div class="specs-grid">
+          <div class="spec-box">
+            <span class="spec-title">MATERIAL</span>
+            <span class="spec-data">{{ activeModel.specs.material }}</span>
+          </div>
+          <div class="spec-box">
+            <span class="spec-title">FIT</span>
+            <span class="spec-data">{{ activeModel.specs.fit }}</span>
+          </div>
+          <div class="spec-box">
+            <span class="spec-title">COLLECTION</span>
+            <span class="spec-data">{{ activeModel.specs.season }}</span>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+          <button
+            type="button"
+            class="btn-primary-action"
+            (click)="addToCart()">
+            <i class="fas fa-shopping-bag"></i>
+            <span>{{ addedToCartFeedback ? 'ADDED TO BAG!' : 'ADD TO BAG' }}</span>
+          </button>
+          <button
+            type="button"
+            class="btn-secondary-action"
+            (click)="goToShop()">
+            <i class="fas fa-store"></i>
+            <span>EXPLORE SHOP</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

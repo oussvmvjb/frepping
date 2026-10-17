@@ -58,9 +58,6 @@
               <div class="modern-badge new" *ngIf="item.product?.is_featured">
                 FEATURED
               </div>
-              <div class="modern-badge quantity" *ngIf="item.quantity > 1">
-                x{{item.quantity}}
-              </div>
             </div>
             
             <!-- Quick Actions -->
@@ -79,7 +76,6 @@
           <!-- Cart Item Content -->
           <div class="modern-cart-content modern-product-content">
             <div class="modern-cart-info modern-product-info">
-              <div class="modern-brand">{{item.product?.category?.name || 'FREPPING'}}</div>
               <h3 class="modern-product-name">{{item.product?.name || 'Product unavailable'}}</h3>
               <p class="modern-material" *ngIf="!item.product">This item is no longer available. Remove it to continue.</p>
               
@@ -95,7 +91,6 @@
                   <i class="fas fa-tag"></i>
                   Save ${{getItemSavings(item) | number:'1.2-2'}}
                 </div>
-                <div class="modern-material" *ngIf="item.product?.material">{{item.product?.material}}</div>
               </div>
               
               <!-- Size & Color Info from Variant -->
@@ -107,10 +102,6 @@
                 <div class="detail-row" *ngIf="item.variant.color">
                   <span class="detail-label">Color:</span>
                   <span class="detail-value">{{item.variant.color}}</span>
-                </div>
-                <div class="detail-row" *ngIf="item.variant.sku">
-                  <span class="detail-label">SKU:</span>
-                  <span class="detail-value">{{item.variant.sku}}</span>
                 </div>
               </div>
               

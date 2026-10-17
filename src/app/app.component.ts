@@ -34,13 +34,11 @@ export class AppComponent implements OnInit, OnDestroy {
 
   // Audio handling
   private ambienceAudio: HTMLAudioElement | null = null;
-  private audioInitialized = false;
 
   // Cursor state
   cursorHideTimeout: any;
   isCursorActive = true;
   isAmbiencePlaying = false;
-  isManuallyPaused = false;
 
   // Router subscription
   private routerSubscription: Subscription;
@@ -62,11 +60,6 @@ export class AppComponent implements OnInit, OnDestroy {
 
         this.updateSidebarVisibility(event.urlAfterRedirects || event.url);
 
-        console.log('Navigation completed, attempting to play ambience...');
-        // Try to play ambience when navigation completes
-        setTimeout(() => {
-          this.attemptAutoplay();
-        }, 500);
       }
     });
   }
@@ -129,18 +122,6 @@ export class AppComponent implements OnInit, OnDestroy {
       console.log('Ambience paused');
     });
 
-    // Handle autoplay restrictions
-    this.ambienceAudio.addEventListener('canplaythrough', () => {
-      this.audioInitialized = true;
-      console.log('Audio ready to play');
-    });
-  }
-
-  attemptAutoplay(): void {
-    // Only attempt autoplay if not manually paused
-    if (!this.isManuallyPaused && this.ambienceAudio && this.audioInitialized) {
-      this.playGTAAmbience();
-    }
   }
 
   @HostListener('document:mousemove', ['$event'])
@@ -161,13 +142,6 @@ export class AppComponent implements OnInit, OnDestroy {
     // Check if we're "aiming" (holding right click)
     this.checkAimingState(event);
 
-    // Try to start ambience on first user interaction (browser autoplay workaround)
-    if (!this.isManuallyPaused && this.ambienceAudio && this.ambienceAudio.paused) {
-      // Only attempt on first significant movement (not tiny movements)
-      if (Math.abs(event.movementX) > 5 || Math.abs(event.movementY) > 5) {
-        this.playGTAAmbience();
-      }
-    }
   }
 
   toggleAmbience(): void {
@@ -176,17 +150,9 @@ export class AppComponent implements OnInit, OnDestroy {
     }
 
     if (this.ambienceAudio!.paused) {
-      // User wants to unmute
-      this.playGTAAmbience().then(() => {
-        this.isManuallyPaused = false;
-      }).catch(error => {
-        console.error('Failed to unmute ambience:', error);
-        this.isManuallyPaused = false;
-      });
+      this.playGTAAmbience();
     } else {
-      // User wants to mute
       this.ambienceAudio!.pause();
-      this.isManuallyPaused = true;
     }
   }
 
@@ -195,10 +161,6 @@ export class AppComponent implements OnInit, OnDestroy {
     this.playClickSound();
     this.showClickEffect(event);
 
-    // Try to play ambience on click (user interaction)
-    if (!this.isManuallyPaused) {
-      this.playGTAAmbience();
-    }
   }
 
   async playGTAAmbience(): Promise<void> {
@@ -211,41 +173,9 @@ export class AppComponent implements OnInit, OnDestroy {
         await this.ambienceAudio.play();
         console.log('Ambience playback started successfully');
       } catch (error) {
-        console.warn('Autoplay blocked by browser:', error);
-
-        // Show a subtle hint to user
-        this.showAutoplayHint();
+        console.warn('Ambience playback failed:', error);
       }
     }
-  }
-
-  showAutoplayHint(): void {
-    // Create a temporary hint for the user
-    const hint = this.renderer.createElement('div');
-    this.renderer.addClass(hint, 'gta-autoplay-hint');
-    this.renderer.setStyle(hint, 'position', 'fixed');
-    this.renderer.setStyle(hint, 'bottom', '20px');
-    this.renderer.setStyle(hint, 'left', '50%');
-    this.renderer.setStyle(hint, 'transform', 'translateX(-50%)');
-    this.renderer.setStyle(hint, 'background', 'rgba(0, 0, 0, 0.8)');
-    this.renderer.setStyle(hint, 'color', '#fff');
-    this.renderer.setStyle(hint, 'padding', '10px 20px');
-    this.renderer.setStyle(hint, 'border-radius', '5px');
-    this.renderer.setStyle(hint, 'font-family', '"Arial", sans-serif');
-    this.renderer.setStyle(hint, 'font-size', '14px');
-    this.renderer.setStyle(hint, 'z-index', '9999');
-    this.renderer.setStyle(hint, 'border', '1px solid #f1c40f');
-
-    const text = this.renderer.createText('Click anywhere or use the music button to enable sound');
-    this.renderer.appendChild(hint, text);
-    this.renderer.appendChild(document.body, hint);
-
-    // Remove hint after 5 seconds
-    setTimeout(() => {
-      if (document.body.contains(hint)) {
-        this.renderer.removeChild(document.body, hint);
-      }
-    }, 5000);
   }
 
   // Rest of your existing methods remain the same...
