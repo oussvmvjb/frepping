@@ -27,6 +27,7 @@ import { RegisterComponent } from './pages/register/register.component';
 import { StorePageComponent } from './pages/store-page/store-page.component';
 import { SellerDashboardComponent } from './pages/seller/seller-dashboard/seller-dashboard.component';
 import { CheckoutComponent } from './pages/checkout/checkout.component';
+import { ClothesRoomComponent } from './pages/clothes-room/clothes-room.component';
 
 @NgModule({
   declarations: [
@@ -58,7 +59,8 @@ import { CheckoutComponent } from './pages/checkout/checkout.component';
     BlurTextComponent,
     DitherVeilComponent,
     DriftWallComponent,
-    LiquidEtherComponent
+    LiquidEtherComponent,
+    ClothesRoomComponent
   ],
   providers: [
     { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true }

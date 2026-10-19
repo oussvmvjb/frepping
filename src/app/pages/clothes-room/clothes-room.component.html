@@ -1,0 +1,365 @@
+<div class="clothes-room-page">
+  <!-- Top Header -->
+  <header class="room-header">
+    <div class="header-badge">
+      <i class="fas fa-hand-sparkles"></i>
+      <span>EXCLUSIVE FEATURE &bull; 3D CLOTHES SHOWROOM CAROUSEL</span>
+    </div>
+    <h1 class="header-title">
+      CYBER <span class="highlight">CLOTHES ROOM</span>
+    </h1>
+    <p class="header-subtitle">
+      Inspect streetwear in a dynamic 3D carousel showroom. Browse models with open-hand swipes,
+      rotate 360&deg; with pinch gestures, and zoom touch-free using browser-based AI tracking.
+    </p>
+  </header>
+
+  <!-- Error Notification Banner -->
+  <div class="error-banner" *ngIf="trackingStatus === 'ERROR' && trackingError">
+    <div class="error-banner-content">
+      <i class="fas fa-exclamation-circle"></i>
+      <div class="error-text">
+        <strong>Camera Tracking Notice:</strong> {{ trackingError }}
+      </div>
+      <button type="button" class="btn-retry-tracking" (click)="toggleTracking()">
+        <i class="fas fa-redo"></i> Retry Camera
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Showcase Layout Grid -->
+  <div class="room-layout">
+    <!-- LEFT: Main 3D Viewport Area -->
+    <main class="viewer-stage-column">
+      <div class="stage-frame">
+        <!-- Studio HUD Top Bar -->
+        <div class="stage-hud-top">
+          <!-- Live Status Indicator Pill -->
+          <div
+            class="status-pill"
+            [ngClass]="{
+              'status-off': trackingStatus === 'OFF',
+              'status-busy':
+                trackingStatus === 'REQUESTING_PERMISSION' ||
+                trackingStatus === 'INITIALIZING_MODEL',
+              'status-searching': trackingStatus === 'SEARCHING',
+              'status-open-palm': gestureState === 'OPEN_PALM_READY',
+              'status-tracking':
+                trackingStatus === 'TRACKING' && gestureState === 'CURSOR_HOVER',
+              'status-grabbed': gestureState === 'GRABBED_ROTATING',
+              'status-zooming': gestureState === 'TWO_HAND_ZOOMING',
+              'status-error': trackingStatus === 'ERROR'
+            }"
+          >
+            <span class="status-pulse-dot"></span>
+            <span class="status-label" *ngIf="trackingStatus === 'OFF'">
+              HAND TRACKING: OFF
+            </span>
+            <span class="status-label" *ngIf="trackingStatus === 'REQUESTING_PERMISSION'">
+              REQUESTING CAMERA PERMISSION...
+            </span>
+            <span class="status-label" *ngIf="trackingStatus === 'INITIALIZING_MODEL'">
+              LOADING MEDIAPIPE AI MODEL...
+            </span>
+            <span class="status-label" *ngIf="trackingStatus === 'SEARCHING'">
+              SEARCHING FOR HANDS...
+            </span>
+            <span class="status-label" *ngIf="gestureState === 'OPEN_PALM_READY'">
+              🖐️ OPEN HAND &bull; SWIPE LEFT / RIGHT TO BROWSE
+            </span>
+            <span
+              class="status-label"
+              *ngIf="trackingStatus === 'TRACKING' && gestureState === 'CURSOR_HOVER'"
+            >
+              1 HAND ACTIVE &bull; PINCH TO ROTATE
+            </span>
+            <span class="status-label" *ngIf="gestureState === 'GRABBED_ROTATING'">
+              GRABBED &bull; ROTATING 360&deg;
+            </span>
+            <span class="status-label" *ngIf="gestureState === 'TWO_HAND_ZOOMING'">
+              2 HANDS ACTIVE &bull; VERTICAL ZOOM MODE
+            </span>
+            <span class="status-label" *ngIf="trackingStatus === 'ERROR'">
+              CAMERA ACCESS BLOCKED
+            </span>
+          </div>
+
+          <!-- Stage Meta Badge -->
+          <div class="model-meta-tag">
+            <span class="meta-dot"></span>
+            <span class="meta-name">{{ selectedModel.name | uppercase }}</span>
+            <span class="meta-pill">{{ selectedModel.badge }}</span>
+          </div>
+        </div>
+
+        <!-- 3D Three.js Clothes Viewer Component with Carousel -->
+        <div class="viewer-canvas-wrap">
+          <app-clothes-viewer
+            #viewer
+            [selectedIndex]="selectedModelIndex"
+            [autoRotate]="autoRotate"
+            (modelChanged)="onModelChanged($event)"
+          ></app-clothes-viewer>
+        </div>
+
+        <!-- Stage Bottom Quick Control Toolbar -->
+        <div class="stage-toolbar">
+          <div class="toolbar-left">
+            <button
+              type="button"
+              class="hud-tool-btn"
+              [class.active]="isTrackingActive"
+              (click)="toggleTracking()"
+              [title]="isTrackingActive ? 'Disable Hand Tracking' : 'Enable Hand Tracking'"
+            >
+              <i class="fas" [ngClass]="isTrackingActive ? 'fa-video-slash' : 'fa-video'"></i>
+              <span>{{ isTrackingActive ? 'STOP TRACKING' : 'ENABLE TRACKING' }}</span>
+            </button>
+
+            <button
+              type="button"
+              class="hud-tool-btn"
+              [class.active]="autoRotate"
+              (click)="toggleAutoRotate()"
+              title="Toggle Auto 360° Rotation"
+            >
+              <i class="fas fa-rotate"></i>
+              <span>AUTO ROTATE</span>
+            </button>
+
+            <button
+              type="button"
+              class="hud-tool-btn"
+              (click)="resetView()"
+              title="Reset View Framing"
+            >
+              <i class="fas fa-arrows-rotate"></i>
+              <span>RESET VIEW</span>
+            </button>
+          </div>
+
+          <div class="toolbar-right">
+            <div class="carousel-step-controls">
+              <button
+                type="button"
+                class="carousel-arrow-btn"
+                (click)="prevModel()"
+                title="Previous Garment (←)"
+              >
+                <i class="fas fa-arrow-left"></i>
+              </button>
+              <span class="carousel-pos">
+                {{ selectedModelIndex + 1 }} / {{ clothingModels.length }}
+              </span>
+              <button
+                type="button"
+                class="carousel-arrow-btn"
+                (click)="nextModel()"
+                title="Next Garment (→)"
+              >
+                <i class="fas fa-arrow-right"></i>
+              </button>
+            </div>
+
+            <button
+              type="button"
+              class="guide-toggle-btn"
+              [class.active]="showGuide"
+              (click)="toggleGuide()"
+            >
+              <i class="fas fa-question-circle"></i>
+              <span>{{ showGuide ? 'HIDE GUIDE' : 'GESTURE GUIDE' }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- RIGHT: Carousel Selector, Instructions & Product Column -->
+    <aside class="sidebar-column">
+      <!-- 1. 3D Garment Carousel Switcher -->
+      <section class="card wardrobe-selector-card">
+        <div class="card-header">
+          <div class="card-title">
+            <i class="fas fa-layer-group"></i>
+            <span>3D SHOWROOM COLLECTION</span>
+          </div>
+          <span class="card-chip chip-active">5 GARMENTS</span>
+        </div>
+
+        <div class="wardrobe-list">
+          <button
+            type="button"
+            *ngFor="let m of clothingModels; let i = index"
+            class="wardrobe-item"
+            [class.active]="i === selectedModelIndex"
+            (click)="selectModel(i)"
+          >
+            <div class="wardrobe-icon">
+              <i [class]="m.icon"></i>
+            </div>
+            <div class="wardrobe-info">
+              <div class="wardrobe-header-row">
+                <span class="wardrobe-name">{{ m.name }}</span>
+                <span class="wardrobe-price">${{ m.price.toFixed(2) }}</span>
+              </div>
+              <div class="wardrobe-meta-row">
+                <span class="wardrobe-category">{{ m.category }}</span>
+                <span class="wardrobe-badge">{{ m.badge }}</span>
+              </div>
+            </div>
+            <div class="wardrobe-check" *ngIf="i === selectedModelIndex">
+              <i class="fas fa-circle-check"></i>
+            </div>
+          </button>
+        </div>
+      </section>
+
+      <!-- 2. Hand Tracking Toggle & Privacy Card -->
+      <section class="card tracking-action-card">
+        <div class="card-header">
+          <div class="card-title">
+            <i class="fas fa-hand-sparkles"></i>
+            <span>GESTURE CONTROLLER</span>
+          </div>
+          <span class="card-chip" [class.chip-active]="isTrackingActive">
+            {{ isTrackingActive ? 'ACTIVE' : 'STANDBY' }}
+          </span>
+        </div>
+
+        <p class="card-desc">
+          Swipe left and right with an open palm to slide garments across the 3D carousel.
+          Pinch thumb and index to grab and inspect in 360&deg;.
+        </p>
+
+        <button
+          type="button"
+          class="btn-primary-tracking"
+          [class.tracking-active]="isTrackingActive"
+          (click)="toggleTracking()"
+        >
+          <i
+            class="fas"
+            [ngClass]="isTrackingActive ? 'fa-stop-circle' : 'fa-hand-sparkles'"
+          ></i>
+          <span>{{ isTrackingActive ? 'STOP HAND TRACKING' : 'START HAND TRACKING' }}</span>
+        </button>
+
+        <div class="privacy-note">
+          <i class="fas fa-shield-alt"></i>
+          <span>
+            <strong>100% Client-Side Privacy:</strong> Computer vision runs strictly inside your
+            browser. No video is recorded or sent to any server.
+          </span>
+        </div>
+      </section>
+
+      <!-- 3. Gesture Instructions Card -->
+      <section class="card guide-card" *ngIf="showGuide">
+        <div class="card-header">
+          <div class="card-title">
+            <i class="fas fa-wand-magic-sparkles"></i>
+            <span>GESTURE COMMANDS</span>
+          </div>
+          <span class="card-chip">HOW TO USE</span>
+        </div>
+
+        <ul class="gesture-steps">
+          <li class="gesture-item">
+            <div class="gesture-icon-wrap icon-amber">
+              <i class="fas fa-hand"></i>
+            </div>
+            <div class="gesture-item-content">
+              <strong>Open Hand + Swipe Left / Right</strong>
+              <p>
+                Hold hand open and swipe horizontally to navigate models in the 3D carousel.
+              </p>
+            </div>
+          </li>
+
+          <li class="gesture-item">
+            <div class="gesture-icon-wrap icon-green">
+              <i class="fas fa-hand-scissors"></i>
+            </div>
+            <div class="gesture-item-content">
+              <strong>Pinch Thumb & Index</strong>
+              <p>Pinch together to grab center garment and enter 360&deg; rotation mode.</p>
+            </div>
+          </li>
+
+          <li class="gesture-item">
+            <div class="gesture-icon-wrap icon-green">
+              <i class="fas fa-arrows-left-right"></i>
+            </div>
+            <div class="gesture-item-content">
+              <strong>Move Hand While Pinched</strong>
+              <p>Smoothly spins the garment 360&deg; to inspect back, front, and sides.</p>
+            </div>
+          </li>
+
+          <li class="gesture-item">
+            <div class="gesture-icon-wrap icon-magenta">
+              <i class="fas fa-hands"></i>
+            </div>
+            <div class="gesture-item-content">
+              <strong>Raise / Lower Second Hand</strong>
+              <p>When grabbed, raise 2nd hand to zoom in; lower to zoom out.</p>
+            </div>
+          </li>
+
+          <li class="gesture-item">
+            <div class="gesture-icon-wrap icon-gray">
+              <i class="fas fa-keyboard"></i>
+            </div>
+            <div class="gesture-item-content">
+              <strong>Keyboard & Mouse Fallback</strong>
+              <p>Use Left/Right arrow keys, drag to rotate, or click side models to select.</p>
+            </div>
+          </li>
+        </ul>
+      </section>
+
+      <!-- 4. Garment Details & Cart Card -->
+      <section class="card product-card">
+        <div class="product-header">
+          <span class="product-badge">{{ selectedModel.category }} &bull; 2026</span>
+          <h2 class="product-title">{{ selectedModel.name }}</h2>
+          <div class="product-price">${{ selectedModel.price.toFixed(2) }}</div>
+        </div>
+
+        <p class="product-text">{{ selectedModel.description }}</p>
+
+        <div class="product-specs">
+          <div class="spec-cell">
+            <span class="spec-label">FABRIC</span>
+            <span class="spec-val">{{ selectedModel.specs.material }}</span>
+          </div>
+          <div class="spec-cell">
+            <span class="spec-label">FIT</span>
+            <span class="spec-val">{{ selectedModel.specs.fit }}</span>
+          </div>
+          <div class="spec-cell">
+            <span class="spec-label">COLLECTION</span>
+            <span class="spec-val">{{ selectedModel.specs.season }}</span>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          class="btn-add-cart"
+          [class.added]="addedToCart"
+          (click)="addToCart()"
+        >
+          <i class="fas" [ngClass]="addedToCart ? 'fa-check' : 'fa-shopping-bag'"></i>
+          <span>
+            {{
+              addedToCart
+                ? 'ADDED TO BAG'
+                : 'ADD TO BAG &bull; $' + selectedModel.price.toFixed(2)
+            }}
+          </span>
+        </button>
+      </section>
+    </aside>
+  </div>
+</div>

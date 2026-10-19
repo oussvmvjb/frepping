@@ -1,0 +1,654 @@
+:host {
+  display: block;
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.viewer-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+  user-select: none;
+  touch-action: none;
+  background: radial-gradient(circle at 50% 35%, #151d16 0%, #0c0f0d 65%, #050706 100%);
+  border-radius: 16px;
+  cursor: grab;
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+.webgl-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  outline: none;
+}
+
+/* ==========================================================
+   GESTURE NOTIFICATION TOAST
+   ========================================================== */
+.gesture-toast {
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(14, 22, 16, 0.94);
+  border: 1px solid #39ff14;
+  color: #39ff14;
+  font-family: 'Oswald', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  padding: 8px 20px;
+  border-radius: 30px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.8), 0 0 25px rgba(57, 255, 20, 0.35);
+  z-index: 45;
+  animation: slideToast 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+
+  i {
+    font-size: 14px;
+    animation: pulseIcon 1.5s infinite;
+  }
+}
+
+@keyframes slideToast {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -15px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+/* ==========================================================
+   1. GESTURE CURSOR OVERLAY (HIGH-TECH RETICLE)
+   ========================================================== */
+.hand-cursor {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 44px;
+  height: 44px;
+  margin-top: -22px;
+  margin-left: -22px;
+  pointer-events: none;
+  z-index: 50;
+  transition: opacity 0.2s ease;
+  will-change: transform, opacity;
+
+  &.cursor-hidden {
+    opacity: 0 !important;
+  }
+
+  .cursor-reticle {
+    position: absolute;
+    inset: 0;
+    border: 2px dashed rgba(57, 255, 20, 0.45);
+    border-radius: 50%;
+    animation: rotateReticle 8s linear infinite;
+    transition: all 0.25s ease;
+  }
+
+  .cursor-pinch-ring {
+    position: absolute;
+    inset: -6px;
+    border: 1px solid rgba(57, 255, 20, 0.2);
+    border-radius: 50%;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .cursor-core {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 24px;
+    height: 24px;
+    background: rgba(12, 15, 13, 0.85);
+    border: 1.5px solid #39ff14;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 15px rgba(57, 255, 20, 0.5);
+    transition: all 0.25s ease;
+
+    .cursor-icon {
+      font-size: 10px;
+      color: #39ff14;
+      transition: all 0.2s ease;
+    }
+  }
+
+  .cursor-tag {
+    position: absolute;
+    top: 48px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(8, 12, 9, 0.92);
+    border: 1px solid rgba(57, 255, 20, 0.4);
+    color: #39ff14;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    font-family: 'Oswald', sans-serif;
+    padding: 3px 8px;
+    border-radius: 12px;
+    white-space: nowrap;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.7);
+  }
+
+  /* Open-Palm Ready State */
+  &.is-open-palm {
+    .cursor-reticle {
+      border-color: #ffc800;
+      border-style: solid;
+      animation: rotateReticle 4s linear infinite;
+    }
+    .cursor-core {
+      border-color: #ffc800;
+      background: rgba(255, 200, 0, 0.2);
+      box-shadow: 0 0 20px rgba(255, 200, 0, 0.6);
+
+      .cursor-icon {
+        color: #ffc800;
+        font-size: 11px;
+      }
+    }
+    .cursor-tag {
+      border-color: rgba(255, 200, 0, 0.6);
+      color: #ffc800;
+    }
+  }
+
+  /* Hover State (over garment mesh) */
+  &.is-hovering {
+    .cursor-reticle {
+      border-color: #39ff14;
+      border-style: solid;
+      transform: scale(1.15);
+    }
+    .cursor-core {
+      background: rgba(57, 255, 20, 0.2);
+      box-shadow: 0 0 25px rgba(57, 255, 20, 0.8);
+    }
+  }
+
+  /* Grabbed / Rotating State */
+  &.is-grabbed {
+    .cursor-reticle {
+      border-color: #00e5ff;
+      border-style: solid;
+      animation: rotateReticle 2s linear infinite;
+    }
+    .cursor-pinch-ring {
+      inset: -10px;
+      border-color: rgba(0, 229, 255, 0.6);
+      animation: pulsePinch 1.2s infinite;
+    }
+    .cursor-core {
+      border-color: #00e5ff;
+      background: rgba(0, 229, 255, 0.25);
+      box-shadow: 0 0 25px rgba(0, 229, 255, 0.8);
+
+      .cursor-icon {
+        color: #00e5ff;
+        font-size: 11px;
+      }
+    }
+    .cursor-tag {
+      border-color: rgba(0, 229, 255, 0.6);
+      color: #00e5ff;
+    }
+  }
+
+  /* Two-Hand Zooming State */
+  &.is-zooming {
+    .cursor-reticle {
+      border-color: #ff007f;
+      animation: rotateReticle 1.2s linear infinite;
+    }
+    .cursor-core {
+      border-color: #ff007f;
+      background: rgba(255, 0, 127, 0.25);
+      box-shadow: 0 0 25px rgba(255, 0, 127, 0.8);
+
+      .cursor-icon {
+        color: #ff007f;
+      }
+    }
+    .cursor-tag {
+      border-color: rgba(255, 0, 127, 0.6);
+      color: #ff007f;
+    }
+  }
+}
+
+@keyframes rotateReticle {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulsePinch {
+  0% {
+    transform: scale(0.95);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 0.4;
+  }
+  100% {
+    transform: scale(0.95);
+    opacity: 0.9;
+  }
+}
+
+/* ==========================================================
+   2. CAROUSEL QUICK SIDE NAVIGATION BUTTONS
+   ========================================================== */
+.carousel-nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 48px;
+  height: 64px;
+  background: rgba(12, 17, 14, 0.75);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(57, 255, 20, 0.3);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 30;
+  transition: all 0.25s ease;
+
+  i {
+    font-size: 18px;
+    color: #39ff14;
+    transition: transform 0.2s ease;
+  }
+
+  &:hover {
+    background: rgba(57, 255, 20, 0.2);
+    border-color: #39ff14;
+    box-shadow: 0 0 20px rgba(57, 255, 20, 0.4);
+
+    i {
+      transform: scale(1.2);
+    }
+  }
+
+  &:active {
+    transform: translateY(-50%) scale(0.95);
+  }
+
+  &.btn-prev {
+    left: 14px;
+    border-radius: 12px 6px 6px 12px;
+  }
+
+  &.btn-next {
+    right: 14px;
+    border-radius: 6px 12px 12px 6px;
+  }
+}
+
+/* ==========================================================
+   3. CAROUSEL DOTS INDICATOR BAR
+   ========================================================== */
+.carousel-dots-bar {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(10, 15, 12, 0.85);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(57, 255, 20, 0.25);
+  padding: 6px 14px;
+  border-radius: 30px;
+  z-index: 30;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+
+  .carousel-dot-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 16px;
+    transition: all 0.25s ease;
+
+    .dot-indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.25);
+      transition: all 0.25s ease;
+    }
+
+    .dot-label {
+      display: none;
+      font-family: 'Oswald', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.2px;
+      color: #39ff14;
+      white-space: nowrap;
+    }
+
+    &:hover {
+      .dot-indicator {
+        background: rgba(57, 255, 20, 0.6);
+        transform: scale(1.2);
+      }
+    }
+
+    &.active {
+      background: rgba(57, 255, 20, 0.15);
+
+      .dot-indicator {
+        background: #39ff14;
+        box-shadow: 0 0 10px #39ff14;
+        transform: scale(1.25);
+      }
+
+      .dot-label {
+        display: inline-block;
+      }
+    }
+  }
+}
+
+/* ==========================================================
+   4. LOADING OVERLAY
+   ========================================================== */
+.loading-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(8, 11, 9, 0.85);
+  backdrop-filter: blur(8px);
+  z-index: 40;
+}
+
+.loading-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 32px 40px;
+  background: rgba(15, 22, 17, 0.95);
+  border: 1px solid rgba(57, 255, 20, 0.35);
+  border-radius: 20px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 30px rgba(57, 255, 20, 0.15);
+  max-width: 360px;
+  width: 90%;
+}
+
+.cyber-spinner {
+  position: relative;
+  width: 70px;
+  height: 70px;
+  margin-bottom: 20px;
+
+  .spinner-ring {
+    position: absolute;
+    inset: 0;
+    border: 3px solid rgba(57, 255, 20, 0.15);
+    border-top-color: #39ff14;
+    border-radius: 50%;
+    animation: rotateReticle 1s linear infinite;
+  }
+
+  .spinner-inner {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    i {
+      font-size: 24px;
+      color: #39ff14;
+      animation: pulseIcon 1.6s ease-in-out infinite;
+    }
+  }
+}
+
+@keyframes pulseIcon {
+  0%, 100% {
+    transform: scale(0.9);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+}
+
+.loading-title {
+  font-family: 'Oswald', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #ffffff;
+  margin-bottom: 6px;
+}
+
+.loading-subtitle {
+  font-size: 12px;
+  color: #8c9c90;
+  margin-bottom: 20px;
+}
+
+.progress-track {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #1fa30a, #39ff14);
+  box-shadow: 0 0 10px #39ff14;
+  border-radius: 3px;
+  transition: width 0.15s ease;
+}
+
+.progress-label {
+  font-size: 11px;
+  font-weight: 600;
+  font-family: 'Oswald', sans-serif;
+  letter-spacing: 1.5px;
+  color: #39ff14;
+}
+
+/* ==========================================================
+   5. ERROR OVERLAY
+   ========================================================== */
+.error-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(8, 11, 9, 0.9);
+  backdrop-filter: blur(8px);
+  z-index: 45;
+}
+
+.error-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 32px 36px;
+  background: rgba(24, 14, 15, 0.95);
+  border: 1px solid rgba(255, 68, 68, 0.4);
+  border-radius: 20px;
+  max-width: 380px;
+  width: 90%;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 30px rgba(255, 68, 68, 0.15);
+
+  .error-icon {
+    font-size: 34px;
+    color: #ff4444;
+    margin-bottom: 14px;
+  }
+
+  .error-title {
+    font-family: 'Oswald', sans-serif;
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: #ff4444;
+    margin-bottom: 8px;
+  }
+
+  .error-text {
+    font-size: 13px;
+    line-height: 1.5;
+    color: #d1b4b4;
+    margin-bottom: 22px;
+  }
+
+  .retry-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 68, 68, 0.15);
+    border: 1px solid #ff4444;
+    color: #ff4444;
+    font-family: 'Oswald', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    padding: 10px 24px;
+    border-radius: 30px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+
+    &:hover {
+      background: #ff4444;
+      color: #ffffff;
+      box-shadow: 0 0 15px rgba(255, 68, 68, 0.5);
+    }
+  }
+}
+
+/* ==========================================================
+   6. CANVAS FALLBACK CONTROLS
+   ========================================================== */
+.canvas-controls {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(10, 15, 12, 0.85);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(57, 255, 20, 0.25);
+  padding: 6px 10px;
+  border-radius: 30px;
+  z-index: 30;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+
+  .zoom-badge {
+    padding: 2px 8px;
+    font-family: 'Oswald', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #39ff14;
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .icon-action-btn {
+    width: 32px;
+    height: 32px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 11px;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: rgba(57, 255, 20, 0.2);
+      border-color: #39ff14;
+      color: #39ff14;
+      transform: translateY(-1px);
+    }
+
+    &:active {
+      transform: scale(0.95);
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .carousel-nav-btn {
+    width: 40px;
+    height: 52px;
+    i {
+      font-size: 15px;
+    }
+  }
+
+  .carousel-dots-bar {
+    bottom: 12px;
+    padding: 4px 8px;
+    gap: 6px;
+
+    .carousel-dot-btn {
+      padding: 3px 6px;
+      .dot-label {
+        font-size: 10px;
+      }
+    }
+  }
+
+  .canvas-controls {
+    bottom: 12px;
+    right: 12px;
+    padding: 4px 8px;
+    gap: 6px;
+
+    .icon-action-btn {
+      width: 28px;
+      height: 28px;
+      font-size: 10px;
+    }
+  }
+}

@@ -143,6 +143,7 @@ export class SidebarNavComponent implements OnInit, OnDestroy {
         label: 'EXPLORE',
         icon: 'fas fa-compass',
         children: [
+          { label: 'Clothes Room', value: '/clothes-room', icon: 'fas fa-hand-sparkles' },
           { label: '3D Try-On', value: '/try-on', icon: 'fas fa-vr-cardboard' },
           { label: 'Store Page', value: '/stores/main', icon: 'fas fa-map-marker-alt' },
         ],

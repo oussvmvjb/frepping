@@ -1,0 +1,169 @@
+<div
+  #containerRef
+  class="viewer-container"
+  (mousedown)="onPointerDown($event)"
+  (mousemove)="onPointerMove($event)"
+  (mouseup)="onPointerUp($event)"
+  (mouseleave)="onPointerUp()"
+  (touchstart)="onPointerDown($event)"
+  (touchmove)="onPointerMove($event)"
+  (touchend)="onPointerUp($event)"
+  (touchcancel)="onPointerUp()"
+  (wheel)="onWheel($event)"
+>
+  <!-- 3D WebGL Canvas -->
+  <canvas #canvasRef class="webgl-canvas"></canvas>
+
+  <!-- Gesture Action Notification Toast -->
+  <div class="gesture-toast" *ngIf="gestureNotification">
+    <i class="fas fa-hand-sparkles"></i>
+    <span>{{ gestureNotification }}</span>
+  </div>
+
+  <!-- 1. Hand Gesture Cursor Overlay -->
+  <div
+    #cursorRef
+    class="hand-cursor"
+    [class.cursor-hidden]="!isCursorVisible"
+    [class.is-hovering]="isHoveringObject"
+    [class.is-open-palm]="cursorState === 'OPEN_PALM_READY'"
+    [class.is-grabbed]="cursorState === 'GRABBED_ROTATING'"
+    [class.is-zooming]="cursorState === 'TWO_HAND_ZOOMING'"
+  >
+    <!-- Outer animated radar / target ring -->
+    <div class="cursor-reticle"></div>
+
+    <!-- Pinch grab pulse ring -->
+    <div class="cursor-pinch-ring"></div>
+
+    <!-- Core tracking dot -->
+    <div class="cursor-core">
+      <i
+        class="cursor-icon fas"
+        [ngClass]="{
+          'fa-crosshairs': cursorState === 'CURSOR_HOVER' && !isHoveringObject,
+          'fa-hand-pointer': cursorState === 'CURSOR_HOVER' && isHoveringObject,
+          'fa-hand': cursorState === 'OPEN_PALM_READY',
+          'fa-hand-rock': cursorState === 'GRABBED_ROTATING',
+          'fa-arrows-up-down': cursorState === 'TWO_HAND_ZOOMING'
+        }"
+      ></i>
+    </div>
+
+    <!-- Floating status pill attached to cursor -->
+    <div class="cursor-tag">
+      <span *ngIf="cursorState === 'CURSOR_HOVER' && !isHoveringObject">TARGETING</span>
+      <span *ngIf="cursorState === 'CURSOR_HOVER' && isHoveringObject">PINCH TO ROTATE</span>
+      <span *ngIf="cursorState === 'OPEN_PALM_READY'">🖐️ SWIPE LEFT / RIGHT</span>
+      <span *ngIf="cursorState === 'GRABBED_ROTATING'">ROTATING 360&deg;</span>
+      <span *ngIf="cursorState === 'TWO_HAND_ZOOMING'">2-HAND ZOOM</span>
+    </div>
+  </div>
+
+  <!-- 2. Carousel Quick Side Navigation Arrows -->
+  <button
+    type="button"
+    class="carousel-nav-btn btn-prev"
+    (click)="prevModel()"
+    title="Previous Model (or Swipe Left)"
+    aria-label="Previous Garment"
+  >
+    <i class="fas fa-chevron-left"></i>
+  </button>
+
+  <button
+    type="button"
+    class="carousel-nav-btn btn-next"
+    (click)="nextModel()"
+    title="Next Model (or Swipe Right)"
+    aria-label="Next Garment"
+  >
+    <i class="fas fa-chevron-right"></i>
+  </button>
+
+  <!-- 3. Carousel Dots Indicator Bar -->
+  <div class="carousel-dots-bar">
+    <button
+      type="button"
+      *ngFor="let m of clothingModels; let i = index"
+      class="carousel-dot-btn"
+      [class.active]="i === currentIndex"
+      (click)="selectModelIndex(i)"
+      [title]="m.name"
+    >
+      <span class="dot-indicator"></span>
+      <span class="dot-label">{{ m.name }}</span>
+    </button>
+  </div>
+
+  <!-- 4. Loading State Overlay -->
+  <div class="loading-overlay" *ngIf="isLoading">
+    <div class="loading-card">
+      <div class="cyber-spinner">
+        <div class="spinner-ring"></div>
+        <div class="spinner-inner">
+          <i class="fas fa-vest"></i>
+        </div>
+      </div>
+      <div class="loading-title">INITIALIZING 3D SHOWROOM</div>
+      <div class="loading-subtitle">Loading models and cyber textures...</div>
+
+      <div class="progress-track">
+        <div class="progress-bar" [style.width.%]="loadingProgress"></div>
+      </div>
+      <div class="progress-label">{{ loadingProgress }}% LOADED</div>
+    </div>
+  </div>
+
+  <!-- 5. Error Overlay -->
+  <div class="error-overlay" *ngIf="hasError">
+    <div class="error-card">
+      <div class="error-icon">
+        <i class="fas fa-exclamation-triangle"></i>
+      </div>
+      <div class="error-title">MODEL LOAD FAILED</div>
+      <p class="error-text">{{ errorMessage }}</p>
+      <button type="button" class="retry-btn" (click)="loadAllModels()">
+        <i class="fas fa-redo"></i>
+        <span>RETRY LOADING</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- 6. Floating On-Canvas Fallback Controls -->
+  <div class="canvas-controls">
+    <div class="zoom-badge">
+      <span class="zoom-val">{{ zoomLevelPercent }}%</span>
+    </div>
+
+    <button
+      type="button"
+      class="icon-action-btn"
+      (click)="zoomIn()"
+      title="Zoom In"
+      aria-label="Zoom In"
+    >
+      <i class="fas fa-plus"></i>
+    </button>
+
+    <button
+      type="button"
+      class="icon-action-btn"
+      (click)="zoomOut()"
+      title="Zoom Out"
+      aria-label="Zoom Out"
+    >
+      <i class="fas fa-minus"></i>
+    </button>
+
+    <button
+      type="button"
+      class="icon-action-btn"
+      (click)="resetView()"
+      title="Reset View"
+      aria-label="Reset View"
+    >
+      <i class="fas fa-expand-alt"></i>
+    </button>
+  </div>
+</div>

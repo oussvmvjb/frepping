@@ -17,6 +17,7 @@ import { RoleGuard } from './services/role.guard';
 // Dev/test routes kept but not shown in production navigation
 import { TestViewerComponent } from './test-viewer/test-viewer.component';
 import { ModelViewerComponent } from './components/model-viewer/model-viewer.component';
+import { ClothesRoomComponent } from './pages/clothes-room/clothes-room.component';
 
 const routes: Routes = [
   // ── Public ──────────────────────────────────────────────────────────────
@@ -24,6 +25,7 @@ const routes: Routes = [
   { path: 'shop', component: ShopComponent },
   { path: 'product/:id', component: ProductDetailsComponent },
   { path: 'try-on', component: TryOnComponent },
+  { path: 'clothes-room', component: ClothesRoomComponent },
   { path: 'cart', component: CartComponent },
   { path: 'checkout', component: CheckoutComponent, canActivate: [AuthGuard] },
   { path: 'login', component: LoginComponent },
