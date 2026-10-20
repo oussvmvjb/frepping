@@ -1,184 +1,664 @@
-.admin-dashboard-view {
+// ─── Design Tokens ───────────────────────────────────────────
+$neon:        #39ff14;
+$neon-dim:    rgba(57, 255, 20, 0.08);
+$neon-border: rgba(57, 255, 20, 0.2);
+$neon-glow:   rgba(57, 255, 20, 0.4);
+
+$bg-body:     #0b0f0c;
+$bg-card:     #0e1810;
+$bg-panel:    #0a120b;
+$bg-input:    #070d08;
+$bg-row-alt:  #0a130c;
+
+$border:      rgba(57, 255, 20, 0.15);
+$border-dim:  rgba(255, 255, 255, 0.08);
+
+$white:       #f5f5f5;
+$muted:       #8a9a8c;
+$muted-dark:  #526054;
+$gold:        #ffb703;
+$red:         #ff3b3b;
+$cyan:        #00e5ff;
+$purple:      #a855f7;
+
+$font-disp:   'Oswald', sans-serif;
+$font-body:   'Poppins', sans-serif;
+
+.admin-dashboard-page {
   padding: 24px;
-  color: #e0e2ec;
+  max-width: 1360px;
+  margin: 0 auto;
+  font-family: $font-body;
+  color: $white;
 }
 
+// ─── Header ──────────────────────────────────────────────────────────
+.dashboard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 8px;
+
+  .header-titles {
+    .page-title {
+      font-family: $font-disp;
+      font-size: 2rem;
+      letter-spacing: 2px;
+      color: $neon;
+      margin: 0 0 4px;
+    }
+    .subtitle {
+      font-size: 0.85rem;
+      color: $muted;
+      margin: 0;
+    }
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+}
+
+.last-sync {
+  font-size: 0.75rem;
+  color: $muted-dark;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  .sync-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: $neon;
+    box-shadow: 0 0 6px $neon;
+  }
+}
+
+// ─── Controls ────────────────────────────────────────────────────────
+.preset-group {
+  display: flex;
+  background: $bg-input;
+  border: 1px solid $border;
+  border-radius: 6px;
+  overflow: hidden;
+
+  .btn-preset {
+    background: transparent;
+    border: none;
+    color: $muted;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 6px 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+      background: $neon-dim;
+      color: $neon;
+    }
+  }
+}
+
+.date-inputs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  .admin-input-date {
+    background: $bg-input;
+    border: 1px solid $border;
+    border-radius: 6px;
+    color: $white;
+    font-size: 0.8rem;
+    padding: 6px 10px;
+    font-family: inherit;
+
+    &:focus {
+      outline: none;
+      border-color: $neon;
+    }
+  }
+
+  .date-sep {
+    font-size: 0.75rem;
+    color: $muted;
+  }
+}
+
+.btn-admin-primary {
+  background: $neon;
+  color: #000;
+  border: none;
+  font-family: $font-disp;
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 1px;
+  padding: 7px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    box-shadow: 0 0 12px $neon-glow;
+  }
+}
+
+.btn-admin-ghost {
+  background: transparent;
+  color: $muted;
+  border: 1px solid $border-dim;
+  font-size: 0.8rem;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+
+  &:hover {
+    border-color: $neon;
+    color: $white;
+  }
+}
+
+.btn-refresh {
+  background: $bg-card;
+  color: $neon;
+  border: 1px solid $border;
+  font-family: $font-disp;
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 1px;
+  padding: 7px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+
+  &:hover:not(:disabled) {
+    background: $neon-dim;
+    box-shadow: 0 0 10px $neon-border;
+  }
+
+  .spin {
+    display: inline-block;
+    animation: rotate 1s linear infinite;
+  }
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+// ─── Alerts ──────────────────────────────────────────────────────────
+.admin-alert {
+  padding: 12px 16px;
+  border-radius: 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  font-size: 0.85rem;
+
+  &.error-alert {
+    background: rgba(255, 59, 59, 0.1);
+    border: 1px solid rgba(255, 59, 59, 0.3);
+    color: $red;
+  }
+}
+
+// ─── KPI Grid ────────────────────────────────────────────────────────
 .kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 16px;
   margin-bottom: 24px;
 }
 
 .kpi-card {
-  background: #12141d;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
-  padding: 20px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  background: $bg-card;
+  border: 1px solid $border;
+  border-radius: 8px;
+  padding: 18px 20px;
+  position: relative;
+  transition: transform 0.2s, box-shadow 0.2s;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  }
+
+  &.kpi-alert {
+    border-color: rgba(255, 59, 59, 0.4);
+    background: rgba(255, 59, 59, 0.05);
+  }
 
   .kpi-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
+
     .kpi-label {
-      font-size: 11px;
-      font-weight: 800;
+      font-family: $font-disp;
+      font-size: 0.8rem;
       letter-spacing: 1px;
-      color: #8b92a5;
+      color: $muted;
     }
     .kpi-icon {
-      font-size: 18px;
+      font-size: 1.1rem;
     }
   }
 
   .kpi-value {
-    font-size: 28px;
-    font-weight: 800;
+    font-family: $font-disp;
+    font-size: 1.85rem;
+    font-weight: 700;
     line-height: 1.1;
     margin-bottom: 6px;
+    color: $white;
+
+    &.neon-glow {
+      color: $neon;
+      text-shadow: 0 0 10px rgba(57, 255, 20, 0.3);
+    }
+    &.red-text {
+      color: $red;
+    }
   }
 
   .kpi-sub {
-    font-size: 12px;
+    font-size: 0.75rem;
+    color: $muted;
+
+    .card-link {
+      color: $neon;
+      text-decoration: none;
+      font-weight: 600;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+  }
+}
+
+// ─── Panels ──────────────────────────────────────────────────────────
+.middle-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
+  margin-bottom: 24px;
+
+  @media (max-width: 960px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.bottom-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+
+  @media (max-width: 960px) {
+    grid-template-columns: 1fr;
   }
 }
 
 .panel-card {
-  background: #12141d;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
-  padding: 20px;
-  margin-bottom: 24px;
+  background: $bg-card;
+  border: 1px solid $border;
+  border-radius: 8px;
+  overflow: hidden;
 
   .panel-header {
-    margin-bottom: 16px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    padding: 16px 20px;
+    border-bottom: 1px solid $border-dim;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    .panel-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+
+      .panel-icon {
+        font-size: 1.1rem;
+      }
+
+      .panel-title {
+        font-family: $font-disp;
+        font-size: 1rem;
+        letter-spacing: 1.5px;
+        color: $white;
+        margin: 0;
+      }
+    }
+
+    .panel-sub {
+      font-size: 0.75rem;
+      color: $muted;
+    }
+  }
+
+  .panel-body {
+    padding: 20px;
+
+    &.no-pad {
+      padding: 0;
+    }
   }
 }
 
-/* Revenue Chart */
-.revenue-chart-container {
-  padding-top: 10px;
-  height: 220px;
+// ─── Revenue Chart ───────────────────────────────────────────────────
+.chart-container {
+  height: 200px;
 
-  .chart-bars-wrap {
+  .chart-bars {
     display: flex;
     align-items: flex-end;
     gap: 8px;
-    height: 180px;
+    height: 100%;
     overflow-x: auto;
-    padding-bottom: 20px;
+    padding-bottom: 10px;
   }
 
-  .chart-bar-col {
+  .chart-bar-item {
     flex: 1;
-    min-width: 24px;
+    min-width: 28px;
     height: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: flex-end;
 
-    .bar-fill-wrap {
+    .bar-track {
       width: 14px;
-      height: 100%;
+      height: 150px;
       background: rgba(255, 255, 255, 0.04);
       border-radius: 4px;
       display: flex;
       flex-direction: column;
       justify-content: flex-end;
-      overflow: hidden;
 
       .bar-fill {
         width: 100%;
-        background: linear-gradient(180deg, #28c76f 0%, rgba(40, 199, 111, 0.4) 100%);
+        background: linear-gradient(180deg, $neon 0%, rgba(57, 255, 20, 0.3) 100%);
         border-radius: 4px 4px 0 0;
         transition: height 0.3s ease;
       }
     }
 
-    .bar-date-label {
-      font-size: 9px;
-      color: #8b92a5;
+    .bar-label {
+      font-size: 0.65rem;
+      color: $muted;
       margin-top: 6px;
       white-space: nowrap;
     }
   }
 }
 
-/* Admin Table */
+.empty-chart, .empty-state {
+  padding: 30px;
+  text-align: center;
+  color: $muted-dark;
+  font-size: 0.85rem;
+}
+
+// ─── Status List ─────────────────────────────────────────────────────
+.status-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  .status-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: $bg-panel;
+    border: 1px solid $border-dim;
+    border-radius: 6px;
+
+    .status-count {
+      font-family: $font-disp;
+      font-size: 1.1rem;
+      color: $white;
+      font-weight: 700;
+    }
+  }
+}
+
+// ─── Badges ──────────────────────────────────────────────────────────
+.status-badge {
+  font-family: $font-disp;
+  font-size: 0.75rem;
+  letter-spacing: 1px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-weight: 700;
+  text-transform: uppercase;
+
+  &[data-status='PENDING'] { background: rgba(255, 183, 3, 0.15); color: $gold; }
+  &[data-status='PAID'] { background: rgba(0, 229, 255, 0.15); color: $cyan; }
+  &[data-status='PROCESSING'] { background: rgba(168, 85, 247, 0.15); color: $purple; }
+  &[data-status='SHIPPED'] { background: rgba(57, 255, 20, 0.15); color: $neon; }
+  &[data-status='DELIVERED'] { background: rgba(57, 255, 20, 0.25); color: $neon; }
+  &[data-status='CANCELLED'], &[data-status='REFUNDED'] { background: rgba(255, 59, 59, 0.15); color: $red; }
+}
+
+// ─── Tables ──────────────────────────────────────────────────────────
 .admin-table {
   width: 100%;
   border-collapse: collapse;
+
   th {
-    text-align: left;
-    font-size: 11px;
-    font-weight: 800;
+    font-family: $font-disp;
+    font-size: 0.75rem;
     letter-spacing: 1px;
-    color: #8b92a5;
-    padding: 12px 16px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    color: $muted;
+    text-align: left;
+    padding: 10px 16px;
+    border-bottom: 1px solid $border-dim;
+    background: rgba(0, 0, 0, 0.2);
   }
+
   td {
-    padding: 14px 16px;
-    font-size: 13px;
+    padding: 12px 16px;
+    font-size: 0.85rem;
     border-bottom: 1px solid rgba(255, 255, 255, 0.04);
   }
+
   tr:hover td {
-    background: rgba(255, 255, 255, 0.02);
+    background: $neon-dim;
   }
 }
 
-.rank-badge {
-  background: rgba(255, 255, 255, 0.08);
+.rank-num {
+  font-family: $font-disp;
+  font-size: 0.8rem;
+  color: $neon;
+  background: rgba(57, 255, 20, 0.08);
   padding: 2px 6px;
   border-radius: 4px;
-  font-size: 10px;
-  font-weight: 800;
+  border: 1px solid $neon-border;
 }
 
-.admin-input-sm {
-  background: #151822;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 4px;
-  color: #fff;
-  font-size: 12px;
-  padding: 6px 10px;
+.prod-name {
+  color: $white;
+  font-size: 0.85rem;
 }
 
-.btn-admin-sm {
-  background: #28c76f;
-  color: #0b0c10;
-  border: none;
+.prod-id {
+  font-family: monospace;
+  font-size: 0.7rem;
+  color: $muted-dark;
+}
+
+.bold-white {
+  font-weight: 700;
+  color: $white;
+}
+
+.neon-text {
+  font-family: $font-disp;
+  font-weight: 700;
+  color: $neon;
+}
+
+.text-muted {
+  color: $muted;
+  font-size: 0.8rem;
+}
+
+.btn-table-action {
+  background: transparent;
+  border: 1px solid $border;
+  color: $neon;
+  font-family: $font-disp;
+  font-size: 0.75rem;
+  letter-spacing: 1px;
+  padding: 4px 10px;
   border-radius: 4px;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.5px;
-  padding: 6px 14px;
   cursor: pointer;
-  &.btn-ghost {
-    background: transparent;
-    color: #8b92a5;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.2s;
+
+  &:hover {
+    background: $neon;
+    color: #000;
   }
 }
 
-.text-green { color: #28c76f; }
-.text-cyan { color: #00cfe8; }
-.text-purple { color: #7367f0; }
-.text-yellow { color: #ff9f43; }
-.text-muted { color: #8b92a5; }
+// ─── Skeletons ───────────────────────────────────────────────────────
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.03);
 
-.status-badge {
-  font-size: 10px;
-  font-weight: 800;
-  padding: 3px 8px;
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+    animation: shimmer 1.5s infinite;
+  }
+}
+
+@keyframes shimmer {
+  100% { transform: translateX(100%); }
+}
+
+.sk-line {
+  height: 14px;
+  background: rgba(255, 255, 255, 0.05);
   border-radius: 4px;
-  &.status-pending { background: rgba(255, 159, 67, 0.15); color: #ff9f43; }
-  &.status-paid { background: rgba(0, 207, 232, 0.15); color: #00cfe8; }
-  &.status-processing { background: rgba(115, 103, 240, 0.15); color: #7367f0; }
-  &.status-shipped { background: rgba(40, 199, 111, 0.15); color: #28c76f; }
-  &.status-delivered { background: rgba(40, 199, 111, 0.25); color: #28c76f; }
-  &.status-cancelled { background: rgba(234, 84, 85, 0.15); color: #ea5455; }
-  &.status-refunded { background: rgba(234, 84, 85, 0.25); color: #ea5455; }
+  margin-bottom: 8px;
+
+  &.sk-title { width: 50%; }
+  &.sk-val { width: 80%; height: 28px; }
+}
+
+.sk-panel {
+  height: 240px;
+  border-radius: 8px;
+}
+
+// ─── Modal ───────────────────────────────────────────────────────────
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.modal-dialog {
+  background: #0d160f;
+  border: 1px solid $neon;
+  box-shadow: 0 0 24px rgba(57, 255, 20, 0.2);
+  border-radius: 10px;
+  width: 100%;
+  max-width: 600px;
+  overflow: hidden;
+
+  .modal-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid $border;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    .modal-title {
+      font-family: $font-disp;
+      font-size: 1.1rem;
+      letter-spacing: 1px;
+      color: $neon;
+      margin: 0;
+    }
+
+    .btn-close {
+      background: transparent;
+      border: none;
+      color: $muted;
+      font-size: 1.2rem;
+      cursor: pointer;
+
+      &:hover { color: $white; }
+    }
+  }
+
+  .modal-body {
+    padding: 20px;
+    max-height: 400px;
+    overflow-y: auto;
+  }
+
+  .modal-footer {
+    padding: 12px 20px;
+    border-top: 1px solid $border-dim;
+    display: flex;
+    justify-content: flex-end;
+  }
+}
+
+.modal-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid $border-dim;
+
+  .page-info {
+    font-size: 0.8rem;
+    color: $muted;
+  }
+
+  .btn-page {
+    background: transparent;
+    border: 1px solid $border;
+    color: $neon;
+    font-size: 0.75rem;
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+
+    &:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+  }
 }

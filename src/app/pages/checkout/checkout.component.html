@@ -278,16 +278,16 @@
                   <div class="address-header">
                     <div class="flex items-center gap-2">
                       <div class="gta-radio" [class.checked]="selectedAddressId === addr.id"></div>
-                      <h4 class="address-name">{{ addr.full_name }}</h4>
+                      <h4 class="address-name">{{ addr.name }}</h4>
                     </div>
-                    <span class="addr-type-pill" [class.office]="addr.address_type === 'office'">
-                      {{ addr.address_type | uppercase }}
+                    <span class="addr-type-pill" [class.office]="addr.type === 'office'">
+                      {{ addr.type | uppercase }}
                     </span>
                   </div>
 
                   <p class="address-text">
-                    {{ addr.address_line1 }}<br />
-                    {{ addr.city }}, {{ addr.state }} {{ addr.postal_code }} ({{ addr.country }})<br />
+                    {{ addr.street }}<br />
+                    {{ addr.city }}, {{ addr.state }} {{ addr.zip }} ({{ addr.country }})<br />
                     <span class="text-green"><i class="fas fa-phone-alt mr-1"></i> {{ addr.phone }}</span>
                   </p>
 
@@ -629,11 +629,11 @@
             <div class="panel-body">
               <div *ngIf="selectedAddress" class="deliver-to-summary">
                 <div class="flex items-center justify-between mb-2">
-                  <strong class="text-white">{{ selectedAddress.full_name }}</strong>
-                  <span class="badge-free">{{ selectedAddress.address_type | uppercase }}</span>
+                  <strong class="text-white">{{ selectedAddress.name }}</strong>
+                  <span class="badge-free">{{ selectedAddress.type | uppercase }}</span>
                 </div>
                 <p class="text-muted text-sm">
-                  {{ selectedAddress.address_line1 }}, {{ selectedAddress.city }} ({{ selectedAddress.postal_code }})
+                  {{ selectedAddress.street }}, {{ selectedAddress.city }} ({{ selectedAddress.zip }})
                 </p>
                 <button class="link-btn text-green mt-2 text-sm" (click)="goToStep(1)">
                   Change Address
@@ -708,7 +708,7 @@
             <h4 class="panel-title"><i class="fas fa-map-pin mr-2 text-green"></i> SHIPPING ADDRESS</h4>
           </div>
           <div class="panel-body">
-            <strong class="text-white">{{ selectedAddress?.full_name || 'Delivery Customer' }}</strong>
+            <strong class="text-white">{{ selectedAddress?.name || 'Delivery Customer' }}</strong>
             <p class="text-muted mt-1">
               {{ lastOrder.shipping_address_line1 }}<br />
               {{ lastOrder.shipping_city }}, {{ lastOrder.shipping_state }} {{ lastOrder.shipping_postal_code }}<br />
@@ -726,7 +726,7 @@
               {{ lastOrder.payment_method }}
             </strong>
             <p class="text-muted mt-1">
-              Billing: {{ selectedAddress?.full_name || 'Customer' }}<br />
+              Billing: {{ selectedAddress?.name || 'Customer' }}<br />
               Status: <span class="text-green font-bold">{{ lastOrder.payment_status }}</span><br />
               Total Billed: <strong class="text-green">${{ (+lastOrder.total) | number:'1.2-2' }}</strong>
             </p>
@@ -775,13 +775,13 @@
           <div class="form-row">
             <div class="form-group w-full">
               <label>FULL NAME / RECIPIENT *</label>
-              <input type="text" [(ngModel)]="newAddress.full_name" placeholder="Name" class="gta-input" />
+              <input type="text" [(ngModel)]="newAddress.name" placeholder="Name" class="gta-input" />
             </div>
           </div>
           <div class="form-row mt-3">
             <div class="form-group w-full">
               <label>STREET ADDRESS *</label>
-              <input type="text" [(ngModel)]="newAddress.address_line1" placeholder="123 Street Ave, Apt 4" class="gta-input" />
+              <input type="text" [(ngModel)]="newAddress.street" placeholder="123 Street Ave, Apt 4" class="gta-input" />
             </div>
           </div>
           <div class="form-row mt-3">
@@ -795,7 +795,7 @@
             </div>
             <div class="form-group flex-1">
               <label>POSTAL CODE *</label>
-              <input type="text" [(ngModel)]="newAddress.postal_code" placeholder="Zip" class="gta-input" />
+              <input type="text" [(ngModel)]="newAddress.zip" placeholder="Zip" class="gta-input" />
             </div>
           </div>
           <div class="form-row mt-3">
@@ -813,13 +813,13 @@
               <label>ADDRESS TYPE</label>
               <div class="flex gap-4 mt-1">
                 <label class="radio-label">
-                  <input type="radio" [(ngModel)]="newAddress.address_type" value="home" name="addrType" /> Home
+                  <input type="radio" [(ngModel)]="newAddress.type" value="home" name="addrType" /> Home
                 </label>
                 <label class="radio-label">
-                  <input type="radio" [(ngModel)]="newAddress.address_type" value="office" name="addrType" /> Office
+                  <input type="radio" [(ngModel)]="newAddress.type" value="office" name="addrType" /> Office
                 </label>
                 <label class="radio-label">
-                  <input type="radio" [(ngModel)]="newAddress.address_type" value="other" name="addrType" /> Other
+                  <input type="radio" [(ngModel)]="newAddress.type" value="other" name="addrType" /> Other
                 </label>
               </div>
             </div>

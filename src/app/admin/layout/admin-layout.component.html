@@ -57,13 +57,32 @@
       <!-- Quick Nav Tabs -->
       <nav class="top-nav-links" aria-label="Quick tabs">
         <a
+          routerLink="/admin/dashboard"
+          routerLinkActive="top-nav-link--active"
+          [routerLinkActiveOptions]="{ exact: true }"
+          class="top-nav-link"
+        >
+          <span class="top-icon">📊</span>
+          <span>Dashboard</span>
+        </a>
+
+        <a
+          routerLink="/admin/orders"
+          routerLinkActive="top-nav-link--active"
+          class="top-nav-link"
+        >
+          <span class="top-icon">📦</span>
+          <span>Orders</span>
+        </a>
+
+        <a
           routerLink="/admin/products"
           routerLinkActive="top-nav-link--active"
           [routerLinkActiveOptions]="{ exact: true }"
           class="top-nav-link"
         >
           <span class="top-icon">🛍️</span>
-          <span>All Products</span>
+          <span>Products</span>
         </a>
 
         <a
@@ -72,7 +91,7 @@
           class="top-nav-link"
         >
           <span class="top-icon">🗂️</span>
-          <span>All Categories</span>
+          <span>Categories</span>
         </a>
 
         <a

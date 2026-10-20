@@ -1,0 +1,590 @@
+// ─── Tokens ──────────────────────────────────────────────────────────
+$neon:        #39ff14;
+$neon-dim:    rgba(57, 255, 20, 0.08);
+$neon-border: rgba(57, 255, 20, 0.2);
+$neon-glow:   rgba(57, 255, 20, 0.35);
+
+$bg-body:     #0b0f0c;
+$bg-card:     #0e1810;
+$bg-panel:    #0a120b;
+$bg-input:    #070d08;
+
+$border:      rgba(57, 255, 20, 0.15);
+$border-dim:  rgba(255, 255, 255, 0.08);
+
+$white:       #f5f5f5;
+$muted:       #8a9a8c;
+$muted-dark:  #526054;
+$gold:        #ffb703;
+$red:         #ff3b3b;
+$cyan:        #00e5ff;
+$purple:      #a855f7;
+
+$font-disp:   'Oswald', sans-serif;
+$font-body:   'Poppins', sans-serif;
+
+.admin-order-detail-page {
+  padding: 24px;
+  max-width: 1360px;
+  margin: 0 auto;
+  font-family: $font-body;
+  color: $white;
+}
+
+.page-top-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+
+  .btn-back {
+    background: transparent;
+    border: 1px solid $border;
+    color: $neon;
+    font-family: $font-disp;
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+      background: $neon;
+      color: #000;
+    }
+  }
+
+  .btn-refresh {
+    background: $bg-card;
+    color: $neon;
+    border: 1px solid $border;
+    font-family: $font-disp;
+    font-size: 0.85rem;
+    padding: 7px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    .spin {
+      display: inline-block;
+      animation: rotate 1s linear infinite;
+    }
+  }
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+// ─── Hero Card ───────────────────────────────────────────────────────
+.order-hero-card {
+  background: $bg-card;
+  border: 1px solid $border;
+  border-radius: 8px;
+  padding: 24px;
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+
+  .order-meta-pill {
+    font-family: monospace;
+    font-size: 0.75rem;
+    color: $muted;
+    margin-bottom: 6px;
+  }
+
+  .order-hero-title {
+    font-family: $font-disp;
+    font-size: 2.2rem;
+    letter-spacing: 2px;
+    color: $neon;
+    margin: 0 0 6px;
+  }
+
+  .order-timestamps {
+    font-size: 0.8rem;
+    color: $muted;
+
+    strong { color: $white; }
+  }
+
+  .badge-stack {
+    display: flex;
+    gap: 20px;
+
+    .badge-item {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 6px;
+
+      .badge-label {
+        font-family: $font-disp;
+        font-size: 0.7rem;
+        letter-spacing: 1px;
+        color: $muted;
+      }
+    }
+  }
+}
+
+// ─── Grid ────────────────────────────────────────────────────────────
+.order-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+
+  @media (max-width: 960px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.order-main-col, .order-side-col {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+// ─── Panel Card ──────────────────────────────────────────────────────
+.panel-card {
+  background: $bg-card;
+  border: 1px solid $border;
+  border-radius: 8px;
+  overflow: hidden;
+
+  .panel-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid $border-dim;
+    display: flex;
+    align-items: center;
+
+    .panel-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+
+      .panel-icon { font-size: 1.1rem; }
+      .panel-title {
+        font-family: $font-disp;
+        font-size: 1rem;
+        letter-spacing: 1.5px;
+        color: $white;
+        margin: 0;
+      }
+    }
+  }
+
+  .panel-body {
+    padding: 20px;
+
+    &.no-pad { padding: 0; }
+  }
+}
+
+// ─── Action Card ─────────────────────────────────────────────────────
+.action-card {
+  background: $bg-card;
+  border: 1px solid $neon-border;
+  box-shadow: 0 0 16px rgba(57, 255, 20, 0.08);
+  border-radius: 8px;
+  padding: 20px;
+
+  &.refund-card {
+    border-color: rgba(255, 59, 59, 0.3);
+    box-shadow: 0 0 16px rgba(255, 59, 59, 0.08);
+  }
+
+  .action-card-title {
+    font-family: $font-disp;
+    font-size: 1.1rem;
+    letter-spacing: 1px;
+    color: $neon;
+    margin: 0 0 14px;
+
+    &.red-title { color: $red; }
+  }
+
+  .action-desc {
+    font-size: 0.8rem;
+    color: $muted;
+    margin-bottom: 14px;
+    line-height: 1.4;
+
+    strong { color: $white; }
+  }
+}
+
+.form-group {
+  margin-bottom: 14px;
+
+  label {
+    display: block;
+    font-family: $font-disp;
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+    color: $muted;
+    margin-bottom: 6px;
+  }
+}
+
+.admin-input, .admin-select, .admin-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  background: $bg-input;
+  border: 1px solid $border;
+  border-radius: 6px;
+  color: $white;
+  font-size: 0.85rem;
+  padding: 8px 12px;
+  font-family: inherit;
+
+  &:focus {
+    outline: none;
+    border-color: $neon;
+  }
+}
+
+.w-full {
+  width: 100%;
+}
+
+.btn-admin-primary {
+  background: $neon;
+  color: #000;
+  border: none;
+  font-family: $font-disp;
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 1px;
+  padding: 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover:not(:disabled) {
+    box-shadow: 0 0 14px $neon-glow;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.btn-admin-danger {
+  background: $red;
+  color: #fff;
+  border: none;
+  font-family: $font-disp;
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 1px;
+  padding: 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover:not(:disabled) {
+    box-shadow: 0 0 14px rgba(255, 59, 59, 0.4);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+// ─── Table ───────────────────────────────────────────────────────────
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th {
+    font-family: $font-disp;
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+    color: $muted;
+    text-align: left;
+    padding: 12px 16px;
+    border-bottom: 1px solid $border-dim;
+    background: rgba(0, 0, 0, 0.2);
+  }
+
+  td {
+    padding: 14px 16px;
+    font-size: 0.85rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  }
+}
+
+.item-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  .item-img {
+    width: 44px;
+    height: 44px;
+    border-radius: 6px;
+    overflow: hidden;
+    background: #000;
+    flex-shrink: 0;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
+  .item-info {
+    .item-name {
+      color: $white;
+      display: block;
+      font-size: 0.9rem;
+    }
+    .item-seller {
+      font-size: 0.7rem;
+    }
+  }
+}
+
+.variant-tag {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  color: $white;
+  margin-top: 4px;
+}
+
+// ─── Timeline ────────────────────────────────────────────────────────
+.timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: relative;
+  padding-left: 20px;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 6px;
+    top: 4px;
+    bottom: 4px;
+    width: 2px;
+    background: $border;
+  }
+
+  .timeline-step {
+    position: relative;
+
+    .timeline-marker {
+      position: absolute;
+      left: -20px;
+      top: 4px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: $neon;
+      box-shadow: 0 0 6px $neon;
+    }
+
+    .timeline-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 4px;
+
+      .timeline-date {
+        font-size: 0.75rem;
+        color: $muted;
+      }
+    }
+
+    .timeline-note {
+      font-size: 0.8rem;
+      color: $white;
+      margin: 4px 0;
+    }
+
+    .timeline-by {
+      font-size: 0.7rem;
+    }
+  }
+}
+
+// ─── Address & Financial ─────────────────────────────────────────────
+.address-details {
+  line-height: 1.6;
+  font-size: 0.85rem;
+
+  .addr-name {
+    font-size: 0.95rem;
+    margin-bottom: 4px;
+  }
+
+  .addr-line {
+    color: $white;
+  }
+
+  .addr-phone {
+    margin-top: 8px;
+    font-size: 0.8rem;
+  }
+}
+
+.breakdown-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  .breakdown-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+
+    &.text-gold { color: $gold; }
+
+    &.total-row {
+      margin-top: 4px;
+
+      .total-label {
+        font-family: $font-disp;
+        font-size: 1.1rem;
+        letter-spacing: 1px;
+        color: $white;
+      }
+
+      .total-val {
+        font-size: 1.3rem;
+      }
+    }
+  }
+
+  .breakdown-divider {
+    height: 1px;
+    background: $border-dim;
+    margin: 6px 0;
+  }
+}
+
+.payment-method-box {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid $border-dim;
+
+  .pm-title {
+    font-family: $font-disp;
+    font-size: 0.7rem;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+  }
+
+  .card-brand {
+    font-size: 0.75rem;
+    color: $muted;
+    margin-left: 6px;
+  }
+}
+
+// ─── Badges & Colors ─────────────────────────────────────────────────
+.status-badge {
+  font-family: $font-disp;
+  font-size: 0.75rem;
+  letter-spacing: 1px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-weight: 700;
+  text-transform: uppercase;
+
+  &[data-status='PENDING'] { background: rgba(255, 183, 3, 0.15); color: $gold; }
+  &[data-status='PAID'] { background: rgba(0, 229, 255, 0.15); color: $cyan; }
+  &[data-status='PROCESSING'] { background: rgba(168, 85, 247, 0.15); color: $purple; }
+  &[data-status='SHIPPED'] { background: rgba(57, 255, 20, 0.15); color: $neon; }
+  &[data-status='DELIVERED'] { background: rgba(57, 255, 20, 0.25); color: $neon; }
+  &[data-status='CANCELLED'], &[data-status='REFUNDED'] { background: rgba(255, 59, 59, 0.15); color: $red; }
+}
+
+.payment-badge {
+  font-family: $font-disp;
+  font-size: 0.7rem;
+  letter-spacing: 1px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 700;
+
+  &[data-pay-status='PAID'] { background: rgba(57, 255, 20, 0.15); color: $neon; }
+  &[data-pay-status='PENDING'] { background: rgba(255, 183, 3, 0.15); color: $gold; }
+  &[data-pay-status='FAILED'], &[data-pay-status='REFUNDED'] { background: rgba(255, 59, 59, 0.15); color: $red; }
+}
+
+.bold-white { font-weight: 700; color: $white; }
+.neon-text { font-family: $font-disp; font-weight: 700; color: $neon; }
+.text-muted { color: $muted; }
+
+.admin-alert {
+  padding: 12px 16px;
+  border-radius: 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  font-size: 0.85rem;
+
+  &.error-alert {
+    background: rgba(255, 59, 59, 0.1);
+    border: 1px solid rgba(255, 59, 59, 0.3);
+    color: $red;
+  }
+  &.success-alert {
+    background: rgba(57, 255, 20, 0.1);
+    border: 1px solid rgba(57, 255, 20, 0.3);
+    color: $neon;
+  }
+}
+
+.btn-admin-ghost {
+  background: transparent;
+  color: $muted;
+  border: 1px solid $border-dim;
+  font-size: 0.8rem;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+
+  &:hover {
+    border-color: $neon;
+    color: $white;
+  }
+}
+
+// ─── Skeletons ───────────────────────────────────────────────────────
+.detail-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+
+  .sk-box {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+  }
+
+  .sk-header { height: 100px; }
+  .sk-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 20px;
+
+    .sk-main { height: 350px; }
+    .sk-side { height: 350px; }
+  }
+}

@@ -1,0 +1,171 @@
+<div class="admin-orders-page">
+  <!-- Header -->
+  <div class="orders-header">
+    <div class="header-titles">
+      <h1 class="page-title">ORDERS CONTROL</h1>
+      <p class="subtitle">Platform order processing, fulfillment status & payment lifecycles</p>
+    </div>
+
+    <div class="header-actions">
+      <button class="btn-refresh" (click)="fetchOrders(page)" [disabled]="loading" title="Refresh orders">
+        <span [class.spin]="loading">↻</span> REFRESH
+      </button>
+    </div>
+  </div>
+
+  <!-- Filter Bar -->
+  <div class="filter-card">
+    <div class="filter-grid">
+      <!-- Search -->
+      <div class="filter-field search-field">
+        <label>SEARCH</label>
+        <input
+          type="text"
+          [(ngModel)]="searchQuery"
+          placeholder="Order # or keyword..."
+          class="admin-input"
+          (keyup.enter)="fetchOrders(1)"
+        />
+      </div>
+
+      <!-- Status -->
+      <div class="filter-field">
+        <label>ORDER STATUS</label>
+        <select [(ngModel)]="filterStatus" class="admin-select" (change)="fetchOrders(1)">
+          <option value="">All Statuses</option>
+          <option *ngFor="let s of statuses" [value]="s">{{ s }}</option>
+        </select>
+      </div>
+
+      <!-- Payment Status -->
+      <div class="filter-field">
+        <label>PAYMENT STATUS</label>
+        <select [(ngModel)]="filterPaymentStatus" class="admin-select" (change)="fetchOrders(1)">
+          <option value="">All Payments</option>
+          <option *ngFor="let ps of paymentStatuses" [value]="ps">{{ ps }}</option>
+        </select>
+      </div>
+
+      <!-- Dates -->
+      <div class="filter-field date-field">
+        <label>FROM DATE</label>
+        <input type="date" [(ngModel)]="fromDate" class="admin-input" />
+      </div>
+
+      <div class="filter-field date-field">
+        <label>TO DATE</label>
+        <input type="date" [(ngModel)]="toDate" class="admin-input" />
+      </div>
+
+      <div class="filter-actions">
+        <button class="btn-admin-primary" (click)="fetchOrders(1)">APPLY</button>
+        <button class="btn-admin-ghost" (click)="resetFilters()">RESET</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Alerts -->
+  <div *ngIf="!loading && error" class="admin-alert error-alert">
+    <span>⚠️ {{ error }}</span>
+    <button class="btn-admin-ghost" (click)="fetchOrders(page)">RETRY</button>
+  </div>
+
+  <!-- Skeleton -->
+  <div *ngIf="loading" class="table-skeleton">
+    <div class="sk-row" *ngFor="let i of [1,2,3,4,5,6]"></div>
+  </div>
+
+  <!-- Main Table Card -->
+  <div *ngIf="!loading" class="panel-card">
+    <div *ngIf="orders.length === 0" class="empty-state">
+      <span class="empty-icon">📦</span>
+      <p>No orders match the selected filters.</p>
+      <button class="btn-admin-ghost" (click)="resetFilters()">Clear Filters</button>
+    </div>
+
+    <div *ngIf="orders.length > 0" class="table-responsive">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>ORDER #</th>
+            <th>CUSTOMER / SHIPPING</th>
+            <th>ORDER STATUS</th>
+            <th>PAYMENT</th>
+            <th>ITEMS</th>
+            <th>TOTAL</th>
+            <th>PLACED AT</th>
+            <th>ACTION</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let order of orders" (click)="viewOrder(order)" class="clickable-row">
+            <td>
+              <span class="order-number font-mono">#{{ order.order_number }}</span>
+              <div *ngIf="order.tracking_number" class="tracking-badge">
+                🚚 {{ order.tracking_number }}
+              </div>
+            </td>
+            <td>
+              <div class="customer-name bold-white">
+                {{ order.shipping_address.name || 'Customer' }}
+              </div>
+              <div class="customer-loc text-muted">
+                {{ order.shipping_address.city }}, {{ order.shipping_address.country }}
+              </div>
+            </td>
+            <td>
+              <span class="status-badge" [attr.data-status]="order.status">{{ order.status }}</span>
+            </td>
+            <td>
+              <span class="payment-badge" [attr.data-pay-status]="order.payment_status">
+                {{ order.payment_status }}
+              </span>
+              <div class="pay-method text-muted">{{ order.payment_method }}</div>
+            </td>
+            <td class="bold-white">
+              {{ order.items ? order.items.length : 0 }} items
+            </td>
+            <td>
+              <span class="total-price neon-text">${{ order.total }}</span>
+            </td>
+            <td class="text-muted text-sm">
+              {{ order.placed_at | date:'short' }}
+            </td>
+            <td>
+              <button
+                class="btn-table-action"
+                (click)="$event.stopPropagation(); viewOrder(order)"
+              >
+                DETAILS →
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div *ngIf="pages > 1" class="pagination-bar">
+      <div class="pagination-info">
+        Showing {{ orders.length }} of {{ total }} orders
+      </div>
+      <div class="pagination-controls">
+        <button
+          class="btn-page"
+          [disabled]="page <= 1"
+          (click)="fetchOrders(page - 1)"
+        >
+          ← PREV
+        </button>
+        <span class="page-num">PAGE {{ page }} / {{ pages }}</span>
+        <button
+          class="btn-page"
+          [disabled]="page >= pages"
+          (click)="fetchOrders(page + 1)"
+        >
+          NEXT →
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

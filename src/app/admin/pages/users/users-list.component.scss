@@ -1,0 +1,445 @@
+// ─── Tokens ──────────────────────────────────────────────────────────
+$neon:        #39ff14;
+$neon-dim:    rgba(57, 255, 20, 0.08);
+$neon-border: rgba(57, 255, 20, 0.2);
+$neon-glow:   rgba(57, 255, 20, 0.35);
+
+$bg-body:     #0b0f0c;
+$bg-card:     #0e1810;
+$bg-panel:    #0a120b;
+$bg-input:    #070d08;
+
+$border:      rgba(57, 255, 20, 0.15);
+$border-dim:  rgba(255, 255, 255, 0.08);
+
+$white:       #f5f5f5;
+$muted:       #8a9a8c;
+$muted-dark:  #526054;
+$gold:        #ffb703;
+$red:         #ff3b3b;
+$cyan:        #00e5ff;
+$purple:      #a855f7;
+
+$font-disp:   'Oswald', sans-serif;
+$font-body:   'Poppins', sans-serif;
+
+.admin-users-page {
+  padding: 24px;
+  max-width: 1360px;
+  margin: 0 auto;
+  font-family: $font-body;
+  color: $white;
+}
+
+// ─── Header ──────────────────────────────────────────────────────────
+.users-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+
+  .header-titles {
+    .page-title {
+      font-family: $font-disp;
+      font-size: 2rem;
+      letter-spacing: 2px;
+      color: $neon;
+      margin: 0 0 4px;
+    }
+    .subtitle {
+      font-size: 0.85rem;
+      color: $muted;
+      margin: 0;
+    }
+  }
+}
+
+.btn-refresh {
+  background: $bg-card;
+  color: $neon;
+  border: 1px solid $border;
+  font-family: $font-disp;
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 1px;
+  padding: 7px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+
+  &:hover:not(:disabled) {
+    background: $neon-dim;
+    box-shadow: 0 0 10px $neon-border;
+  }
+
+  .spin {
+    display: inline-block;
+    animation: rotate 1s linear infinite;
+  }
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+// ─── Filter Card ─────────────────────────────────────────────────────
+.filter-card {
+  background: $bg-card;
+  border: 1px solid $border;
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+
+  .filter-grid {
+    display: flex;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+
+  .filter-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-width: 160px;
+
+    &.search-field {
+      flex: 2;
+      min-width: 240px;
+    }
+
+    label {
+      font-family: $font-disp;
+      font-size: 0.75rem;
+      letter-spacing: 1px;
+      color: $muted;
+    }
+  }
+
+  .admin-input, .admin-select {
+    background: $bg-input;
+    border: 1px solid $border;
+    border-radius: 6px;
+    color: $white;
+    font-size: 0.85rem;
+    padding: 8px 12px;
+    font-family: inherit;
+
+    &:focus {
+      outline: none;
+      border-color: $neon;
+    }
+  }
+
+  .filter-actions {
+    display: flex;
+    gap: 8px;
+  }
+}
+
+.btn-admin-primary {
+  background: $neon;
+  color: #000;
+  border: none;
+  font-family: $font-disp;
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 1px;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+
+  &:hover {
+    box-shadow: 0 0 12px $neon-glow;
+  }
+}
+
+.btn-admin-ghost {
+  background: transparent;
+  color: $muted;
+  border: 1px solid $border-dim;
+  font-size: 0.8rem;
+  padding: 7px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+
+  &:hover {
+    border-color: $neon;
+    color: $white;
+  }
+}
+
+// ─── Table ───────────────────────────────────────────────────────────
+.panel-card {
+  background: $bg-card;
+  border: 1px solid $border;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.table-responsive {
+  overflow-x: auto;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th {
+    font-family: $font-disp;
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+    color: $muted;
+    text-align: left;
+    padding: 12px 16px;
+    border-bottom: 1px solid $border-dim;
+    background: rgba(0, 0, 0, 0.2);
+  }
+
+  td {
+    padding: 14px 16px;
+    font-size: 0.85rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  }
+
+  .clickable-row {
+    cursor: pointer;
+    transition: background 0.15s;
+
+    &:hover td {
+      background: $neon-dim;
+    }
+  }
+}
+
+.user-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  .user-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: $bg-panel;
+    border: 1px solid $neon;
+    color: $neon;
+    font-family: $font-disp;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .user-meta {
+    .user-name {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .you-badge {
+      background: $neon;
+      color: #000;
+      font-family: $font-disp;
+      font-size: 0.65rem;
+      padding: 1px 5px;
+      border-radius: 3px;
+      font-weight: 800;
+    }
+
+    .user-email {
+      font-size: 0.8rem;
+    }
+
+    .user-id {
+      font-size: 0.65rem;
+    }
+  }
+}
+
+// ─── Role Badges ─────────────────────────────────────────────────────
+.role-badge {
+  font-family: $font-disp;
+  font-size: 0.75rem;
+  letter-spacing: 1px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-weight: 700;
+
+  &[data-role='SUPER_ADMIN'] {
+    background: rgba(255, 183, 3, 0.15);
+    border: 1px solid rgba(255, 183, 3, 0.3);
+    color: $gold;
+  }
+
+  &[data-role='ADMIN'] {
+    background: rgba(0, 229, 255, 0.15);
+    border: 1px solid rgba(0, 229, 255, 0.3);
+    color: $cyan;
+  }
+
+  &[data-role='SELLER'] {
+    background: rgba(168, 85, 247, 0.15);
+    border: 1px solid rgba(168, 85, 247, 0.3);
+    color: $purple;
+  }
+
+  &[data-role='CUSTOMER'] {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid $border-dim;
+    color: $muted;
+  }
+}
+
+.verify-badge {
+  font-size: 0.75rem;
+  color: $muted;
+
+  &.verified {
+    color: $neon;
+    font-weight: 600;
+  }
+}
+
+.btn-toggle {
+  background: rgba(255, 59, 59, 0.15);
+  border: 1px solid rgba(255, 59, 59, 0.3);
+  color: $red;
+  font-family: $font-disp;
+  font-size: 0.7rem;
+  letter-spacing: 1px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &.active {
+    background: rgba(57, 255, 20, 0.15);
+    border-color: rgba(57, 255, 20, 0.3);
+    color: $neon;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+.btn-table-action {
+  background: transparent;
+  border: 1px solid $border;
+  color: $neon;
+  font-family: $font-disp;
+  font-size: 0.75rem;
+  letter-spacing: 1px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+
+  &:hover {
+    background: $neon;
+    color: #000;
+  }
+}
+
+.bold-white { font-weight: 700; color: $white; }
+.text-muted { color: $muted; }
+.text-sm { font-size: 0.75rem; }
+
+// ─── Pagination ──────────────────────────────────────────────────────
+.pagination-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 20px;
+  border-top: 1px solid $border-dim;
+
+  .pagination-info { font-size: 0.8rem; color: $muted; }
+  .pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    .page-num {
+      font-family: $font-disp;
+      font-size: 0.85rem;
+      letter-spacing: 1px;
+      color: $white;
+    }
+
+    .btn-page {
+      background: transparent;
+      border: 1px solid $border;
+      color: $neon;
+      font-family: $font-disp;
+      font-size: 0.75rem;
+      padding: 5px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+
+      &:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+      }
+    }
+  }
+}
+
+// ─── Alerts & Skeletons ──────────────────────────────────────────────
+.admin-alert {
+  padding: 12px 16px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  font-size: 0.85rem;
+
+  &.error-alert {
+    background: rgba(255, 59, 59, 0.1);
+    border: 1px solid rgba(255, 59, 59, 0.3);
+    color: $red;
+  }
+  &.success-alert {
+    background: rgba(57, 255, 20, 0.1);
+    border: 1px solid rgba(57, 255, 20, 0.3);
+    color: $neon;
+  }
+}
+
+.users-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  .sk-row {
+    height: 48px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 6px;
+  }
+}
+
+.empty-state {
+  padding: 60px 20px;
+  text-align: center;
+
+  .empty-icon {
+    font-size: 2.5rem;
+    display: block;
+    margin-bottom: 12px;
+  }
+
+  .empty-title {
+    font-family: $font-disp;
+    font-size: 1.2rem;
+    color: $muted;
+    margin-bottom: 16px;
+  }
+}

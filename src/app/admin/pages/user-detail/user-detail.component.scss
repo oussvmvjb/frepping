@@ -1,0 +1,472 @@
+// ─── Tokens ──────────────────────────────────────────────────────────
+$neon:        #39ff14;
+$neon-dim:    rgba(57, 255, 20, 0.08);
+$neon-border: rgba(57, 255, 20, 0.2);
+$neon-glow:   rgba(57, 255, 20, 0.35);
+
+$bg-body:     #0b0f0c;
+$bg-card:     #0e1810;
+$bg-panel:    #0a120b;
+$bg-input:    #070d08;
+
+$border:      rgba(57, 255, 20, 0.15);
+$border-dim:  rgba(255, 255, 255, 0.08);
+
+$white:       #f5f5f5;
+$muted:       #8a9a8c;
+$muted-dark:  #526054;
+$gold:        #ffb703;
+$red:         #ff3b3b;
+$cyan:        #00e5ff;
+$purple:      #a855f7;
+
+$font-disp:   'Oswald', sans-serif;
+$font-body:   'Poppins', sans-serif;
+
+.admin-user-detail-page {
+  padding: 24px;
+  max-width: 1360px;
+  margin: 0 auto;
+  font-family: $font-body;
+  color: $white;
+}
+
+.page-top-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+
+  .btn-back {
+    background: transparent;
+    border: 1px solid $border;
+    color: $neon;
+    font-family: $font-disp;
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+      background: $neon;
+      color: #000;
+    }
+  }
+
+  .btn-refresh {
+    background: $bg-card;
+    color: $neon;
+    border: 1px solid $border;
+    font-family: $font-disp;
+    font-size: 0.85rem;
+    padding: 7px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    .spin {
+      display: inline-block;
+      animation: rotate 1s linear infinite;
+    }
+  }
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+// ─── Hero Banner ─────────────────────────────────────────────────────
+.user-hero-card {
+  background: $bg-card;
+  border: 1px solid $border;
+  border-radius: 8px;
+  padding: 24px;
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+
+  .hero-left {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+
+    .user-avatar-lg {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: $bg-panel;
+      border: 2px solid $neon;
+      color: $neon;
+      font-family: $font-disp;
+      font-size: 1.8rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      flex-shrink: 0;
+      box-shadow: 0 0 16px rgba(57, 255, 20, 0.2);
+    }
+
+    .hero-titles {
+      .hero-top-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 4px;
+
+        .hero-name {
+          font-family: $font-disp;
+          font-size: 1.8rem;
+          letter-spacing: 1.5px;
+          color: $white;
+          margin: 0;
+        }
+
+        .you-pill {
+          background: $neon;
+          color: #000;
+          font-family: $font-disp;
+          font-size: 0.7rem;
+          letter-spacing: 1px;
+          padding: 2px 6px;
+          border-radius: 3px;
+          font-weight: 800;
+        }
+      }
+
+      .hero-email {
+        font-size: 0.9rem;
+      }
+
+      .hero-id {
+        font-size: 0.75rem;
+        margin-top: 2px;
+      }
+    }
+  }
+
+  .hero-right {
+    display: flex;
+    gap: 20px;
+
+    .badge-item {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 6px;
+
+      .badge-label {
+        font-family: $font-disp;
+        font-size: 0.7rem;
+        letter-spacing: 1px;
+        color: $muted;
+      }
+    }
+  }
+}
+
+// ─── Grid ────────────────────────────────────────────────────────────
+.user-grid {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 24px;
+
+  @media (max-width: 960px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.user-side-col {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+// ─── Panel Card ──────────────────────────────────────────────────────
+.panel-card {
+  background: $bg-card;
+  border: 1px solid $border;
+  border-radius: 8px;
+  overflow: hidden;
+
+  .panel-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid $border-dim;
+    display: flex;
+    align-items: center;
+
+    .panel-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+
+      .panel-icon { font-size: 1.1rem; }
+      .panel-title {
+        font-family: $font-disp;
+        font-size: 1rem;
+        letter-spacing: 1.5px;
+        color: $white;
+        margin: 0;
+      }
+    }
+  }
+
+  .panel-body {
+    padding: 20px;
+  }
+}
+
+.attribute-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+
+  .attr-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    background: $bg-panel;
+    border: 1px solid $border-dim;
+    border-radius: 6px;
+
+    .attr-label {
+      font-size: 0.85rem;
+      color: $muted;
+    }
+  }
+}
+
+// ─── Action Card ─────────────────────────────────────────────────────
+.action-card {
+  background: $bg-card;
+  border: 1px solid $neon-border;
+  border-radius: 8px;
+  padding: 20px;
+
+  &.status-card {
+    border-color: rgba(255, 59, 59, 0.25);
+  }
+
+  .action-card-title {
+    font-family: $font-disp;
+    font-size: 1.1rem;
+    letter-spacing: 1px;
+    color: $neon;
+    margin: 0 0 12px;
+
+    &.red-title { color: $red; }
+  }
+}
+
+.permission-notice, .self-notice {
+  background: rgba(255, 183, 3, 0.1);
+  border: 1px solid rgba(255, 183, 3, 0.3);
+  color: $gold;
+  font-size: 0.8rem;
+  padding: 10px 12px;
+  border-radius: 6px;
+  line-height: 1.4;
+}
+
+.form-group {
+  margin-bottom: 16px;
+
+  label {
+    display: block;
+    font-family: $font-disp;
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+    color: $muted;
+    margin-bottom: 6px;
+  }
+}
+
+.admin-select {
+  width: 100%;
+  box-sizing: border-box;
+  background: $bg-input;
+  border: 1px solid $border;
+  border-radius: 6px;
+  color: $white;
+  font-size: 0.85rem;
+  padding: 8px 12px;
+  font-family: inherit;
+
+  &:focus {
+    outline: none;
+    border-color: $neon;
+  }
+}
+
+.w-full { width: 100%; }
+
+.btn-admin-primary {
+  background: $neon;
+  color: #000;
+  border: none;
+  font-family: $font-disp;
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 1px;
+  padding: 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover:not(:disabled) {
+    box-shadow: 0 0 12px $neon-glow;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+.btn-admin-danger {
+  background: $red;
+  color: #fff;
+  border: none;
+  font-family: $font-disp;
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 1px;
+  padding: 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover:not(:disabled) {
+    box-shadow: 0 0 14px rgba(255, 59, 59, 0.4);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+// ─── Badges ──────────────────────────────────────────────────────────
+.role-badge {
+  font-family: $font-disp;
+  font-size: 0.8rem;
+  letter-spacing: 1px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-weight: 700;
+
+  &[data-role='SUPER_ADMIN'] {
+    background: rgba(255, 183, 3, 0.15);
+    border: 1px solid rgba(255, 183, 3, 0.3);
+    color: $gold;
+  }
+
+  &[data-role='ADMIN'] {
+    background: rgba(0, 229, 255, 0.15);
+    border: 1px solid rgba(0, 229, 255, 0.3);
+    color: $cyan;
+  }
+
+  &[data-role='SELLER'] {
+    background: rgba(168, 85, 247, 0.15);
+    border: 1px solid rgba(168, 85, 247, 0.3);
+    color: $purple;
+  }
+
+  &[data-role='CUSTOMER'] {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid $border-dim;
+    color: $muted;
+  }
+}
+
+.status-pill {
+  font-family: $font-disp;
+  font-size: 0.75rem;
+  letter-spacing: 1px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-weight: 700;
+  background: rgba(255, 59, 59, 0.15);
+  border: 1px solid rgba(255, 59, 59, 0.3);
+  color: $red;
+
+  &.active {
+    background: rgba(57, 255, 20, 0.15);
+    border-color: rgba(57, 255, 20, 0.3);
+    color: $neon;
+  }
+}
+
+.verify-badge {
+  font-size: 0.8rem;
+  color: $muted;
+
+  &.verified {
+    color: $neon;
+    font-weight: 600;
+  }
+}
+
+.bold-white { font-weight: 700; color: $white; }
+.text-muted { color: $muted; }
+.text-sm { font-size: 0.75rem; }
+.mb-4 { margin-bottom: 16px; }
+
+// ─── Alerts & Skeletons ──────────────────────────────────────────────
+.admin-alert {
+  padding: 12px 16px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  font-size: 0.85rem;
+
+  &.error-alert {
+    background: rgba(255, 59, 59, 0.1);
+    border: 1px solid rgba(255, 59, 59, 0.3);
+    color: $red;
+  }
+  &.success-alert {
+    background: rgba(57, 255, 20, 0.1);
+    border: 1px solid rgba(57, 255, 20, 0.3);
+    color: $neon;
+  }
+}
+
+.btn-admin-ghost {
+  background: transparent;
+  color: $muted;
+  border: 1px solid $border-dim;
+  font-size: 0.8rem;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.detail-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+
+  .sk-box {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+  }
+
+  .sk-hero { height: 110px; }
+  .sk-grid {
+    display: grid;
+    grid-template-columns: 3fr 2fr;
+    gap: 20px;
+
+    .sk-panel { height: 300px; }
+  }
+}

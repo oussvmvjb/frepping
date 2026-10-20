@@ -1,0 +1,446 @@
+// ─── Tokens ──────────────────────────────────────────────────────────
+$neon:        #39ff14;
+$neon-dim:    rgba(57, 255, 20, 0.08);
+$neon-border: rgba(57, 255, 20, 0.2);
+$neon-glow:   rgba(57, 255, 20, 0.35);
+
+$bg-body:     #0b0f0c;
+$bg-card:     #0e1810;
+$bg-panel:    #0a120b;
+$bg-input:    #070d08;
+
+$border:      rgba(57, 255, 20, 0.15);
+$border-dim:  rgba(255, 255, 255, 0.08);
+
+$white:       #f5f5f5;
+$muted:       #8a9a8c;
+$muted-dark:  #526054;
+$gold:        #ffb703;
+$red:         #ff3b3b;
+$cyan:        #00e5ff;
+
+$font-disp:   'Oswald', sans-serif;
+$font-body:   'Poppins', sans-serif;
+
+.admin-delivery-page {
+  padding: 24px;
+  max-width: 1360px;
+  margin: 0 auto;
+  font-family: $font-body;
+  color: $white;
+}
+
+// ─── Header ──────────────────────────────────────────────────────────
+.delivery-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 16px;
+
+  .header-titles {
+    .page-title {
+      font-family: $font-disp;
+      font-size: 2rem;
+      letter-spacing: 2px;
+      color: $neon;
+      margin: 0 0 4px;
+    }
+    .subtitle {
+      font-size: 0.85rem;
+      color: $muted;
+      margin: 0;
+    }
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+}
+
+.info-banner {
+  background: rgba(0, 229, 255, 0.06);
+  border: 1px solid rgba(0, 229, 255, 0.2);
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 0.8rem;
+  color: $cyan;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-admin-cta {
+  background: $neon;
+  color: #000;
+  border: none;
+  font-family: $font-disp;
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 1px;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    box-shadow: 0 0 14px $neon-glow;
+  }
+}
+
+.btn-refresh {
+  background: $bg-card;
+  color: $neon;
+  border: 1px solid $border;
+  font-family: $font-disp;
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 1px;
+  padding: 7px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+
+  &:hover:not(:disabled) {
+    background: $neon-dim;
+    box-shadow: 0 0 10px $neon-border;
+  }
+
+  .spin {
+    display: inline-block;
+    animation: rotate 1s linear infinite;
+  }
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+// ─── Table ───────────────────────────────────────────────────────────
+.panel-card {
+  background: $bg-card;
+  border: 1px solid $border;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.table-responsive {
+  overflow-x: auto;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th {
+    font-family: $font-disp;
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+    color: $muted;
+    text-align: left;
+    padding: 12px 16px;
+    border-bottom: 1px solid $border-dim;
+    background: rgba(0, 0, 0, 0.2);
+  }
+
+  td {
+    padding: 14px 16px;
+    font-size: 0.85rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  }
+}
+
+.method-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  .method-icon {
+    font-size: 1.5rem;
+  }
+
+  .method-meta {
+    .method-code {
+      font-size: 0.75rem;
+      margin-top: 2px;
+    }
+    .method-desc {
+      font-size: 0.75rem;
+      margin-top: 2px;
+    }
+  }
+}
+
+.promo-badge {
+  background: rgba(255, 183, 3, 0.15);
+  border: 1px solid rgba(255, 183, 3, 0.3);
+  color: $gold;
+  font-family: $font-disp;
+  font-size: 0.7rem;
+  letter-spacing: 1px;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.neon-text { color: $neon; }
+.bold-white { font-weight: 700; color: $white; }
+.text-muted { color: $muted; }
+.text-sm { font-size: 0.75rem; }
+
+.btn-toggle {
+  background: rgba(255, 59, 59, 0.15);
+  border: 1px solid rgba(255, 59, 59, 0.3);
+  color: $red;
+  font-family: $font-disp;
+  font-size: 0.7rem;
+  letter-spacing: 1px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+
+  &.active {
+    background: rgba(57, 255, 20, 0.15);
+    border-color: rgba(57, 255, 20, 0.3);
+    color: $neon;
+  }
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+
+  .btn-table-edit {
+    background: transparent;
+    border: 1px solid $border;
+    color: $neon;
+    font-family: $font-disp;
+    font-size: 0.75rem;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+
+    &:hover {
+      background: $neon;
+      color: #000;
+    }
+  }
+
+  .btn-table-del {
+    background: transparent;
+    border: 1px solid rgba(255, 59, 59, 0.3);
+    color: $red;
+    font-family: $font-disp;
+    font-size: 0.75rem;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+
+    &:hover:not(:disabled) {
+      background: $red;
+      color: #fff;
+    }
+  }
+}
+
+// ─── Modal ───────────────────────────────────────────────────────────
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.modal-dialog {
+  background: #0d160f;
+  border: 1px solid $neon;
+  box-shadow: 0 0 24px rgba(57, 255, 20, 0.25);
+  border-radius: 10px;
+  width: 100%;
+  max-width: 620px;
+  overflow: hidden;
+
+  .modal-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid $border;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    .modal-title {
+      font-family: $font-disp;
+      font-size: 1.1rem;
+      letter-spacing: 1px;
+      color: $neon;
+      margin: 0;
+    }
+
+    .btn-close {
+      background: transparent;
+      border: none;
+      color: $muted;
+      font-size: 1.2rem;
+      cursor: pointer;
+    }
+  }
+
+  .modal-body {
+    padding: 20px;
+    max-height: 500px;
+    overflow-y: auto;
+  }
+
+  .modal-footer {
+    padding: 14px 20px;
+    border-top: 1px solid $border-dim;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+}
+
+.modal-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.form-group {
+  margin-bottom: 14px;
+
+  label {
+    display: block;
+    font-family: $font-disp;
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+    color: $muted;
+    margin-bottom: 6px;
+  }
+
+  &.checkbox-group {
+    margin-top: 10px;
+  }
+}
+
+.admin-input {
+  width: 100%;
+  box-sizing: border-box;
+  background: $bg-input;
+  border: 1px solid $border;
+  border-radius: 6px;
+  color: $white;
+  font-size: 0.85rem;
+  padding: 8px 12px;
+  font-family: inherit;
+
+  &.uppercase { text-transform: uppercase; }
+
+  &:focus {
+    outline: none;
+    border-color: $neon;
+  }
+}
+
+.confirm-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.8rem;
+  color: $white;
+  cursor: pointer;
+
+  input[type='checkbox'] {
+    width: 16px;
+    height: 16px;
+    accent-color: $neon;
+  }
+}
+
+.btn-admin-primary {
+  background: $neon;
+  color: #000;
+  border: none;
+  font-family: $font-disp;
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 1px;
+  padding: 9px 18px;
+  border-radius: 6px;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+.btn-admin-ghost {
+  background: transparent;
+  color: $muted;
+  border: 1px solid $border-dim;
+  font-size: 0.8rem;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+// ─── Alerts ──────────────────────────────────────────────────────────
+.admin-alert {
+  padding: 12px 16px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  font-size: 0.85rem;
+
+  &.error-alert {
+    background: rgba(255, 59, 59, 0.1);
+    border: 1px solid rgba(255, 59, 59, 0.3);
+    color: $red;
+  }
+  &.success-alert {
+    background: rgba(57, 255, 20, 0.1);
+    border: 1px solid rgba(57, 255, 20, 0.3);
+    color: $neon;
+  }
+}
+
+.delivery-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  .sk-row {
+    height: 48px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 6px;
+  }
+}
+
+.empty-state {
+  padding: 60px 20px;
+  text-align: center;
+
+  .empty-icon {
+    font-size: 2.5rem;
+    display: block;
+    margin-bottom: 12px;
+  }
+
+  .empty-title {
+    font-family: $font-disp;
+    font-size: 1.2rem;
+    color: $muted;
+    margin-bottom: 16px;
+  }
+}

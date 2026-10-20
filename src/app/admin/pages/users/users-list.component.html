@@ -1,0 +1,145 @@
+<div class="admin-users-page">
+  <!-- Header -->
+  <div class="users-header">
+    <div class="header-titles">
+      <h1 class="page-title">USER ACCOUNTS</h1>
+      <p class="subtitle">Platform membership directory, access privileges, and account security</p>
+    </div>
+
+    <div class="header-actions">
+      <button class="btn-refresh" (click)="fetchUsers(page)" [disabled]="loading">
+        <span [class.spin]="loading">↻</span> REFRESH
+      </button>
+    </div>
+  </div>
+
+  <!-- Filter Card -->
+  <div class="filter-card">
+    <div class="filter-grid">
+      <div class="filter-field search-field">
+        <label>SEARCH USER</label>
+        <input
+          type="text"
+          [(ngModel)]="searchQuery"
+          placeholder="Search by name or email..."
+          class="admin-input"
+          (keyup.enter)="fetchUsers(1)"
+        />
+      </div>
+
+      <div class="filter-field">
+        <label>ROLE FILTER</label>
+        <select [(ngModel)]="filterRole" class="admin-select" (change)="fetchUsers(1)">
+          <option value="">All Roles</option>
+          <option *ngFor="let r of roles" [value]="r">{{ r }}</option>
+        </select>
+      </div>
+
+      <div class="filter-actions">
+        <button class="btn-admin-primary" (click)="fetchUsers(1)">APPLY</button>
+        <button class="btn-admin-ghost" (click)="resetFilters()">RESET</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Feedback alerts -->
+  <div *ngIf="actionSuccess" class="admin-alert success-alert">
+    <span>✓ {{ actionSuccess }}</span>
+  </div>
+  <div *ngIf="!loading && error" class="admin-alert error-alert">
+    <span>⚠️ {{ error }}</span>
+    <button class="btn-admin-ghost" (click)="fetchUsers(page)">RETRY</button>
+  </div>
+
+  <!-- Skeleton -->
+  <div *ngIf="loading" class="users-skeleton">
+    <div class="sk-row" *ngFor="let i of [1,2,3,4,5]"></div>
+  </div>
+
+  <!-- Table Card -->
+  <div *ngIf="!loading" class="panel-card">
+    <div *ngIf="users.length === 0" class="empty-state">
+      <span class="empty-icon">👥</span>
+      <p class="empty-title">No users matched your query.</p>
+      <button class="btn-admin-ghost" (click)="resetFilters()">Clear Filters</button>
+    </div>
+
+    <div *ngIf="users.length > 0" class="table-responsive">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>USER / IDENTITY</th>
+            <th>ROLE</th>
+            <th>STATUS</th>
+            <th>VERIFIED</th>
+            <th>JOINED AT</th>
+            <th>ACTION</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let user of users" (click)="viewUser(user)" class="clickable-row">
+            <td>
+              <div class="user-cell">
+                <div class="user-avatar">
+                  {{ user.first_name ? user.first_name[0] : (user.email[0] | uppercase) }}
+                </div>
+                <div class="user-meta">
+                  <div class="user-name">
+                    <strong class="bold-white">
+                      {{ (user.first_name || user.last_name) ? (user.first_name + ' ' + (user.last_name || '')) : 'Anonymous User' }}
+                    </strong>
+                    <span class="you-badge" *ngIf="isSelf(user)">YOU</span>
+                  </div>
+                  <div class="user-email text-muted">{{ user.email }}</div>
+                  <div class="user-id font-mono text-muted text-xs">{{ user.id }}</div>
+                </div>
+              </div>
+            </td>
+            <td>
+              <span class="role-badge" [attr.data-role]="user.role">
+                {{ user.role }}
+              </span>
+            </td>
+            <td>
+              <button
+                class="btn-toggle"
+                [class.active]="user.is_active"
+                [disabled]="isSelf(user) || toggling[user.id]"
+                (click)="toggleActive(user, $event)"
+                [title]="isSelf(user) ? 'Cannot deactivate self' : 'Toggle account active status'"
+              >
+                {{ toggling[user.id] ? '...' : (user.is_active ? 'ACTIVE' : 'INACTIVE') }}
+              </button>
+            </td>
+            <td>
+              <span class="verify-badge" [class.verified]="user.is_verified">
+                {{ user.is_verified ? '✓ Verified' : 'Unverified' }}
+              </span>
+            </td>
+            <td class="text-muted text-sm">
+              {{ user.created_at | date:'mediumDate' }}
+            </td>
+            <td>
+              <button
+                class="btn-table-action"
+                (click)="$event.stopPropagation(); viewUser(user)"
+              >
+                PROFILE →
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div *ngIf="pages > 1" class="pagination-bar">
+      <div class="pagination-info">Showing {{ users.length }} of {{ total }} registered users</div>
+      <div class="pagination-controls">
+        <button class="btn-page" [disabled]="page <= 1" (click)="fetchUsers(page - 1)">← PREV</button>
+        <span class="page-num">PAGE {{ page }} / {{ pages }}</span>
+        <button class="btn-page" [disabled]="page >= pages" (click)="fetchUsers(page + 1)">NEXT →</button>
+      </div>
+    </div>
+  </div>
+</div>

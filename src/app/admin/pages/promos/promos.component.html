@@ -1,0 +1,246 @@
+<div class="admin-promos-page">
+  <!-- Header -->
+  <div class="promos-header">
+    <div class="header-titles">
+      <h1 class="page-title">PROMO CODES</h1>
+      <p class="subtitle">Platform discounts, voucher campaigns, and redemption restrictions</p>
+    </div>
+
+    <div class="header-actions">
+      <button class="btn-admin-cta" (click)="openCreateModal()">
+        ＋ CREATE PROMO
+      </button>
+      <button class="btn-refresh" (click)="fetchPromos(page)" [disabled]="loading">
+        <span [class.spin]="loading">↻</span> REFRESH
+      </button>
+    </div>
+  </div>
+
+  <!-- Feedback alerts -->
+  <div *ngIf="actionSuccess" class="admin-alert success-alert">
+    <span>✓ {{ actionSuccess }}</span>
+  </div>
+  <div *ngIf="!loading && error" class="admin-alert error-alert">
+    <span>⚠️ {{ error }}</span>
+    <button class="btn-admin-ghost" (click)="fetchPromos(page)">RETRY</button>
+  </div>
+
+  <!-- Skeleton -->
+  <div *ngIf="loading" class="promos-skeleton">
+    <div class="sk-row" *ngFor="let i of [1,2,3,4,5]"></div>
+  </div>
+
+  <!-- Table Card -->
+  <div *ngIf="!loading" class="panel-card">
+    <div *ngIf="promos.length === 0" class="empty-state">
+      <span class="empty-icon">🎟️</span>
+      <p class="empty-title">No promo codes found.</p>
+      <button class="btn-admin-primary" (click)="openCreateModal()">Create First Promo</button>
+    </div>
+
+    <div *ngIf="promos.length > 0" class="table-responsive">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>CODE</th>
+            <th>DISCOUNT</th>
+            <th>MIN ORDER</th>
+            <th>USAGE STATS</th>
+            <th>STATUS</th>
+            <th>VALIDITY</th>
+            <th>ACTIONS</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let promo of promos">
+            <td>
+              <span class="code-pill font-mono">{{ promo.code }}</span>
+              <div class="promo-desc text-muted" *ngIf="promo.description">{{ promo.description }}</div>
+            </td>
+            <td>
+              <span class="discount-badge" [class.badge-percent]="promo.discount_type === 'PERCENT'">
+                {{ promo.discount_type === 'PERCENT' ? (promo.discount_value + '% OFF') : ('$' + promo.discount_value + ' OFF') }}
+              </span>
+              <div class="max-cap text-muted" *ngIf="promo.max_discount_amount">
+                Max cap: ${{ promo.max_discount_amount }}
+              </div>
+            </td>
+            <td class="bold-white">
+              ${{ promo.min_order_amount || '0.00' }}
+            </td>
+            <td>
+              <div class="usage-metric">
+                <span class="bold-white">{{ promo.used_count }}</span>
+                <span class="text-muted"> / {{ promo.usage_limit ? promo.usage_limit : '∞' }} used</span>
+              </div>
+            </td>
+            <td>
+              <button
+                class="btn-toggle"
+                [class.active]="promo.is_active"
+                (click)="toggleActive(promo)"
+              >
+                {{ promo.is_active ? 'ACTIVE' : 'INACTIVE' }}
+              </button>
+            </td>
+            <td class="text-muted text-sm">
+              <div>Starts: {{ promo.starts_at ? (promo.starts_at | date:'mediumDate') : 'Immediate' }}</div>
+              <div>Expires: {{ promo.expires_at ? (promo.expires_at | date:'mediumDate') : 'Never' }}</div>
+            </td>
+            <td>
+              <div class="action-buttons">
+                <button class="btn-table-edit" (click)="openEditModal(promo)">
+                  EDIT
+                </button>
+                <button
+                  class="btn-table-del"
+                  [disabled]="deletingId === promo.id"
+                  (click)="deletePromo(promo)"
+                >
+                  {{ deletingId === promo.id ? '...' : 'DEL' }}
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div *ngIf="pages > 1" class="pagination-bar">
+      <div class="pagination-info">Showing {{ promos.length }} of {{ total }} promo codes</div>
+      <div class="pagination-controls">
+        <button class="btn-page" [disabled]="page <= 1" (click)="fetchPromos(page - 1)">← PREV</button>
+        <span class="page-num">PAGE {{ page }} / {{ pages }}</span>
+        <button class="btn-page" [disabled]="page >= pages" (click)="fetchPromos(page + 1)">NEXT →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create / Edit Modal -->
+  <div *ngIf="modalOpen" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">{{ isEditing ? 'EDIT PROMO CODE' : 'CREATE PROMO CODE' }}</h3>
+        <button class="btn-close" (click)="closeModal()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div *ngIf="modalError" class="admin-alert error-alert mb-4">
+          ⚠️ {{ modalError }}
+        </div>
+
+        <div class="modal-grid">
+          <div class="form-group">
+            <label>PROMO CODE</label>
+            <input
+              type="text"
+              [(ngModel)]="formData.code"
+              placeholder="e.g. FLASH20"
+              class="admin-input uppercase font-mono"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>DISCOUNT TYPE</label>
+            <select [(ngModel)]="formData.discount_type" class="admin-select">
+              <option value="PERCENT">PERCENTAGE (%)</option>
+              <option value="FIXED">FIXED AMOUNT ($)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>DISCOUNT VALUE</label>
+            <input
+              type="text"
+              [(ngModel)]="formData.discount_value"
+              placeholder="e.g. 20.00"
+              class="admin-input"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>MIN ORDER AMOUNT ($)</label>
+            <input
+              type="text"
+              [(ngModel)]="formData.min_order_amount"
+              placeholder="0.00"
+              class="admin-input"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>MAX DISCOUNT CAP ($) (OPTIONAL)</label>
+            <input
+              type="text"
+              [(ngModel)]="formData.max_discount_amount"
+              placeholder="Leave blank for none"
+              class="admin-input"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>TOTAL USAGE LIMIT (OPTIONAL)</label>
+            <input
+              type="number"
+              [(ngModel)]="formData.usage_limit"
+              placeholder="Blank = unlimited"
+              class="admin-input"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>PER-USER LIMIT</label>
+            <input
+              type="number"
+              [(ngModel)]="formData.per_user_limit"
+              class="admin-input"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>STARTS AT (OPTIONAL)</label>
+            <input
+              type="date"
+              [(ngModel)]="formData.starts_at"
+              class="admin-input"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>EXPIRES AT (OPTIONAL)</label>
+            <input
+              type="date"
+              [(ngModel)]="formData.expires_at"
+              class="admin-input"
+            />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>DESCRIPTION (OPTIONAL)</label>
+          <input
+            type="text"
+            [(ngModel)]="formData.description"
+            placeholder="e.g. 20% off streetwear autumn drops"
+            class="admin-input"
+          />
+        </div>
+
+        <div class="form-group checkbox-group">
+          <label class="confirm-check">
+            <input type="checkbox" [(ngModel)]="formData.is_active" />
+            <span>Promo is immediately active</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-admin-ghost" (click)="closeModal()" [disabled]="saving">CANCEL</button>
+        <button class="btn-admin-primary" (click)="savePromo()" [disabled]="saving">
+          {{ saving ? 'SAVING...' : (isEditing ? 'UPDATE PROMO' : 'CREATE PROMO') }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

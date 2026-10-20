@@ -1,0 +1,137 @@
+<div class="admin-inventory-page">
+  <!-- Header -->
+  <div class="inventory-header">
+    <div class="header-titles">
+      <h1 class="page-title">INVENTORY CONTROL</h1>
+      <p class="subtitle">Threshold-based low stock monitoring and instant inline stock adjustment</p>
+    </div>
+
+    <div class="header-actions">
+      <button class="btn-refresh" (click)="fetchInventory()" [disabled]="loading">
+        <span [class.spin]="loading">↻</span> REFRESH
+      </button>
+    </div>
+  </div>
+
+  <!-- Controls Card -->
+  <div class="control-card">
+    <div class="control-row">
+      <!-- Threshold Presets -->
+      <div class="threshold-group">
+        <span class="ctrl-label">THRESHOLD:</span>
+        <button class="btn-preset" [class.active]="threshold === 0" (click)="resetThreshold(0)">0 (Out)</button>
+        <button class="btn-preset" [class.active]="threshold === 5" (click)="resetThreshold(5)">≤ 5</button>
+        <button class="btn-preset" [class.active]="threshold === 10" (click)="resetThreshold(10)">≤ 10</button>
+        <button class="btn-preset" [class.active]="threshold === 25" (click)="resetThreshold(25)">≤ 25</button>
+      </div>
+
+      <!-- Custom Threshold & Search -->
+      <div class="custom-threshold">
+        <span class="ctrl-label">CUSTOM ≤</span>
+        <input
+          type="number"
+          min="0"
+          max="1000"
+          [(ngModel)]="threshold"
+          class="admin-input-num"
+          (keyup.enter)="fetchInventory()"
+        />
+        <button class="btn-admin-primary" (click)="fetchInventory()">APPLY</button>
+      </div>
+
+      <!-- Search Filter -->
+      <div class="search-wrap">
+        <input
+          type="text"
+          [(ngModel)]="searchQuery"
+          placeholder="Filter by product, SKU, size..."
+          class="admin-input-search"
+        />
+      </div>
+    </div>
+  </div>
+
+  <!-- Success & Error Banners -->
+  <div *ngIf="successMsg" class="admin-alert success-alert">
+    <span>✓ {{ successMsg }}</span>
+  </div>
+  <div *ngIf="actionError" class="admin-alert error-alert">
+    <span>⚠️ {{ actionError }}</span>
+  </div>
+  <div *ngIf="!loading && error" class="admin-alert error-alert">
+    <span>⚠️ {{ error }}</span>
+    <button class="btn-admin-ghost" (click)="fetchInventory()">RETRY</button>
+  </div>
+
+  <!-- Loading Skeleton -->
+  <div *ngIf="loading" class="inventory-skeleton">
+    <div class="sk-row" *ngFor="let i of [1,2,3,4,5]"></div>
+  </div>
+
+  <!-- Main Table -->
+  <div *ngIf="!loading" class="panel-card">
+    <div *ngIf="filteredItems.length === 0" class="empty-state">
+      <span class="empty-icon">✅</span>
+      <p class="empty-title">All items well-stocked!</p>
+      <p class="text-muted">No variants have stock levels at or below {{ threshold }} units.</p>
+    </div>
+
+    <div *ngIf="filteredItems.length > 0" class="table-responsive">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>PRODUCT</th>
+            <th>SKU</th>
+            <th>ATTRIBUTES</th>
+            <th>CURRENT STOCK</th>
+            <th>UPDATE QUANTITY</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of filteredItems" [class.out-of-stock-row]="item.stock === 0">
+            <td>
+              <strong class="prod-name">{{ item.product_name }}</strong>
+              <div class="prod-sub text-muted font-mono">{{ item.product_id }}</div>
+            </td>
+            <td>
+              <span class="sku-badge font-mono">{{ item.sku }}</span>
+            </td>
+            <td>
+              <div class="attr-badges">
+                <span class="attr-tag" *ngIf="item.size">SIZE: {{ item.size }}</span>
+                <span class="attr-tag" *ngIf="item.color">COLOR: {{ item.color }}</span>
+                <span class="text-muted" *ngIf="!item.size && !item.color">—</span>
+              </div>
+            </td>
+            <td>
+              <span class="stock-pill" [class.pill-zero]="item.stock === 0" [class.pill-low]="item.stock > 0">
+                {{ item.stock === 0 ? 'OUT OF STOCK' : item.stock + ' REMAINING' }}
+              </span>
+            </td>
+            <td>
+              <div class="stock-edit-group">
+                <input
+                  type="number"
+                  min="0"
+                  [(ngModel)]="editingStock[item.variant_id]"
+                  class="admin-input-stock"
+                />
+                <button
+                  class="btn-save-stock"
+                  [disabled]="saving[item.variant_id] || editingStock[item.variant_id] === item.stock"
+                  (click)="saveStock(item)"
+                >
+                  {{ saving[item.variant_id] ? 'SAVING...' : 'SAVE' }}
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="panel-footer" *ngIf="filteredItems.length > 0">
+      <span class="footer-count">{{ filteredItems.length }} variant(s) requiring attention</span>
+    </div>
+  </div>
+</div>

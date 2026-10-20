@@ -1,21 +1,40 @@
-import { Component, OnInit } from "@angular/core";
-import { AdminService } from "../../../services/admin.service";
-import { AdminDashboardSummary, OrdersByStatus, TopProduct, RevenuePoint } from "../../../models/api.models";
+import { Component, OnInit } from '@angular/core';
+import { AdminDashboardService } from '../../services/admin-dashboard.service';
+import { AdminLikesService } from '../../services/admin-likes.service';
+import {
+  AdminDashboardSummary,
+  ProductLikersListResponse,
+  TopProductLikesItem,
+  TopProductSalesItem
+} from '../../models/admin-extended.models';
 
 @Component({
-  selector: "app-admin-dashboard",
-  templateUrl: "./admin-dashboard.component.html",
-  styleUrls: ["./admin-dashboard.component.scss"],
+  selector: 'app-admin-dashboard',
+  templateUrl: './admin-dashboard.component.html',
+  styleUrls: ['./admin-dashboard.component.scss'],
 })
 export class AdminDashboardComponent implements OnInit {
   summary: AdminDashboardSummary | null = null;
   loading = true;
   error: string | null = null;
+  lastUpdated: Date = new Date();
 
-  fromDate = "";
-  toDate = "";
+  // Filters
+  fromDate = '';
+  toDate = '';
 
-  constructor(private adminService: AdminService) {}
+  // Likers Modal
+  likersModalOpen = false;
+  selectedProductForLikes: TopProductLikesItem | null = null;
+  likersData: ProductLikersListResponse | null = null;
+  likersLoading = false;
+  likersPage = 1;
+  likersPageSize = 10;
+
+  constructor(
+    private dashboardService: AdminDashboardService,
+    private likesService: AdminLikesService
+  ) {}
 
   ngOnInit(): void {
     this.loadSummary();
@@ -24,41 +43,80 @@ export class AdminDashboardComponent implements OnInit {
   loadSummary(): void {
     this.loading = true;
     this.error = null;
-    const params: { from?: string; to?: string } = {};
-    if (this.fromDate) params.from = this.fromDate;
-    if (this.toDate) params.to = this.toDate;
 
-    this.adminService.getDashboard(params).subscribe({
-      next: data => {
+    this.dashboardService.getSummary(this.fromDate || null, this.toDate || null).subscribe({
+      next: (data) => {
         this.summary = data;
+        this.lastUpdated = new Date();
         this.loading = false;
       },
-      error: (err: Error) => {
-        this.error = err.message;
+      error: (err) => {
+        this.error = err.error?.detail || err.message || 'Failed to load dashboard summary';
         this.loading = false;
       },
     });
   }
 
-  resetFilters(): void {
-    this.fromDate = "";
-    this.toDate = "";
+  setPreset(days: number): void {
+    const to = new Date();
+    const from = new Date();
+    from.setDate(to.getDate() - days);
+
+    this.toDate = to.toISOString().split('T')[0];
+    this.fromDate = from.toISOString().split('T')[0];
     this.loadSummary();
   }
 
-  getOrderStatusKeys(obs: OrdersByStatus | undefined): (keyof OrdersByStatus)[] {
-    if (!obs) return [];
-    return Object.keys(obs) as (keyof OrdersByStatus)[];
+  resetFilters(): void {
+    this.fromDate = '';
+    this.toDate = '';
+    this.loadSummary();
   }
 
-  getMaxRevenue(): number {
-    if (!this.summary?.revenue_last_30_days?.length) return 100;
-    const max = Math.max(...this.summary.revenue_last_30_days.map(r => Number(r.revenue) || 0));
+  getOrderStatusKeys(obs: Record<string, number> | undefined): string[] {
+    if (!obs) return [];
+    return Object.keys(obs);
+  }
+
+  getMaxDailyRevenue(): number {
+    if (!this.summary?.revenue_daily?.length) return 100;
+    const max = Math.max(...this.summary.revenue_daily.map(r => parseFloat(r.revenue) || 0));
     return max > 0 ? max : 100;
   }
 
-  getBarHeightPercent(rev: string): number {
-    const max = this.getMaxRevenue();
-    return Math.min(100, Math.round(((Number(rev) || 0) / max) * 100));
+  getBarHeight(rev: string): number {
+    const max = this.getMaxDailyRevenue();
+    const val = parseFloat(rev) || 0;
+    return Math.min(100, Math.max(6, Math.round((val / max) * 100)));
+  }
+
+  // ─── Likers Modal ────────────────────────────────────────────────────────
+  openLikersModal(product: TopProductLikesItem): void {
+    this.selectedProductForLikes = product;
+    this.likersModalOpen = true;
+    this.likersPage = 1;
+    this.fetchLikers();
+  }
+
+  closeLikersModal(): void {
+    this.likersModalOpen = false;
+    this.selectedProductForLikes = null;
+    this.likersData = null;
+  }
+
+  fetchLikers(page = 1): void {
+    if (!this.selectedProductForLikes) return;
+    this.likersPage = page;
+    this.likersLoading = true;
+
+    this.likesService.getLikers(this.selectedProductForLikes.product_id, page, this.likersPageSize).subscribe({
+      next: (res) => {
+        this.likersData = res;
+        this.likersLoading = false;
+      },
+      error: () => {
+        this.likersLoading = false;
+      },
+    });
   }
 }

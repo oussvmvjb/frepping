@@ -1,0 +1,246 @@
+<div class="admin-delivery-page">
+  <!-- Header -->
+  <div class="delivery-header">
+    <div class="header-titles">
+      <h1 class="page-title">DELIVERY OPTIONS</h1>
+      <p class="subtitle">Platform carrier shipping methods, transit estimates, and fee structures</p>
+    </div>
+
+    <div class="header-actions">
+      <button class="btn-admin-cta" (click)="openCreateModal()">
+        ＋ ADD DELIVERY METHOD
+      </button>
+      <button class="btn-refresh" (click)="fetchOptions()" [disabled]="loading">
+        <span [class.spin]="loading">↻</span> REFRESH
+      </button>
+    </div>
+  </div>
+
+  <!-- Notice Info Banner -->
+  <div class="info-banner">
+    <span class="info-icon">ℹ️</span>
+    <span>
+      This view displays all active delivery methods from the store catalog.
+      Deactivating an option hides it from storefront checkout.
+    </span>
+  </div>
+
+  <!-- Success & Error Alerts -->
+  <div *ngIf="actionSuccess" class="admin-alert success-alert">
+    <span>✓ {{ actionSuccess }}</span>
+  </div>
+  <div *ngIf="!loading && error" class="admin-alert error-alert">
+    <span>⚠️ {{ error }}</span>
+    <button class="btn-admin-ghost" (click)="fetchOptions()">RETRY</button>
+  </div>
+
+  <!-- Skeleton -->
+  <div *ngIf="loading" class="delivery-skeleton">
+    <div class="sk-row" *ngFor="let i of [1,2,3,4]"></div>
+  </div>
+
+  <!-- Table Card -->
+  <div *ngIf="!loading" class="panel-card">
+    <div *ngIf="options.length === 0" class="empty-state">
+      <span class="empty-icon">🚚</span>
+      <p class="empty-title">No active delivery options found.</p>
+      <button class="btn-admin-primary" (click)="openCreateModal()">Add First Delivery Option</button>
+    </div>
+
+    <div *ngIf="options.length > 0" class="table-responsive">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>METHOD</th>
+            <th>PRICE</th>
+            <th>ESTIMATED ARRIVAL</th>
+            <th>BADGE</th>
+            <th>STATUS</th>
+            <th>SORT</th>
+            <th>ACTIONS</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let opt of options">
+            <td>
+              <div class="method-cell">
+                <span class="method-icon">{{ opt.icon || '🚚' }}</span>
+                <div class="method-meta">
+                  <strong class="bold-white">{{ opt.title }}</strong>
+                  <div class="method-code font-mono text-muted">{{ opt.code }}</div>
+                  <div class="method-desc text-muted" *ngIf="opt.description">{{ opt.description }}</div>
+                </div>
+              </div>
+            </td>
+            <td>
+              <span class="neon-text font-disp font-bold">${{ opt.price }}</span>
+            </td>
+            <td>
+              <div class="bold-white">{{ opt.estimated_label || (opt.estimated_days_min + '-' + opt.estimated_days_max + ' days') }}</div>
+              <div class="text-muted text-sm" *ngIf="opt.estimated_days_min">
+                ({{ opt.estimated_days_min }} - {{ opt.estimated_days_max }} days)
+              </div>
+            </td>
+            <td>
+              <span class="promo-badge" *ngIf="opt.badge">{{ opt.badge }}</span>
+              <span class="text-muted" *ngIf="!opt.badge">—</span>
+            </td>
+            <td>
+              <button
+                class="btn-toggle active"
+                (click)="toggleActive(opt)"
+                title="Click to toggle status"
+              >
+                ACTIVE
+              </button>
+            </td>
+            <td class="font-mono text-muted">{{ opt.sort_order }}</td>
+            <td>
+              <div class="action-buttons">
+                <button class="btn-table-edit" (click)="openEditModal(opt)">
+                  EDIT
+                </button>
+                <button
+                  class="btn-table-del"
+                  [disabled]="deletingId === opt.id"
+                  (click)="deleteOption(opt)"
+                >
+                  {{ deletingId === opt.id ? '...' : 'DEL' }}
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Create / Edit Modal -->
+  <div *ngIf="modalOpen" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">{{ isEditing ? 'EDIT DELIVERY OPTION' : 'CREATE DELIVERY OPTION' }}</h3>
+        <button class="btn-close" (click)="closeModal()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div *ngIf="modalError" class="admin-alert error-alert mb-4">
+          ⚠️ {{ modalError }}
+        </div>
+
+        <div class="modal-grid">
+          <div class="form-group">
+            <label>OPTION CODE</label>
+            <input
+              type="text"
+              [(ngModel)]="formData.code"
+              placeholder="e.g. STANDARD"
+              class="admin-input uppercase font-mono"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>DISPLAY TITLE</label>
+            <input
+              type="text"
+              [(ngModel)]="formData.title"
+              placeholder="e.g. Standard Courier"
+              class="admin-input"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>ICON (EMOJI)</label>
+            <input
+              type="text"
+              [(ngModel)]="formData.icon"
+              placeholder="🚚"
+              class="admin-input"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>PRICE ($)</label>
+            <input
+              type="text"
+              [(ngModel)]="formData.price"
+              placeholder="5.00"
+              class="admin-input"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>ESTIMATED DAYS MIN</label>
+            <input
+              type="number"
+              [(ngModel)]="formData.estimated_days_min"
+              class="admin-input"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>ESTIMATED DAYS MAX</label>
+            <input
+              type="number"
+              [(ngModel)]="formData.estimated_days_max"
+              class="admin-input"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>ESTIMATED LABEL</label>
+            <input
+              type="text"
+              [(ngModel)]="formData.estimated_label"
+              placeholder="e.g. 2-4 Business Days"
+              class="admin-input"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>BADGE (OPTIONAL)</label>
+            <input
+              type="text"
+              [(ngModel)]="formData.badge"
+              placeholder="e.g. FASTEST or FREE"
+              class="admin-input"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>SORT ORDER</label>
+            <input
+              type="number"
+              [(ngModel)]="formData.sort_order"
+              class="admin-input"
+            />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>DESCRIPTION (OPTIONAL)</label>
+          <input
+            type="text"
+            [(ngModel)]="formData.description"
+            placeholder="e.g. Express tracked courier with SMS alerts"
+            class="admin-input"
+          />
+        </div>
+
+        <div class="form-group checkbox-group">
+          <label class="confirm-check">
+            <input type="checkbox" [(ngModel)]="formData.is_active" />
+            <span>Option is active and available for customer checkout</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-admin-ghost" (click)="closeModal()" [disabled]="saving">CANCEL</button>
+        <button class="btn-admin-primary" (click)="saveOption()" [disabled]="saving">
+          {{ saving ? 'SAVING...' : (isEditing ? 'UPDATE OPTION' : 'CREATE OPTION') }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

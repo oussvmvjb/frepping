@@ -1,162 +1,303 @@
-<div class="admin-dashboard-view">
-  <!-- HEADER & FILTER -->
-  <div class="dashboard-top-bar flex justify-between items-center mb-6">
-    <div>
-      <h1 class="page-title text-2xl font-bold text-white">ADMIN EXECUTIVE OVERVIEW</h1>
-      <p class="text-muted text-xs">Real-time metrics, platform revenue & order fulfillments</p>
+<div class="admin-dashboard-page">
+  <!-- Top Bar / Controls -->
+  <div class="dashboard-header">
+    <div class="header-titles">
+      <h1 class="page-title">EXECUTIVE DASHBOARD</h1>
+      <p class="subtitle">Platform sales, revenue metrics & order operations</p>
     </div>
 
-    <!-- DATE FILTERS -->
-    <div class="date-filter-group flex items-center gap-2">
-      <input type="date" [(ngModel)]="fromDate" class="admin-input-sm" />
-      <span class="text-muted text-xs">to</span>
-      <input type="date" [(ngModel)]="toDate" class="admin-input-sm" />
-      <button class="btn-admin-sm" (click)="loadSummary()">APPLY</button>
-      <button *ngIf="fromDate || toDate" class="btn-admin-sm btn-ghost" (click)="resetFilters()">RESET</button>
+    <div class="header-actions">
+      <!-- Date Presets -->
+      <div class="preset-group">
+        <button class="btn-preset" (click)="setPreset(7)">7D</button>
+        <button class="btn-preset" (click)="setPreset(30)">30D</button>
+        <button class="btn-preset" (click)="setPreset(90)">90D</button>
+      </div>
+
+      <!-- Date Inputs -->
+      <div class="date-inputs">
+        <input type="date" [(ngModel)]="fromDate" class="admin-input-date" title="Start date" />
+        <span class="date-sep">to</span>
+        <input type="date" [(ngModel)]="toDate" class="admin-input-date" title="End date" />
+        <button class="btn-admin-primary" (click)="loadSummary()">APPLY</button>
+        <button *ngIf="fromDate || toDate" class="btn-admin-ghost" (click)="resetFilters()">RESET</button>
+      </div>
+
+      <button class="btn-refresh" (click)="loadSummary()" [disabled]="loading" title="Refresh metrics">
+        <span [class.spin]="loading">↻</span> REFRESH
+      </button>
     </div>
   </div>
 
-  <!-- LOADING STATE -->
-  <div *ngIf="loading" class="text-center p-12 text-muted">
-    <i class="fas fa-spinner fa-spin text-3xl"></i>
-    <p class="mt-2 text-sm font-bold">COMPUTING METRICS...</p>
+  <div class="last-sync" *ngIf="!loading">
+    <span class="sync-dot"></span> Cached analytics • Last updated: {{ lastUpdated | date:'HH:mm:ss' }}
   </div>
 
-  <!-- ERROR STATE -->
-  <div *ngIf="!loading && error" class="gta-alert error-alert mb-6">
-    <div class="alert-icon"><i class="fas fa-exclamation-triangle"></i></div>
-    <div class="alert-body"><p class="alert-text">{{ error }}</p></div>
-    <button class="btn-admin-xs ml-auto" (click)="loadSummary()">RETRY</button>
+  <!-- Loading Skeleton -->
+  <div *ngIf="loading" class="dashboard-loading">
+    <div class="kpi-grid">
+      <div class="kpi-card skeleton" *ngFor="let i of [1,2,3,4,5]">
+        <div class="sk-line sk-title"></div>
+        <div class="sk-line sk-val"></div>
+      </div>
+    </div>
+    <div class="panel-card skeleton sk-panel"></div>
   </div>
 
-  <!-- MAIN METRICS -->
-  <div *ngIf="!loading && summary" class="dashboard-body space-y-6">
+  <!-- Error Alert -->
+  <div *ngIf="!loading && error" class="admin-alert error-alert">
+    <span>⚠️ {{ error }}</span>
+    <button class="btn-admin-ghost" (click)="loadSummary()">RETRY</button>
+  </div>
 
-    <!-- KPI ROW (4 CARDS) -->
-    <div class="kpi-grid grid grid-cols-1 md:grid-cols-4 gap-4">
+  <!-- Dashboard Body -->
+  <div *ngIf="!loading && summary" class="dashboard-body">
+
+    <!-- KPI ROW (5 CARDS) -->
+    <div class="kpi-grid">
       <div class="kpi-card">
         <div class="kpi-header">
           <span class="kpi-label">TOTAL REVENUE</span>
-          <i class="fas fa-dollar-sign kpi-icon text-green"></i>
+          <span class="kpi-icon">💰</span>
         </div>
-        <div class="kpi-value text-green">${{ (+summary.total_revenue) | number:'1.2-2' }}</div>
-        <div class="kpi-sub text-muted">Gross platform sales</div>
+        <div class="kpi-value neon-glow">${{ summary.total_revenue }}</div>
+        <div class="kpi-sub">Gross platform sales</div>
       </div>
 
       <div class="kpi-card">
         <div class="kpi-header">
           <span class="kpi-label">TOTAL ORDERS</span>
-          <i class="fas fa-shopping-bag kpi-icon text-cyan"></i>
+          <span class="kpi-icon">📦</span>
         </div>
-        <div class="kpi-value text-white">{{ summary.total_orders | number }}</div>
-        <div class="kpi-sub text-muted">Total orders placed</div>
+        <div class="kpi-value">{{ summary.orders_count | number }}</div>
+        <div class="kpi-sub">Orders placed</div>
       </div>
 
       <div class="kpi-card">
         <div class="kpi-header">
-          <span class="kpi-label">REGISTERED USERS</span>
-          <i class="fas fa-users kpi-icon text-purple"></i>
+          <span class="kpi-label">NEW USERS</span>
+          <span class="kpi-icon">👥</span>
         </div>
-        <div class="kpi-value text-white">{{ summary.total_users | number }}</div>
-        <div class="kpi-sub text-muted">Active community members</div>
+        <div class="kpi-value">{{ summary.new_users | number }}</div>
+        <div class="kpi-sub">Members joined</div>
       </div>
 
       <div class="kpi-card">
         <div class="kpi-header">
           <span class="kpi-label">ACTIVE PRODUCTS</span>
-          <i class="fas fa-tshirt kpi-icon text-yellow"></i>
+          <span class="kpi-icon">🛍️</span>
         </div>
-        <div class="kpi-value text-white">{{ summary.total_products | number }}</div>
-        <div class="kpi-sub text-muted">Streetwear catalog items</div>
+        <div class="kpi-value">{{ summary.active_products | number }}</div>
+        <div class="kpi-sub">Published in store</div>
+      </div>
+
+      <div class="kpi-card" [class.kpi-alert]="summary.low_stock_count > 0">
+        <div class="kpi-header">
+          <span class="kpi-label">LOW STOCK ITEMS</span>
+          <span class="kpi-icon">⚠️</span>
+        </div>
+        <div class="kpi-value" [class.red-text]="summary.low_stock_count > 0">{{ summary.low_stock_count | number }}</div>
+        <div class="kpi-sub">
+          <a routerLink="/admin/inventory" class="card-link">Review Inventory →</a>
+        </div>
       </div>
     </div>
 
     <!-- MIDDLE ROW: REVENUE TREND & ORDERS BY STATUS -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-      <!-- REVENUE CHART (2/3 width) -->
-      <div class="panel-card lg:col-span-2">
-        <div class="panel-header flex justify-between items-center">
-          <h3 class="panel-title text-base font-bold text-white">
-            <i class="fas fa-chart-area mr-2 text-green"></i> REVENUE (LAST 30 DAYS)
-          </h3>
-          <span class="text-muted text-xs">Platform turnover timeline</span>
+    <div class="middle-grid">
+      <!-- Daily Revenue Chart -->
+      <div class="panel-card chart-panel">
+        <div class="panel-header">
+          <div class="panel-title-wrap">
+            <span class="panel-icon">📈</span>
+            <h3 class="panel-title">DAILY REVENUE TIMELINE</h3>
+          </div>
+          <span class="panel-sub">{{ summary.revenue_daily.length }} points</span>
         </div>
+
         <div class="panel-body">
-          <div *ngIf="!summary.revenue_last_30_days || summary.revenue_last_30_days.length === 0" class="text-center p-8 text-muted">
-            No sales recorded in the past 30 days.
+          <div *ngIf="!summary.revenue_daily || summary.revenue_daily.length === 0" class="empty-chart">
+            No sales recorded for this period.
           </div>
 
-          <!-- REVENUE TIMELINE CHART (SVG/CSS BARS) -->
-          <div *ngIf="summary.revenue_last_30_days?.length" class="revenue-chart-container">
-            <div class="chart-bars-wrap">
-              <div *ngFor="let point of summary.revenue_last_30_days" class="chart-bar-col" [title]="point.date + ': $' + point.revenue">
-                <div class="bar-fill-wrap">
-                  <div class="bar-fill" [style.height.%]="getBarHeightPercent(point.revenue)"></div>
+          <div *ngIf="summary.revenue_daily?.length" class="chart-container">
+            <div class="chart-bars">
+              <div
+                *ngFor="let point of summary.revenue_daily"
+                class="chart-bar-item"
+                [title]="point.date + ': $' + point.revenue + ' (' + point.orders_count + ' orders)'"
+              >
+                <div class="bar-track">
+                  <div class="bar-fill" [style.height.%]="getBarHeight(point.revenue)"></div>
                 </div>
-                <span class="bar-date-label">{{ point.date.substring(5) }}</span>
+                <span class="bar-label">{{ point.date.substring(5) }}</span>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- ORDERS BY STATUS (1/3 width) -->
-      <div class="panel-card">
+      <!-- Orders by Status -->
+      <div class="panel-card status-panel">
         <div class="panel-header">
-          <h3 class="panel-title text-base font-bold text-white">
-            <i class="fas fa-pie-chart mr-2 text-cyan"></i> ORDERS BY STATUS
-          </h3>
+          <div class="panel-title-wrap">
+            <span class="panel-icon">📊</span>
+            <h3 class="panel-title">ORDERS BY STATUS</h3>
+          </div>
         </div>
+
         <div class="panel-body">
-          <div class="status-breakdown-list space-y-3">
-            <div *ngFor="let key of getOrderStatusKeys(summary.orders_by_status)" class="flex justify-between items-center p-2 rounded bg-gray-900 border border-gray-800">
-              <span class="status-badge status-{{ key.toLowerCase() }}">{{ key }}</span>
-              <strong class="text-white text-sm">{{ summary.orders_by_status[key] }}</strong>
+          <div class="status-list">
+            <div *ngFor="let status of getOrderStatusKeys(summary.orders_by_status)" class="status-row">
+              <span class="status-badge" [attr.data-status]="status">{{ status }}</span>
+              <span class="status-count">{{ summary.orders_by_status[status] }}</span>
             </div>
           </div>
         </div>
       </div>
-
     </div>
 
-    <!-- BOTTOM ROW: TOP PRODUCTS -->
-    <div class="panel-card">
-      <div class="panel-header flex justify-between items-center">
-        <h3 class="panel-title text-base font-bold text-white">
-          <i class="fas fa-crown mr-2 text-yellow"></i> TOP SELLING PRODUCTS
-        </h3>
-        <span class="text-muted text-xs">Ranked by volume & gross turnover</span>
-      </div>
-      <div class="panel-body p-0">
-        <div *ngIf="!summary.top_products || summary.top_products.length === 0" class="text-center p-6 text-muted">
-          No top products recorded yet.
+    <!-- BOTTOM ROW: TOP PRODUCTS BY SALES & LIKES -->
+    <div class="bottom-grid">
+      <!-- Top by Sales -->
+      <div class="panel-card">
+        <div class="panel-header">
+          <div class="panel-title-wrap">
+            <span class="panel-icon">🏆</span>
+            <h3 class="panel-title">TOP SELLING PRODUCTS</h3>
+          </div>
         </div>
-        <div *ngIf="summary.top_products?.length" class="overflow-x-auto">
-          <table class="admin-table w-full">
+
+        <div class="panel-body no-pad">
+          <div *ngIf="!summary.top_products_by_sales?.length" class="empty-state">
+            No product sales recorded yet.
+          </div>
+
+          <table *ngIf="summary.top_products_by_sales?.length" class="admin-table">
             <thead>
               <tr>
+                <th>RANK</th>
                 <th>PRODUCT</th>
-                <th>PRODUCT ID</th>
-                <th>UNITS ORDERED</th>
-                <th>GROSS REVENUE</th>
+                <th>UNITS SOLD</th>
+                <th>REVENUE</th>
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let prod of summary.top_products; let i = index">
+              <tr *ngFor="let prod of summary.top_products_by_sales; let i = index">
+                <td><span class="rank-num">#{{ i + 1 }}</span></td>
                 <td>
-                  <span class="rank-badge mr-2">#{{ i + 1 }}</span>
-                  <strong class="text-white">{{ prod.product_name }}</strong>
+                  <strong class="prod-name">{{ prod.product_name }}</strong>
+                  <div class="prod-id">{{ prod.product_id }}</div>
                 </td>
-                <td class="text-muted text-xs font-mono">{{ prod.product_id }}</td>
-                <td class="text-white font-bold">{{ prod.total_sold }}</td>
-                <td class="text-green font-bold">${{ (+prod.revenue) | number:'1.2-2' }}</td>
+                <td class="bold-white">{{ prod.units_sold }}</td>
+                <td class="neon-text">${{ prod.total_revenue }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Top by Likes -->
+      <div class="panel-card">
+        <div class="panel-header">
+          <div class="panel-title-wrap">
+            <span class="panel-icon">❤️</span>
+            <h3 class="panel-title">TOP FAVORITED PRODUCTS</h3>
+          </div>
+        </div>
+
+        <div class="panel-body no-pad">
+          <div *ngIf="!summary.top_products_by_likes?.length" class="empty-state">
+            No likes recorded yet.
+          </div>
+
+          <table *ngIf="summary.top_products_by_likes?.length" class="admin-table">
+            <thead>
+              <tr>
+                <th>RANK</th>
+                <th>PRODUCT</th>
+                <th>LIKES</th>
+                <th>ACTION</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let prod of summary.top_products_by_likes; let i = index">
+                <td><span class="rank-num">#{{ i + 1 }}</span></td>
+                <td>
+                  <strong class="prod-name">{{ prod.product_name }}</strong>
+                  <div class="prod-id">{{ prod.product_id }}</div>
+                </td>
+                <td class="bold-white">❤️ {{ prod.likes_count }}</td>
+                <td>
+                  <button class="btn-table-action" (click)="openLikersModal(prod)">
+                    VIEW LIKERS
+                  </button>
+                </td>
               </tr>
             </tbody>
           </table>
         </div>
       </div>
     </div>
+  </div>
 
+  <!-- Likers Modal -->
+  <div *ngIf="likersModalOpen" class="modal-backdrop" (click)="closeLikersModal()">
+    <div class="modal-dialog" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3 class="modal-title">USERS WHO LIKED "{{ selectedProductForLikes?.product_name }}"</h3>
+        <button class="btn-close" (click)="closeLikersModal()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div *ngIf="likersLoading" class="modal-loading">
+          Loading likers...
+        </div>
+
+        <div *ngIf="!likersLoading && !likersData?.items?.length" class="empty-state">
+          No user details found.
+        </div>
+
+        <table *ngIf="!likersLoading && likersData?.items?.length" class="admin-table">
+          <thead>
+            <tr>
+              <th>USER</th>
+              <th>EMAIL</th>
+              <th>LIKED DATE</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let user of likersData!.items">
+              <td class="bold-white">{{ user.full_name || 'N/A' }}</td>
+              <td class="text-muted">{{ user.email }}</td>
+              <td class="text-muted">{{ user.created_at | date:'mediumDate' }}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- Modal Pagination -->
+        <div *ngIf="likersData && likersData.pages > 1" class="modal-pagination">
+          <button
+            class="btn-page"
+            [disabled]="likersPage <= 1"
+            (click)="fetchLikers(likersPage - 1)"
+          >
+            ← Prev
+          </button>
+          <span class="page-info">Page {{ likersPage }} of {{ likersData.pages }}</span>
+          <button
+            class="btn-page"
+            [disabled]="likersPage >= likersData.pages"
+            (click)="fetchLikers(likersPage + 1)"
+          >
+            Next →
+          </button>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-admin-ghost" (click)="closeLikersModal()">CLOSE</button>
+      </div>
+    </div>
   </div>
 </div>

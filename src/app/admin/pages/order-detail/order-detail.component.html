@@ -1,0 +1,287 @@
+<div class="admin-order-detail-page">
+  <!-- Top Navigation & Action -->
+  <div class="page-top-nav">
+    <button class="btn-back" (click)="goBack()">
+      ← BACK TO ORDERS
+    </button>
+    <div class="top-nav-actions" *ngIf="order">
+      <button class="btn-refresh" (click)="fetchOrder()" [disabled]="loading">
+        <span [class.spin]="loading">↻</span> REFRESH
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading Skeleton -->
+  <div *ngIf="loading" class="detail-skeleton">
+    <div class="sk-box sk-header"></div>
+    <div class="sk-grid">
+      <div class="sk-box sk-main"></div>
+      <div class="sk-box sk-side"></div>
+    </div>
+  </div>
+
+  <!-- Error Alert -->
+  <div *ngIf="!loading && error" class="admin-alert error-alert">
+    <span>⚠️ {{ error }}</span>
+    <button class="btn-admin-ghost" (click)="fetchOrder()">RETRY</button>
+  </div>
+
+  <!-- Main Order Content -->
+  <div *ngIf="!loading && order" class="order-content">
+    <!-- Header Banner -->
+    <div class="order-hero-card">
+      <div class="order-hero-left">
+        <div class="order-meta-pill">ORDER ID: {{ order.id }}</div>
+        <h1 class="order-hero-title">ORDER #{{ order.order_number }}</h1>
+        <div class="order-timestamps">
+          <span>Placed: <strong>{{ order.placed_at | date:'medium' }}</strong></span>
+          <span *ngIf="order.updated_at">• Updated: <strong>{{ order.updated_at | date:'medium' }}</strong></span>
+        </div>
+      </div>
+
+      <div class="order-hero-right">
+        <div class="badge-stack">
+          <div class="badge-item">
+            <span class="badge-label">ORDER STATUS</span>
+            <span class="status-badge" [attr.data-status]="order.status">{{ order.status }}</span>
+          </div>
+          <div class="badge-item">
+            <span class="badge-label">PAYMENT</span>
+            <span class="payment-badge" [attr.data-pay-status]="order.payment_status">
+              {{ order.payment_status }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Feedback Alerts -->
+    <div *ngIf="statusSuccessMsg" class="admin-alert success-alert">
+      ✓ {{ statusSuccessMsg }}
+    </div>
+    <div *ngIf="statusErrorMsg" class="admin-alert error-alert">
+      ⚠️ {{ statusErrorMsg }}
+    </div>
+    <div *ngIf="refundSuccessMsg" class="admin-alert success-alert">
+      ✓ {{ refundSuccessMsg }}
+    </div>
+    <div *ngIf="refundErrorMsg" class="admin-alert error-alert">
+      ⚠️ {{ refundErrorMsg }}
+    </div>
+
+    <!-- 2-Column Layout -->
+    <div class="order-grid">
+      <!-- Left Column: Items & Timeline -->
+      <div class="order-main-col">
+        <!-- Ordered Items Card -->
+        <div class="panel-card">
+          <div class="panel-header">
+            <div class="panel-title-wrap">
+              <span class="panel-icon">🛍️</span>
+              <h3 class="panel-title">ORDERED ITEMS ({{ order.items ? order.items.length : 0 }})</h3>
+            </div>
+          </div>
+
+          <div class="panel-body no-pad">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>ITEM</th>
+                  <th>SKU / VARIANT</th>
+                  <th>UNIT PRICE</th>
+                  <th>QTY</th>
+                  <th>TOTAL</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let item of order.items">
+                  <td>
+                    <div class="item-cell">
+                      <div class="item-img" *ngIf="item.image_url">
+                        <img [src]="item.image_url" [alt]="item.product_name" />
+                      </div>
+                      <div class="item-info">
+                        <strong class="item-name">{{ item.product_name }}</strong>
+                        <div class="item-seller text-muted" *ngIf="item.seller_id">
+                          Seller ID: {{ item.seller_id }}
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="font-mono text-muted">{{ item.sku || 'N/A' }}</div>
+                    <div class="variant-tag" *ngIf="item.variant_label">{{ item.variant_label }}</div>
+                  </td>
+                  <td class="bold-white">${{ item.unit_price }}</td>
+                  <td class="bold-white">× {{ item.quantity }}</td>
+                  <td class="neon-text">${{ item.line_total }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Status History Timeline -->
+        <div class="panel-card" *ngIf="order.status_history?.length">
+          <div class="panel-header">
+            <div class="panel-title-wrap">
+              <span class="panel-icon">⏱️</span>
+              <h3 class="panel-title">LIFECYCLE TIMELINE</h3>
+            </div>
+          </div>
+
+          <div class="panel-body">
+            <div class="timeline">
+              <div class="timeline-step" *ngFor="let step of order.status_history">
+                <div class="timeline-marker"></div>
+                <div class="timeline-content">
+                  <div class="timeline-header">
+                    <span class="status-badge" [attr.data-status]="step.to_status">{{ step.to_status }}</span>
+                    <span class="timeline-date">{{ step.created_at | date:'medium' }}</span>
+                  </div>
+                  <p class="timeline-note" *ngIf="step.note">{{ step.note }}</p>
+                  <span class="timeline-by text-muted" *ngIf="step.changed_by">Changed by: {{ step.changed_by }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Controls, Customer, Breakdown -->
+      <div class="order-side-col">
+        <!-- Status Management Action Box -->
+        <div class="action-card">
+          <h3 class="action-card-title">UPDATE ORDER STATUS</h3>
+
+          <div class="form-group">
+            <label>NEXT STATUS</label>
+            <select [(ngModel)]="selectedStatus" class="admin-select">
+              <option *ngFor="let s of statuses" [value]="s">{{ s }}</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>TRACKING NUMBER</label>
+            <input
+              type="text"
+              [(ngModel)]="trackingNumber"
+              placeholder="e.g. DHL-981240182"
+              class="admin-input"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>INTERNAL / CUSTOMER NOTE</label>
+            <textarea
+              [(ngModel)]="statusNote"
+              placeholder="Reason or dispatch notes..."
+              rows="2"
+              class="admin-textarea"
+            ></textarea>
+          </div>
+
+          <button
+            class="btn-admin-primary w-full"
+            [disabled]="updatingStatus"
+            (click)="updateStatus()"
+          >
+            {{ updatingStatus ? 'UPDATING...' : 'CONFIRM STATUS CHANGE' }}
+          </button>
+        </div>
+
+        <!-- Refund Action Box -->
+        <div class="action-card refund-card" *ngIf="order.payment_status === 'PAID'">
+          <h3 class="action-card-title red-title">ORDER REFUND</h3>
+          <p class="action-desc">
+            Return full payment of <strong>${{ order.total }}</strong> to customer. This will cancel fulfillment.
+          </p>
+          <button
+            class="btn-admin-danger w-full"
+            [disabled]="refunding"
+            (click)="refundOrder()"
+          >
+            {{ refunding ? 'PROCESSING REFUND...' : 'ISSUE FULL REFUND' }}
+          </button>
+        </div>
+
+        <!-- Shipping & Customer Card -->
+        <div class="panel-card">
+          <div class="panel-header">
+            <div class="panel-title-wrap">
+              <span class="panel-icon">📍</span>
+              <h3 class="panel-title">SHIPPING DESTINATION</h3>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="address-details" *ngIf="order.shipping_address">
+              <div class="addr-name bold-white">{{ order.shipping_address.name }}</div>
+              <div class="addr-line">{{ order.shipping_address.street }}</div>
+              <div class="addr-line">
+                {{ order.shipping_address.city }}, {{ order.shipping_address.state }} {{ order.shipping_address.zip }}
+              </div>
+              <div class="addr-line">{{ order.shipping_address.country }}</div>
+              <div class="addr-phone text-muted" *ngIf="order.shipping_address.phone">
+                📞 {{ order.shipping_address.phone }}
+              </div>
+            </div>
+            <div *ngIf="!order.shipping_address" class="text-muted">
+              No shipping address recorded.
+            </div>
+          </div>
+        </div>
+
+        <!-- Financial Summary -->
+        <div class="panel-card">
+          <div class="panel-header">
+            <div class="panel-title-wrap">
+              <span class="panel-icon">💳</span>
+              <h3 class="panel-title">FINANCIAL BREAKDOWN</h3>
+            </div>
+          </div>
+
+          <div class="panel-body">
+            <div class="breakdown-list">
+              <div class="breakdown-row">
+                <span class="text-muted">Subtotal</span>
+                <span class="bold-white">${{ order.subtotal }}</span>
+              </div>
+              <div class="breakdown-row" *ngIf="order.delivery_cost">
+                <span class="text-muted">Delivery</span>
+                <span class="bold-white">${{ order.delivery_cost }}</span>
+              </div>
+              <div class="breakdown-row text-gold" *ngIf="order.promo_discount && order.promo_discount !== '0.00'">
+                <span>Promo Discount</span>
+                <span>-${{ order.promo_discount }}</span>
+              </div>
+              <div class="breakdown-row text-gold" *ngIf="order.gift_card_amount_used && order.gift_card_amount_used !== '0.00'">
+                <span>Gift Card Used</span>
+                <span>-${{ order.gift_card_amount_used }}</span>
+              </div>
+              <div class="breakdown-row" *ngIf="order.gift_wrap">
+                <span class="text-muted">Gift Wrap</span>
+                <span class="bold-white">${{ order.gift_wrap_cost || '0.00' }}</span>
+              </div>
+              <div class="breakdown-divider"></div>
+              <div class="breakdown-row total-row">
+                <span class="total-label">TOTAL PAID</span>
+                <span class="total-val neon-text">${{ order.total }}</span>
+              </div>
+            </div>
+
+            <!-- Payment Method Meta -->
+            <div class="payment-method-box">
+              <div class="pm-title text-muted">PAYMENT DETAILS</div>
+              <div class="pm-info">
+                <span class="bold-white">{{ order.payment_method }}</span>
+                <span *ngIf="order.payment?.card_brand" class="card-brand">
+                  ({{ order.payment?.card_brand }} •••• {{ order.payment?.card_last4 }})
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

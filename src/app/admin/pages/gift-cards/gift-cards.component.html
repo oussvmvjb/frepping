@@ -1,0 +1,200 @@
+<div class="admin-gift-cards-page">
+  <!-- Header -->
+  <div class="cards-header">
+    <div class="header-titles">
+      <h1 class="page-title">GIFT CARDS</h1>
+      <p class="subtitle">Issue digital gift cards, monitor live balances and control activation</p>
+    </div>
+
+    <div class="header-actions">
+      <button class="btn-admin-cta" (click)="openCreateModal()">
+        ＋ ISSUE GIFT CARD
+      </button>
+      <button class="btn-refresh" (click)="fetchCards(page)" [disabled]="loading">
+        <span [class.spin]="loading">↻</span> REFRESH
+      </button>
+    </div>
+  </div>
+
+  <!-- Alert -->
+  <div *ngIf="!loading && error" class="admin-alert error-alert">
+    <span>⚠️ {{ error }}</span>
+    <button class="btn-admin-ghost" (click)="fetchCards(page)">RETRY</button>
+  </div>
+
+  <!-- Skeleton -->
+  <div *ngIf="loading" class="cards-skeleton">
+    <div class="sk-row" *ngFor="let i of [1,2,3,4,5]"></div>
+  </div>
+
+  <!-- Table Card -->
+  <div *ngIf="!loading" class="panel-card">
+    <div *ngIf="cards.length === 0" class="empty-state">
+      <span class="empty-icon">💳</span>
+      <p class="empty-title">No gift cards issued yet.</p>
+      <button class="btn-admin-primary" (click)="openCreateModal()">Issue First Gift Card</button>
+    </div>
+
+    <div *ngIf="cards.length > 0" class="table-responsive">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>CARD CODE</th>
+            <th>BALANCE</th>
+            <th>INITIAL VALUE</th>
+            <th>CURRENCY</th>
+            <th>STATUS</th>
+            <th>EXPIRES</th>
+            <th>ISSUED AT</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let card of cards">
+            <td>
+              <span class="code-badge font-mono">{{ card.code }}</span>
+            </td>
+            <td>
+              <span class="neon-text font-disp font-bold">${{ card.balance }}</span>
+            </td>
+            <td class="text-muted">${{ card.initial_balance }}</td>
+            <td class="bold-white">{{ card.currency }}</td>
+            <td>
+              <button
+                class="btn-toggle"
+                [class.active]="card.is_active"
+                [disabled]="toggling[card.id]"
+                (click)="toggleStatus(card)"
+              >
+                {{ toggling[card.id] ? '...' : (card.is_active ? 'ACTIVE' : 'DISABLED') }}
+              </button>
+            </td>
+            <td class="text-muted text-sm">
+              {{ card.expires_at ? (card.expires_at | date:'mediumDate') : 'Never' }}
+            </td>
+            <td class="text-muted text-sm">
+              {{ card.created_at | date:'short' }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div *ngIf="pages > 1" class="pagination-bar">
+      <div class="pagination-info">Showing {{ cards.length }} of {{ total }} gift cards</div>
+      <div class="pagination-controls">
+        <button class="btn-page" [disabled]="page <= 1" (click)="fetchCards(page - 1)">← PREV</button>
+        <span class="page-num">PAGE {{ page }} / {{ pages }}</span>
+        <button class="btn-page" [disabled]="page >= pages" (click)="fetchCards(page + 1)">NEXT →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create / PIN Modal -->
+  <div *ngIf="createModalOpen" class="modal-backdrop">
+    <div class="modal-dialog">
+      <!-- State 1: Form -->
+      <div *ngIf="!createdCardResult">
+        <div class="modal-header">
+          <h3 class="modal-title">ISSUE NEW GIFT CARD</h3>
+          <button class="btn-close" (click)="closeCreateModal()">✕</button>
+        </div>
+
+        <div class="modal-body">
+          <div *ngIf="createError" class="admin-alert error-alert mb-4">
+            ⚠️ {{ createError }}
+          </div>
+
+          <div class="form-group">
+            <label>INITIAL BALANCE ($)</label>
+            <input
+              type="text"
+              [(ngModel)]="newCard.initial_balance"
+              placeholder="e.g. 50.00"
+              class="admin-input"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>CURRENCY</label>
+            <input
+              type="text"
+              [(ngModel)]="newCard.currency"
+              placeholder="USD"
+              class="admin-input"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>EXPIRATION DATE (OPTIONAL)</label>
+            <input
+              type="date"
+              [(ngModel)]="newCard.expires_at"
+              class="admin-input"
+            />
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn-admin-ghost" (click)="closeCreateModal()" [disabled]="creating">CANCEL</button>
+          <button class="btn-admin-primary" (click)="submitCreate()" [disabled]="creating">
+            {{ creating ? 'GENERATING...' : 'ISSUE CARD' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- State 2: One-Time PIN Reveal -->
+      <div *ngIf="createdCardResult">
+        <div class="modal-header header-reveal">
+          <h3 class="modal-title neon-title">🎉 GIFT CARD GENERATED</h3>
+        </div>
+
+        <div class="modal-body">
+          <div class="pin-warning-box">
+            <div class="warn-title">⚠️ CRITICAL SECURITY NOTICE</div>
+            <p>
+              The 4-digit PIN is displayed <strong>ONLY ONCE</strong>.
+              It is stored hashed in the database and cannot be recovered later.
+            </p>
+          </div>
+
+          <div class="card-details-box">
+            <div class="detail-row">
+              <span class="detail-label">CARD CODE:</span>
+              <strong class="font-mono text-white">{{ createdCardResult.code }}</strong>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">VALUE:</span>
+              <strong class="neon-text">${{ createdCardResult.balance }} {{ createdCardResult.currency }}</strong>
+            </div>
+          </div>
+
+          <!-- PIN Display -->
+          <div class="pin-display-box">
+            <span class="pin-tag">SECURITY PIN</span>
+            <div class="pin-number font-mono">{{ createdCardResult.pin }}</div>
+            <button class="btn-copy-pin" (click)="copyPin(createdCardResult.pin)">
+              {{ pinCopied ? '✓ COPIED!' : '📋 COPY PIN' }}
+            </button>
+          </div>
+
+          <!-- Acknowledgment Checkbox -->
+          <label class="confirm-check">
+            <input type="checkbox" [(ngModel)]="savedConfirmed" />
+            <span>I have securely copied and saved this PIN.</span>
+          </label>
+        </div>
+
+        <div class="modal-footer">
+          <button
+            class="btn-admin-primary w-full"
+            [disabled]="!savedConfirmed"
+            (click)="closeCreateModal()"
+          >
+            I SAVED IT — CLOSE
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

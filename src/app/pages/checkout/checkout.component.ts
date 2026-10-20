@@ -66,14 +66,14 @@ export class CheckoutComponent implements OnInit, OnDestroy {
   showAddAddressModal = false;
   addressError = "";
   newAddress: AddressCreate = {
-    full_name: "",
+    name: "",
     phone: "",
-    address_line1: "",
+    street: "",
     city: "",
     state: "",
-    postal_code: "",
+    zip: "",
     country: "US",
-    address_type: "home",
+    type: "home",
     is_default: false,
   };
 
@@ -429,14 +429,14 @@ export class CheckoutComponent implements OnInit, OnDestroy {
   openAddAddressModal(): void {
     this.addressError = "";
     this.newAddress = {
-      full_name: "",
+      name: "",
       phone: "",
-      address_line1: "",
+      street: "",
       city: "",
       state: "",
-      postal_code: "",
+      zip: "",
       country: "US",
-      address_type: "home",
+      type: "home",
       is_default: this.addresses.length === 0,
     };
     this.showAddAddressModal = true;
@@ -447,8 +447,8 @@ export class CheckoutComponent implements OnInit, OnDestroy {
   }
 
   saveNewAddress(): void {
-    if (!this.newAddress.full_name.trim() || !this.newAddress.address_line1.trim() ||
-        !this.newAddress.city.trim() || !this.newAddress.postal_code.trim() ||
+    if (!this.newAddress.name.trim() || !this.newAddress.street.trim() ||
+        !this.newAddress.city.trim() || !this.newAddress.zip.trim() ||
         !this.newAddress.phone.trim()) {
       this.addressError = "Please fill in all required fields.";
       return;

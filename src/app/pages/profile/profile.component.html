@@ -348,12 +348,12 @@
               <div *ngIf="!loadingAddresses && addresses.length > 0" class="addresses-grid">
                 <div *ngFor="let a of addresses" class="address-item-card" [class.is-default]="a.is_default">
                   <div class="addr-header flex justify-between items-center">
-                    <h4 class="text-white font-bold">{{ a.full_name }}</h4>
-                    <span class="badge-type">{{ a.address_type | uppercase }}</span>
+                    <h4 class="text-white font-bold">{{ a.name }}</h4>
+                    <span class="badge-type">{{ a.type | uppercase }}</span>
                   </div>
                   <p class="addr-body text-muted text-sm mt-2">
-                    {{ a.address_line1 }}<br />
-                    {{ a.city }}, {{ a.state }} {{ a.postal_code }}<br />
+                    {{ a.street }}<br />
+                    {{ a.city }}, {{ a.state }} {{ a.zip }}<br />
                     {{ a.country }}<br />
                     <span class="text-green"><i class="fas fa-phone-alt mr-1"></i> {{ a.phone }}</span>
                   </p>
@@ -487,11 +487,11 @@
 
           <div class="form-group mb-3">
             <label>FULL NAME *</label>
-            <input type="text" [(ngModel)]="newAddress.full_name" placeholder="Recipient Name" class="gta-input" />
+            <input type="text" [(ngModel)]="newAddress.name" placeholder="Recipient Name" class="gta-input" />
           </div>
           <div class="form-group mb-3">
             <label>STREET ADDRESS *</label>
-            <input type="text" [(ngModel)]="newAddress.address_line1" placeholder="123 Street Ave" class="gta-input" />
+            <input type="text" [(ngModel)]="newAddress.street" placeholder="123 Street Ave" class="gta-input" />
           </div>
           <div class="form-row mb-3">
             <div class="form-group flex-1">
@@ -504,7 +504,7 @@
             </div>
             <div class="form-group flex-1">
               <label>ZIP *</label>
-              <input type="text" [(ngModel)]="newAddress.postal_code" placeholder="Zip" class="gta-input" />
+              <input type="text" [(ngModel)]="newAddress.zip" placeholder="Zip" class="gta-input" />
             </div>
           </div>
           <div class="form-row mb-3">

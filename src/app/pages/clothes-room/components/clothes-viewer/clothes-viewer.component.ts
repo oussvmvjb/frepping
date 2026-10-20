@@ -92,10 +92,14 @@ export class ClothesViewerComponent
   private ambientLight!: THREE.AmbientLight;
   private groundShadows: THREE.Mesh[] = [];
 
+  // 3D Static Background Model
+  private backgroundModel: THREE.Object3D | null = null;
+  public readonly bgModelPath: string = encodeURI('assets/3dmodel/3d bg/dirty_street.glb');
+
   // Camera framing base variables
   private defaultCameraDistance = 10.5;
-  private baseCameraPos = new THREE.Vector3(0, 0.4, 10.5);
-  private cameraTarget = new THREE.Vector3(0, 0, 0);
+  private baseCameraPos = new THREE.Vector3(0, 0.25, 10.5);
+  private cameraTarget = new THREE.Vector3(0, 0.85, 0);
 
   // Render loop & Subscriptions
   private animationId: number | null = null;
@@ -154,6 +158,7 @@ export class ClothesViewerComponent
   ngAfterViewInit(): void {
     setTimeout(() => {
       this.initThree();
+      this.loadBackgroundStreet();
       this.initCarouselSlots();
       this.loadAllModels();
       this.setupFrameTrackingSubscription();
@@ -252,6 +257,74 @@ export class ClothesViewerComponent
     ring.rotation.x = -Math.PI / 2;
     ring.position.y = -2.6;
     this.scene.add(ring);
+  }
+
+  /**
+   * Load static 3D street background model behind the clothing carousel
+   */
+  private loadBackgroundStreet(): void {
+    const loader = new GLTFLoader();
+    loader.load(
+      this.bgModelPath,
+      (gltf) => {
+        const bg = gltf.scene;
+        this.backgroundModel = bg;
+
+        // Traverse background meshes
+        bg.traverse((node) => {
+          if (node instanceof THREE.Mesh) {
+            node.castShadow = false;
+            node.receiveShadow = true;
+            // Never add to raycastMeshes so the background is non-interactive
+
+            if (node.material) {
+              const materials = Array.isArray(node.material)
+                ? node.material
+                : [node.material];
+              materials.forEach((mat) => {
+                mat.side = THREE.DoubleSide;
+                if (mat instanceof THREE.MeshStandardMaterial) {
+                  mat.roughness = Math.max(0.68, mat.roughness);
+                  mat.metalness = Math.min(0.2, mat.metalness);
+                  mat.needsUpdate = true;
+                }
+              });
+            }
+          }
+        });
+
+        // Turn background model around (180 degrees)
+        bg.rotation.y = Math.PI;
+
+        // Compute bounds to position and scale the street environment
+        let box = new THREE.Box3().setFromObject(bg);
+        let size = box.getSize(new THREE.Vector3());
+
+        // Target width to fill the showroom background behind all carousel models
+        const maxHorizontal = Math.max(size.x, size.z);
+        const targetWidth = 50.0;
+        const scale = targetWidth / maxHorizontal;
+        bg.scale.setScalar(scale);
+
+        // Recompute bounds after rotation & scaling
+        box = new THREE.Box3().setFromObject(bg);
+        const newCenter = box.getCenter(new THREE.Vector3());
+
+        // Ground floor at Y = -2.62 (aligned with the clothing ground level)
+        // Center in X at 0, and push further back along -Z behind the clothing models
+        bg.position.set(-newCenter.x, -box.min.y - 2.62, -newCenter.z - 8.5);
+
+        // Add directly to the scene: completely static, never moves with carousel or gestures
+        this.scene.add(bg);
+      },
+      undefined,
+      (error) => {
+        console.warn(
+          '[ClothesViewer] Note: 3D street background model could not be loaded:',
+          error
+        );
+      }
+    );
   }
 
   /**
@@ -512,9 +585,10 @@ export class ClothesViewerComponent
         // Position all models in 3D showroom carousel
         this.updateCarousel3DPositions(transforms);
 
-        // Camera distance zoom
+        // Camera distance zoom & framing
         const currentDistance = this.defaultCameraDistance / transforms.zoomFactor;
-        this.camera.position.z = currentDistance;
+        this.camera.position.set(this.baseCameraPos.x, this.baseCameraPos.y, currentDistance);
+        this.camera.lookAt(this.cameraTarget);
         this.zoomLevelPercent = Math.round(transforms.zoomFactor * 100);
 
         // Raycasting for cursor hover / selection
@@ -807,6 +881,8 @@ export class ClothesViewerComponent
       this.renderer.dispose();
       this.renderer.forceContextLoss();
     }
+
+    this.backgroundModel = null;
   }
 
   private disposeMaterial(mat: THREE.Material): void {

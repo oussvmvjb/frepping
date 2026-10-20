@@ -1,0 +1,488 @@
+// ─── Tokens ──────────────────────────────────────────────────────────
+$neon:        #39ff14;
+$neon-dim:    rgba(57, 255, 20, 0.08);
+$neon-border: rgba(57, 255, 20, 0.2);
+$neon-glow:   rgba(57, 255, 20, 0.35);
+
+$bg-body:     #0b0f0c;
+$bg-card:     #0e1810;
+$bg-panel:    #0a120b;
+$bg-input:    #070d08;
+
+$border:      rgba(57, 255, 20, 0.15);
+$border-dim:  rgba(255, 255, 255, 0.08);
+
+$white:       #f5f5f5;
+$muted:       #8a9a8c;
+$muted-dark:  #526054;
+$gold:        #ffb703;
+$red:         #ff3b3b;
+
+$font-disp:   'Oswald', sans-serif;
+$font-body:   'Poppins', sans-serif;
+
+.admin-gift-cards-page {
+  padding: 24px;
+  max-width: 1360px;
+  margin: 0 auto;
+  font-family: $font-body;
+  color: $white;
+}
+
+// ─── Header ──────────────────────────────────────────────────────────
+.cards-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+
+  .header-titles {
+    .page-title {
+      font-family: $font-disp;
+      font-size: 2rem;
+      letter-spacing: 2px;
+      color: $neon;
+      margin: 0 0 4px;
+    }
+    .subtitle {
+      font-size: 0.85rem;
+      color: $muted;
+      margin: 0;
+    }
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+}
+
+.btn-admin-cta {
+  background: $neon;
+  color: #000;
+  border: none;
+  font-family: $font-disp;
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 1px;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    box-shadow: 0 0 14px $neon-glow;
+  }
+}
+
+.btn-refresh {
+  background: $bg-card;
+  color: $neon;
+  border: 1px solid $border;
+  font-family: $font-disp;
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 1px;
+  padding: 7px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+
+  &:hover:not(:disabled) {
+    background: $neon-dim;
+    box-shadow: 0 0 10px $neon-border;
+  }
+
+  .spin {
+    display: inline-block;
+    animation: rotate 1s linear infinite;
+  }
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+// ─── Table ───────────────────────────────────────────────────────────
+.panel-card {
+  background: $bg-card;
+  border: 1px solid $border;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.table-responsive {
+  overflow-x: auto;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th {
+    font-family: $font-disp;
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+    color: $muted;
+    text-align: left;
+    padding: 12px 16px;
+    border-bottom: 1px solid $border-dim;
+    background: rgba(0, 0, 0, 0.2);
+  }
+
+  td {
+    padding: 14px 16px;
+    font-size: 0.85rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  }
+}
+
+.code-badge {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid $border-dim;
+  padding: 4px 8px;
+  border-radius: 4px;
+  color: $white;
+  letter-spacing: 1px;
+}
+
+.neon-text {
+  color: $neon;
+}
+
+.bold-white { font-weight: 700; color: $white; }
+.text-muted { color: $muted; }
+.text-sm { font-size: 0.75rem; }
+
+.btn-toggle {
+  background: rgba(255, 59, 59, 0.15);
+  border: 1px solid rgba(255, 59, 59, 0.3);
+  color: $red;
+  font-family: $font-disp;
+  font-size: 0.7rem;
+  letter-spacing: 1px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &.active {
+    background: rgba(57, 255, 20, 0.15);
+    border-color: rgba(57, 255, 20, 0.3);
+    color: $neon;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: wait;
+  }
+}
+
+// ─── Pagination ──────────────────────────────────────────────────────
+.pagination-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 20px;
+  border-top: 1px solid $border-dim;
+
+  .pagination-info { font-size: 0.8rem; color: $muted; }
+  .pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    .page-num {
+      font-family: $font-disp;
+      font-size: 0.85rem;
+      letter-spacing: 1px;
+      color: $white;
+    }
+
+    .btn-page {
+      background: transparent;
+      border: 1px solid $border;
+      color: $neon;
+      font-family: $font-disp;
+      font-size: 0.75rem;
+      padding: 5px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+
+      &:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+      }
+    }
+  }
+}
+
+// ─── Modal ───────────────────────────────────────────────────────────
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.modal-dialog {
+  background: #0d160f;
+  border: 1px solid $neon;
+  box-shadow: 0 0 24px rgba(57, 255, 20, 0.25);
+  border-radius: 10px;
+  width: 100%;
+  max-width: 500px;
+  overflow: hidden;
+
+  .modal-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid $border;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    .modal-title {
+      font-family: $font-disp;
+      font-size: 1.1rem;
+      letter-spacing: 1px;
+      color: $neon;
+      margin: 0;
+
+      &.neon-title { color: $neon; }
+    }
+
+    .btn-close {
+      background: transparent;
+      border: none;
+      color: $muted;
+      font-size: 1.2rem;
+      cursor: pointer;
+    }
+  }
+
+  .modal-body {
+    padding: 20px;
+  }
+
+  .modal-footer {
+    padding: 14px 20px;
+    border-top: 1px solid $border-dim;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+}
+
+.form-group {
+  margin-bottom: 16px;
+
+  label {
+    display: block;
+    font-family: $font-disp;
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+    color: $muted;
+    margin-bottom: 6px;
+  }
+}
+
+.admin-input {
+  width: 100%;
+  box-sizing: border-box;
+  background: $bg-input;
+  border: 1px solid $border;
+  border-radius: 6px;
+  color: $white;
+  font-size: 0.85rem;
+  padding: 8px 12px;
+  font-family: inherit;
+
+  &:focus {
+    outline: none;
+    border-color: $neon;
+  }
+}
+
+.w-full { width: 100%; }
+
+.btn-admin-primary {
+  background: $neon;
+  color: #000;
+  border: none;
+  font-family: $font-disp;
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 1px;
+  padding: 9px 18px;
+  border-radius: 6px;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+.btn-admin-ghost {
+  background: transparent;
+  color: $muted;
+  border: 1px solid $border-dim;
+  font-size: 0.8rem;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+// ─── PIN Reveal Box ──────────────────────────────────────────────────
+.pin-warning-box {
+  background: rgba(255, 59, 59, 0.12);
+  border: 1px solid rgba(255, 59, 59, 0.4);
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 16px;
+
+  .warn-title {
+    font-family: $font-disp;
+    font-size: 0.85rem;
+    color: $red;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+  }
+
+  p {
+    font-size: 0.75rem;
+    color: $white;
+    margin: 0;
+    line-height: 1.4;
+  }
+}
+
+.card-details-box {
+  background: $bg-panel;
+  border: 1px solid $border-dim;
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: space-between;
+
+  .detail-label {
+    font-family: $font-disp;
+    font-size: 0.75rem;
+    color: $muted;
+    margin-right: 6px;
+  }
+}
+
+.pin-display-box {
+  background: #000;
+  border: 2px dashed $neon;
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+  margin-bottom: 20px;
+
+  .pin-tag {
+    font-family: $font-disp;
+    font-size: 0.75rem;
+    letter-spacing: 2px;
+    color: $muted;
+  }
+
+  .pin-number {
+    font-size: 2.4rem;
+    letter-spacing: 8px;
+    color: $neon;
+    font-weight: 800;
+    margin: 10px 0;
+    text-shadow: 0 0 16px rgba(57, 255, 20, 0.5);
+  }
+
+  .btn-copy-pin {
+    background: $neon-dim;
+    border: 1px solid $neon-border;
+    color: $neon;
+    font-family: $font-disp;
+    font-size: 0.8rem;
+    letter-spacing: 1px;
+    padding: 6px 14px;
+    border-radius: 4px;
+    cursor: pointer;
+
+    &:hover {
+      background: $neon;
+      color: #000;
+    }
+  }
+}
+
+.confirm-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.8rem;
+  color: $white;
+  cursor: pointer;
+
+  input[type='checkbox'] {
+    width: 16px;
+    height: 16px;
+    accent-color: $neon;
+  }
+}
+
+// ─── Alerts & Skeletons ──────────────────────────────────────────────
+.admin-alert {
+  padding: 12px 16px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  font-size: 0.85rem;
+
+  &.error-alert {
+    background: rgba(255, 59, 59, 0.1);
+    border: 1px solid rgba(255, 59, 59, 0.3);
+    color: $red;
+  }
+}
+
+.cards-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  .sk-row {
+    height: 48px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 6px;
+  }
+}
+
+.empty-state {
+  padding: 60px 20px;
+  text-align: center;
+
+  .empty-icon {
+    font-size: 2.5rem;
+    display: block;
+    margin-bottom: 12px;
+  }
+
+  .empty-title {
+    font-family: $font-disp;
+    font-size: 1.2rem;
+    color: $muted;
+    margin-bottom: 16px;
+  }
+}

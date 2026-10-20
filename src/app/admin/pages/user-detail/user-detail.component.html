@@ -1,0 +1,175 @@
+<div class="admin-user-detail-page">
+  <!-- Top Nav -->
+  <div class="page-top-nav">
+    <button class="btn-back" (click)="goBack()">
+      ← BACK TO USERS
+    </button>
+    <div class="top-nav-actions" *ngIf="user">
+      <button class="btn-refresh" (click)="fetchUser()" [disabled]="loading">
+        <span [class.spin]="loading">↻</span> REFRESH
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading Skeleton -->
+  <div *ngIf="loading" class="detail-skeleton">
+    <div class="sk-box sk-hero"></div>
+    <div class="sk-grid">
+      <div class="sk-box sk-panel"></div>
+      <div class="sk-box sk-panel"></div>
+    </div>
+  </div>
+
+  <!-- Error Alert -->
+  <div *ngIf="!loading && error" class="admin-alert error-alert">
+    <span>⚠️ {{ error }}</span>
+    <button class="btn-admin-ghost" (click)="fetchUser()">RETRY</button>
+  </div>
+
+  <!-- Main Content -->
+  <div *ngIf="!loading && user" class="user-content">
+    <!-- Hero Banner -->
+    <div class="user-hero-card">
+      <div class="hero-left">
+        <div class="user-avatar-lg">
+          {{ user.first_name ? user.first_name[0] : (user.email[0] | uppercase) }}
+        </div>
+        <div class="hero-titles">
+          <div class="hero-top-row">
+            <h1 class="hero-name">
+              {{ (user.first_name || user.last_name) ? (user.first_name + ' ' + (user.last_name || '')) : 'Anonymous Account' }}
+            </h1>
+            <span class="you-pill" *ngIf="isSelf">LOGGED-IN ACCOUNT (YOU)</span>
+          </div>
+          <div class="hero-email text-muted">{{ user.email }}</div>
+          <div class="hero-id font-mono text-muted">ID: {{ user.id }}</div>
+        </div>
+      </div>
+
+      <div class="hero-right">
+        <div class="badge-item">
+          <span class="badge-label">ROLE</span>
+          <span class="role-badge" [attr.data-role]="user.role">{{ user.role }}</span>
+        </div>
+        <div class="badge-item">
+          <span class="badge-label">STATUS</span>
+          <span class="status-pill" [class.active]="user.is_active">
+            {{ user.is_active ? 'ACTIVE' : 'DEACTIVATED' }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Feedback Alerts -->
+    <div *ngIf="roleSuccessMsg" class="admin-alert success-alert">
+      ✓ {{ roleSuccessMsg }}
+    </div>
+    <div *ngIf="roleErrorMsg" class="admin-alert error-alert">
+      ⚠️ {{ roleErrorMsg }}
+    </div>
+    <div *ngIf="statusSuccessMsg" class="admin-alert success-alert">
+      ✓ {{ statusSuccessMsg }}
+    </div>
+    <div *ngIf="statusErrorMsg" class="admin-alert error-alert">
+      ⚠️ {{ statusErrorMsg }}
+    </div>
+
+    <!-- 2 Column Grid -->
+    <div class="user-grid">
+      <!-- Profile Attributes -->
+      <div class="panel-card">
+        <div class="panel-header">
+          <div class="panel-title-wrap">
+            <span class="panel-icon">👤</span>
+            <h3 class="panel-title">ACCOUNT ATTRIBUTES</h3>
+          </div>
+        </div>
+
+        <div class="panel-body">
+          <div class="attribute-list">
+            <div class="attr-row">
+              <span class="attr-label">Primary Email</span>
+              <strong class="bold-white font-mono">{{ user.email }}</strong>
+            </div>
+            <div class="attr-row">
+              <span class="attr-label">First Name</span>
+              <strong class="bold-white">{{ user.first_name || '—' }}</strong>
+            </div>
+            <div class="attr-row">
+              <span class="attr-label">Last Name</span>
+              <strong class="bold-white">{{ user.last_name || '—' }}</strong>
+            </div>
+            <div class="attr-row">
+              <span class="attr-label">Email Verification</span>
+              <span class="verify-badge" [class.verified]="user.is_verified">
+                {{ user.is_verified ? '✓ Verified by email confirmation' : '⚠️ Pending confirmation' }}
+              </span>
+            </div>
+            <div class="attr-row">
+              <span class="attr-label">Registration Date</span>
+              <span class="text-muted">{{ user.created_at | date:'fullDate' }} ({{ user.created_at | date:'mediumTime' }})</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Privilege & Access Control -->
+      <div class="user-side-col">
+        <!-- Role Assignment Box -->
+        <div class="action-card">
+          <h3 class="action-card-title">ACCESS PRIVILEGE (ROLE)</h3>
+
+          <div *ngIf="!canModifyRole" class="permission-notice">
+            🔒 Only <strong>SUPER_ADMIN</strong> accounts can modify administrative tier roles.
+          </div>
+
+          <div *ngIf="canModifyRole" class="role-form">
+            <p class="text-muted text-sm mb-4">
+              Assigned role determines dashboard access, permissions, and vendor capability.
+            </p>
+
+            <div class="form-group">
+              <label>SELECT ROLE</label>
+              <select [(ngModel)]="selectedRole" class="admin-select">
+                <option *ngFor="let r of availableRoles" [value]="r">{{ r }}</option>
+              </select>
+            </div>
+
+            <button
+              class="btn-admin-primary w-full"
+              [disabled]="updatingRole || selectedRole === user.role"
+              (click)="updateRole()"
+            >
+              {{ updatingRole ? 'SAVING ROLE...' : 'UPDATE ROLE TO ' + selectedRole }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Account Security / Status Box -->
+        <div class="action-card status-card">
+          <h3 class="action-card-title" [class.red-title]="user.is_active">
+            ACCOUNT LIFECYCLE
+          </h3>
+
+          <p class="text-muted text-sm mb-4">
+            {{ user.is_active ? 'Deactivating this user will revoke authentication tokens and terminate active sessions.' : 'Activating this account will allow the user to log in and place orders.' }}
+          </p>
+
+          <div *ngIf="isSelf" class="self-notice">
+            ⚠️ You cannot deactivate your own administrative account.
+          </div>
+
+          <button
+            *ngIf="!isSelf"
+            class="w-full"
+            [ngClass]="user.is_active ? 'btn-admin-danger' : 'btn-admin-primary'"
+            [disabled]="updatingStatus"
+            (click)="toggleStatus()"
+          >
+            {{ updatingStatus ? 'UPDATING...' : (user.is_active ? 'DEACTIVATE USER ACCOUNT' : 'RE-ACTIVATE USER ACCOUNT') }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
