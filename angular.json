@@ -28,6 +28,11 @@
             "assets": [
               "src/favicon.ico",
               "src/assets",
+              {
+                "glob": "**/*",
+                "input": "src/assets/3dmodel/complite",
+                "output": "/assets/3dmodel/complite"
+              },
               "src/_redirects",
               "src/tiktokn8B6XbW5H09MUvXBS8r4csi2Mcu65uVH.txt"
             ],

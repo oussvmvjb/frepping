@@ -113,7 +113,7 @@ function tickSpring(s: Spring, stiffness = 0.10, damping = 0.80): boolean {
   imports: [CommonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="flex-carousel-host" #host [style.height.px]="560">
+    <div class="flex-carousel-host" #host>
       <canvas #canvas class="flex-carousel-canvas" tabindex="0"
               (keydown)="onKey($event)"></canvas>
 
@@ -224,6 +224,8 @@ export class FlexCarouselComponent implements OnInit, AfterViewInit, OnDestroy {
     ySpring: Spring;   // intro
     alphaSpring: Spring;
     progressSpring: Spring;
+    cardW: number;
+    cardH: number;
   }> = [];
 
   private raf = 0;
@@ -354,6 +356,46 @@ export class FlexCarouselComponent implements OnInit, AfterViewInit, OnDestroy {
     this.loop();
   }
 
+  private getCardDimensions(tex: Texture): { w: number; h: number } {
+    const img = tex?.image as HTMLImageElement | undefined;
+    let aspect = 1.0;
+    if (img && (img.naturalWidth || img.width) && (img.naturalHeight || img.height)) {
+      const nw = img.naturalWidth || img.width;
+      const nh = img.naturalHeight || img.height;
+      if (nh > 0) aspect = nw / nh;
+    }
+
+    // Clamp the max card width to ~60% of the canvas width
+    const maxW = this.cW * 0.60;
+    const desiredW = Math.min(this.cW * (this.lensWidth || 0.5), maxW);
+    // Keep card height scaled cleanly without overlapping caption & action bar
+    const maxH = Math.min(this.cH * 0.68, Math.max(180, this.cH - 130));
+
+    let w = desiredW;
+    let h = w / aspect;
+
+    if (this.fit === 'contain' || this.fit === 'natural') {
+      if (h > maxH) {
+        h = maxH;
+        w = h * aspect;
+      }
+      if (w > maxW) {
+        w = maxW;
+        h = w / aspect;
+      }
+    } else {
+      if (h < maxH) {
+        h = maxH;
+        w = h * aspect;
+      }
+      if (w > maxW) {
+        w = maxW;
+      }
+    }
+
+    return { w, h };
+  }
+
   // ── Card creation ───────────────────────────────────────────────────────────
   private buildCards(): void {
     this.cards = [];
@@ -364,8 +406,6 @@ export class FlexCarouselComponent implements OnInit, AfterViewInit, OnDestroy {
       const tex = new Texture(gl, { generateMipmaps: false });
       const img = new Image();
       img.crossOrigin = 'anonymous';
-      img.onload = () => { tex.image = img; };
-      img.src = item.src;
 
       const program = new Program(gl, {
         vertex: VERT,
@@ -387,19 +427,12 @@ export class FlexCarouselComponent implements OnInit, AfterViewInit, OnDestroy {
         depthWrite: false,
       });
 
-      // Mark loaded
-      img.onload = () => {
-        tex.image = img;
-        program.uniforms['uLoaded'].value = 1;
-      };
-
       const mesh = new Mesh(gl, { geometry: geo, program });
       mesh.setParent(this.scene);
 
-      // Position — centred on focused, rest spread
       const xTarget = (i - 0) * (this.cardW + this.gap);
 
-      this.cards.push({
+      const cardEntry = {
         mesh,
         program,
         texture: tex,
@@ -407,11 +440,33 @@ export class FlexCarouselComponent implements OnInit, AfterViewInit, OnDestroy {
         ySpring:       { pos: 0,        vel: 0, target: 0 },
         alphaSpring:   { pos: 0,        vel: 0, target: 1 },
         progressSpring:{ pos: 0,        vel: 0, target: 1 },
-      });
+        cardW: this.cardW,
+        cardH: this.cardH,
+      };
 
-      // Scale mesh to card dimensions
-      mesh.scale.x = this.cardW;
-      mesh.scale.y = this.cardH;
+      img.onload = () => {
+        tex.image = img;
+        program.uniforms['uLoaded'].value = 1;
+        const dims = this.getCardDimensions(tex);
+        cardEntry.cardW = dims.w;
+        cardEntry.cardH = dims.h;
+        cardEntry.mesh.scale.x = dims.w;
+        cardEntry.mesh.scale.y = dims.h;
+        if (i === this.focusedIndex) {
+          this.cardW = dims.w;
+          this.cardH = dims.h;
+          this.updateScrollPositions();
+        }
+      };
+      img.src = item.src;
+      if (img.complete && img.naturalWidth) {
+        img.onload(new Event('load') as any);
+      }
+
+      this.cards.push(cardEntry);
+
+      mesh.scale.x = cardEntry.cardW;
+      mesh.scale.y = cardEntry.cardH;
     });
 
     this.updateScrollPositions();
@@ -422,16 +477,30 @@ export class FlexCarouselComponent implements OnInit, AfterViewInit, OnDestroy {
     const host = this.hostRef.nativeElement;
     this.cW = host.clientWidth  || 800;
     this.cH = host.clientHeight || 560;
-    this.cardW = this.cW * this.lensWidth;
-    this.cardH = this.cH * this.cardHeight;
+
+    const maxW = this.cW * 0.60;
+    this.cardW = Math.min(this.cW * (this.lensWidth || 0.5), maxW);
+    this.cardH = this.cH * (this.cardHeight || 0.38);
 
     this.renderer.setSize(this.cW, this.cH);
+
+    // Update individual card dimensions when host changes
+    if (this.cards && this.cards.length > 0) {
+      this.cards.forEach(c => {
+        const { w, h } = this.getCardDimensions(c.texture);
+        c.cardW = w;
+        c.cardH = h;
+      });
+      const focusedCard = this.cards[this.focusedIndex] || this.cards[0];
+      if (focusedCard) {
+        this.cardW = focusedCard.cardW;
+        this.cardH = focusedCard.cardH;
+      }
+    }
 
     // Orthographic: 1 unit = half container width
     const aspect = this.cW / this.cH;
     (this.camera as any).orthographic?.();
-    // Use perspective but map NDC ourselves via scale
-    // Camera stays at z=5, fov matched so 1 unit = half height at z=0
     const fov = 2 * Math.atan((this.cH / 2) / 5) * (180 / Math.PI);
     this.camera.perspective({ fov, aspect, near: 0.1, far: 100 });
   }
@@ -521,15 +590,16 @@ export class FlexCarouselComponent implements OnInit, AfterViewInit, OnDestroy {
 
       // Scale: focused card slightly larger
       const isFocused = i === nearest;
-      const targetScaleX = isFocused ? this.cardW * (1 + this.squeeze * 0.4) : this.cardW;
-      const targetScaleY = isFocused ? this.cardH * (1 + this.squeeze * 0.2) : this.cardH;
+      const targetScaleX = isFocused ? c.cardW * (1 + this.squeeze * 0.4) : c.cardW;
+      const targetScaleY = isFocused ? c.cardH * (1 + this.squeeze * 0.2) : c.cardH;
       c.mesh.scale.x += (targetScaleX - c.mesh.scale.x) * 0.1;
       c.mesh.scale.y += (targetScaleY - c.mesh.scale.y) * 0.1;
 
-      // World position
+      // World position - positioned nicely above the caption and action bar
+      const centerY = this.cH * 0.43;
       const [wx, wy] = this.pxToWorld(
         this.cW / 2 + c.xSpring.pos,
-        this.cH / 2 - c.ySpring.pos,
+        centerY - c.ySpring.pos,
       );
       c.mesh.position.x = wx;
       c.mesh.position.y = wy;
@@ -688,8 +758,8 @@ export class FlexCarouselComponent implements OnInit, AfterViewInit, OnDestroy {
     this.resizeObserver = new ResizeObserver(() => {
       this.measureHost();
       this.cards.forEach(c => {
-        c.mesh.scale.x = this.cardW;
-        c.mesh.scale.y = this.cardH;
+        c.mesh.scale.x = c.cardW;
+        c.mesh.scale.y = c.cardH;
       });
       this.updateScrollPositions();
     });

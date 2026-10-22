@@ -344,7 +344,7 @@
             width: 100%;
             position: relative;
             overflow: hidden;
-            background: #111;
+            background: transparent;
 
             app-dither-veil {
               position: absolute;
@@ -612,9 +612,43 @@
     height: 70vh;
     min-height: 420px;
     max-height: 720px;
+    border: none;
+    outline: none;
+    box-shadow: none;
+    background: transparent;
 
     @media (max-width: 768px) {
       height: 60vh;
+    }
+
+    ::ng-deep {
+      .dolly-wrapper,
+      .dolly-container {
+        border: none !important;
+        outline: none !important;
+        box-shadow: none !important;
+        background: transparent !important;
+      }
+
+      .dolly-container:focus-visible {
+        outline: none !important;
+      }
+
+      .dolly-card-inner {
+        background: transparent !important;
+        border: none !important;
+        outline: none !important;
+        box-shadow: none !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+      }
+
+      .dolly-img {
+        object-fit: contain !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+      }
     }
   }
 
@@ -635,15 +669,18 @@
   .section-header {
     max-width: 1400px;
     margin: 0 auto 60px;
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
+    position: relative;
+    text-align: center;
     
     .header-left {
+      width: 100%;
+      text-align: center;
+
       .section-title {
         font-size: 36px;
         display: flex;
         align-items: center;
+        justify-content: center;
         gap: 20px;
         margin-bottom: 15px;
         font-family: 'Oswald', sans-serif;
@@ -663,17 +700,34 @@
           color: inherit;
           display: inline-flex;
           align-items: center;
-          --bt-justify: flex-start;
+          justify-content: center;
+          --bt-justify: center;
+
+          ::ng-deep .bt-seg {
+            justify-content: center;
+          }
         }
       }
       
       .section-subtitle {
         color: #888;
         font-size: 16px;
+        text-align: center;
+        margin: 0 auto;
       }
     }
     
     .header-right {
+      position: absolute;
+      right: 0;
+      bottom: 0;
+
+      @media (max-width: 768px) {
+        position: static;
+        margin-top: 20px;
+        display: flex;
+        justify-content: center;
+      }
       .btn-view-all {
         background: transparent;
         color: white;
@@ -1416,6 +1470,19 @@
       font-size: 16px;
       max-width: 600px;
       margin: 0 auto;
+    }
+  }
+
+  app-flex-carousel {
+    display: block;
+    width: 100%;
+    max-width: 1000px;
+    height: clamp(360px, 55vh, 560px);
+    margin: 0 auto;
+
+    @media (max-width: 768px) {
+      height: 420px;
+      max-width: 100%;
     }
   }
   
@@ -2479,4 +2546,317 @@ app-blur-text.modern-loading-text {
     height: 520px;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   3D OUTFIT SCENE SECTION
+   ═══════════════════════════════════════════════════════════════════════════ */
+.outfit-scene-section {
+  padding: 100px 40px;
+  background: linear-gradient(180deg, #0a0a0a 0%, #0d0d18 60%, #0a0a0a 100%);
+  position: relative;
+  overflow: hidden;
+
+  /* faint grid */
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(57,255,20,.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(57,255,20,.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+  }
+
+  /* ambient glow */
+  &::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 700px;
+    height: 700px;
+    background: radial-gradient(circle, rgba(57,255,20,.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  @media (max-width: 768px) {
+    padding: 60px 20px;
+  }
+}
+
+/* ── Two-column layout ───────────────────────────────────────────────── */
+.outfit-scene-layout {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 48px;
+  align-items: center;
+  max-width: 1280px;
+  margin: 48px auto 0;
+
+  @media (max-width: 960px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Info panel ──────────────────────────────────────────────────────── */
+.outfit-info-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+
+  .outfit-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 16px;
+    border-radius: 999px;
+    background: rgba(57,255,20,.12);
+    border: 1px solid rgba(57,255,20,.35);
+    color: #39ff14;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    width: fit-content;
+
+    i { font-size: 0.8rem; }
+  }
+
+  .outfit-name {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: clamp(2rem, 4vw, 3.2rem);
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: 0.06em;
+    line-height: 1;
+    margin: 0;
+
+    /* neon underline */
+    &::after {
+      content: '';
+      display: block;
+      width: 80px;
+      height: 3px;
+      background: #39ff14;
+      margin-top: 10px;
+      border-radius: 2px;
+      box-shadow: 0 0 10px rgba(57,255,20,.6);
+    }
+  }
+
+  .outfit-desc {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 1rem;
+    color: rgba(255,255,255,.55);
+    line-height: 1.7;
+    margin: 0;
+    max-width: 380px;
+  }
+}
+
+/* ── Piece list ──────────────────────────────────────────────────────── */
+.outfit-pieces {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 18px;
+    border-radius: 10px;
+    background: rgba(255,255,255,.03);
+    border: 1px solid rgba(255,255,255,.08);
+    cursor: pointer;
+    user-select: none;
+    transition: all .22s cubic-bezier(0.16, 1, 0.3, 1);
+
+    &:hover {
+      transform: translateX(4px);
+    }
+
+    &:active {
+      transform: scale(0.98);
+    }
+
+    .piece-index {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 1.35rem;
+      font-weight: 800;
+      line-height: 1;
+      min-width: 32px;
+      transition: color .22s ease;
+    }
+
+    .piece-label {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      transition: all .22s ease;
+    }
+
+    .piece-toggle {
+      margin-left: auto;
+      font-size: 1.15rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all .22s ease;
+    }
+
+    /* Selected state (default active) */
+    &.selected {
+      background: rgba(57,255,20,.07);
+      border-color: rgba(57,255,20,.38);
+      box-shadow: 0 0 16px rgba(57,255,20,.08);
+
+      &:hover {
+        background: rgba(57,255,20,.12);
+        border-color: rgba(57,255,20,.6);
+      }
+
+      .piece-index {
+        color: #39ff14;
+      }
+
+      .piece-label {
+        color: #ffffff;
+      }
+
+      .piece-toggle {
+        color: #39ff14;
+        text-shadow: 0 0 10px rgba(57,255,20,.6);
+      }
+    }
+
+    /* Deselected state (removed from fit) */
+    &.deselected {
+      opacity: 0.45;
+      background: rgba(255,255,255,.015);
+      border-color: rgba(255,255,255,.08);
+      border-style: dashed;
+
+      &:hover {
+        opacity: 0.85;
+        border-color: rgba(57,255,20,.3);
+        background: rgba(255,255,255,.04);
+      }
+
+      .piece-index {
+        color: rgba(255,255,255,.3);
+      }
+
+      .piece-label {
+        color: rgba(255,255,255,.45);
+        text-decoration: line-through;
+      }
+
+      .piece-toggle {
+        color: rgba(255,255,255,.25);
+      }
+    }
+  }
+}
+
+.outfit-toggle-hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  color: rgba(255,255,255,.42);
+  text-transform: uppercase;
+  margin-top: -8px;
+
+  i {
+    color: #39ff14;
+    font-size: 0.82rem;
+  }
+}
+
+/* ── CTA row ─────────────────────────────────────────────────────────── */
+.outfit-cta-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+
+  button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: all .25s ease;
+    border: none;
+
+    i { font-size: 0.9rem; }
+  }
+
+  .btn-outfit-shop {
+    background: #39ff14;
+    color: #000;
+    box-shadow: 0 0 20px rgba(57,255,20,.35);
+
+    &:hover {
+      background: #00ffaa;
+      box-shadow: 0 0 30px rgba(0,255,170,.5);
+      transform: translateY(-2px);
+    }
+  }
+
+  .btn-outfit-tryon {
+    background: transparent;
+    color: #39ff14;
+    border: 1px solid rgba(57,255,20,.5);
+
+    &:hover {
+      background: rgba(57,255,20,.1);
+      border-color: #39ff14;
+      transform: translateY(-2px);
+    }
+  }
+}
+
+/* ── Canvas wrapper ──────────────────────────────────────────────────── */
+.outfit-scene-canvas-wrap {
+  height: 680px;
+  border-radius: 20px;
+  overflow: hidden;
+  position: relative;
+  background: radial-gradient(ellipse at center, rgba(57,255,20,.05) 0%, rgba(6,0,16,.8) 70%);
+  border: 1px solid rgba(57,255,20,.12);
+  box-shadow:
+    0 0 60px rgba(57,255,20,.06),
+    inset 0 0 40px rgba(57,255,20,.03);
+
+  app-outfit-scene {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  @media (max-width: 960px) {
+    height: 540px;
+  }
+
+  @media (max-width: 480px) {
+    height: 420px;
+  }
+}
+
 

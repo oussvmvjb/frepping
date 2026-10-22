@@ -1,66 +1,141 @@
 <div class="profile-page">
+  <!-- BACKGROUND LIKE HOME HERO -->
+  <div class="hero-background">
+    <div class="hero-grid-overlay"></div>
+    <div class="hero-glow"></div>
+    <div class="hero-glow-secondary"></div>
+  </div>
+
   <div class="profile-container">
 
-    <!-- PROFILE HEADER -->
-    <div class="profile-header">
+    <!-- PROFILE HERO -->
+    <header class="profile-hero">
+      <div class="hero-badge">
+        <span class="badge-text">AGENT PROFILE</span>
+        <i class="fas fa-bolt"></i>
+      </div>
+
       <div class="user-hero-card">
         <div class="user-avatar-wrap">
           <div class="user-avatar">
             {{ user?.first_name ? user?.first_name?.substring(0, 1)?.toUpperCase() : (user?.email?.substring(0, 1)?.toUpperCase() || 'U') }}
           </div>
-          <div class="status-indicator"></div>
+          <div class="status-indicator" [class.active]="user?.is_active"></div>
         </div>
+
         <div class="user-meta">
           <h1 class="user-name">
             {{ (user?.first_name || user?.last_name) ? ((user?.first_name || '') + ' ' + (user?.last_name || '')) : (user?.email?.split('@')?.[0] | uppercase) }}
           </h1>
-          <p class="user-email text-muted">{{ user?.email }}</p>
+          <p class="user-email"><i class="fas fa-envelope mr-1 text-green"></i> {{ user?.email }}</p>
           <div class="badge-row mt-2">
-            <span class="role-badge">{{ user?.role }}</span>
+            <span class="role-badge"><i class="fas fa-user-tag mr-1"></i> {{ user?.role }}</span>
             <span class="status-badge" [class.active]="user?.is_active">
-              {{ user?.is_active ? 'ACTIVE AGENT' : 'INACTIVE' }}
+              <i class="fas fa-circle mr-1"></i> {{ user?.is_active ? 'ACTIVE AGENT' : 'INACTIVE' }}
             </span>
           </div>
         </div>
+
         <div class="hero-actions">
+          <a routerLink="/shop" class="btn-hero-primary">
+            <i class="fas fa-shopping-bag mr-1"></i>
+            <span>EXPLORE DROPS</span>
+          </a>
           <button class="btn-logout" (click)="logout()">
-            <i class="fas fa-sign-out-alt mr-2"></i> LOGOUT
+            <i class="fas fa-sign-out-alt mr-1"></i>
+            <span>LOGOUT</span>
           </button>
         </div>
       </div>
-    </div>
+
+      <!-- HERO STATS (Home style) -->
+      <div class="hero-stats">
+        <div class="stat-item" [class.active]="activeTab === 'orders'" (click)="switchTab('orders')">
+          <div class="stat-number">{{ totalOrders }}</div>
+          <div class="stat-label">ORDERS</div>
+        </div>
+        <div class="stat-item" [class.active]="activeTab === 'favorites'" (click)="switchTab('favorites')">
+          <div class="stat-number">{{ totalFavorites }}</div>
+          <div class="stat-label">SAVED DROPS</div>
+        </div>
+        <div class="stat-item" [class.active]="activeTab === 'addresses'" (click)="switchTab('addresses')">
+          <div class="stat-number">{{ addresses.length }}</div>
+          <div class="stat-label">ADDRESSES</div>
+        </div>
+        <div class="stat-item" [class.active]="activeTab === 'cards'" (click)="switchTab('cards')">
+          <div class="stat-number">{{ cards.length }}</div>
+          <div class="stat-label">SAVED CARDS</div>
+        </div>
+      </div>
+    </header>
 
     <!-- MAIN PROFILE GRID -->
     <div class="profile-layout mt-6">
 
       <!-- LEFT SIDEBAR TABS -->
-      <aside class="profile-nav-card">
-        <nav class="profile-nav">
-          <button class="nav-item" [class.active]="activeTab === 'profile'" (click)="switchTab('profile')">
-            <i class="fas fa-id-card"></i>
-            <span>PERSONAL INFO</span>
-          </button>
-          <button class="nav-item" [class.active]="activeTab === 'password'" (click)="switchTab('password')">
-            <i class="fas fa-lock"></i>
-            <span>SECURITY / PASSWORD</span>
-          </button>
-          <button class="nav-item" [class.active]="activeTab === 'orders'" (click)="switchTab('orders')">
-            <i class="fas fa-box"></i>
-            <span>MY ORDERS</span>
-          </button>
-          <button class="nav-item" [class.active]="activeTab === 'favorites'" (click)="switchTab('favorites')">
-            <i class="fas fa-heart"></i>
-            <span>SAVED DROPS</span>
-          </button>
-          <button class="nav-item" [class.active]="activeTab === 'addresses'" (click)="switchTab('addresses')">
-            <i class="fas fa-map-marker-alt"></i>
-            <span>ADDRESSES</span>
-          </button>
-          <button class="nav-item" [class.active]="activeTab === 'cards'" (click)="switchTab('cards')">
-            <i class="fas fa-credit-card"></i>
-            <span>SAVED CARDS</span>
-          </button>
-        </nav>
+      <!-- LEFT SIDEBAR HOVER DOCK & 3D OPTION WHEEL DRAWER -->
+      <aside
+        class="profile-sidebar-drawer"
+        [class.is-open]="isSidebarOpen"
+        (mouseenter)="onSidebarMouseEnter()"
+        (mouseleave)="onSidebarMouseLeave()"
+      >
+        <!-- COLLAPSED PEEK DOCK: always visible on the left edge as a hover anchor -->
+        <div class="sidebar-dock-peek" (click)="toggleSidebar()">
+          <div class="dock-indicator-dot"></div>
+          <div class="dock-icon-wrap">
+            <i [class]="activeTabIcon"></i>
+          </div>
+          <div class="dock-label-vertical">
+            <span>SECTIONS</span>
+          </div>
+          <div class="dock-chevron">
+            <i class="fas fa-chevron-right"></i>
+          </div>
+        </div>
+
+        <!-- EXPANDED DRAWER: slides in on hover with 3D OptionWheel & big text -->
+        <div class="sidebar-drawer-body">
+          <div class="drawer-header">
+            <div class="drawer-header-info">
+              <span class="drawer-pill"><i class="fas fa-sliders-h"></i> NAVIGATION</span>
+              <h3 class="drawer-heading">PROFILE SECTIONS</h3>
+              <p class="drawer-caption">Hover &bull; scroll or drag wheel to select</p>
+            </div>
+            <button class="drawer-back-btn" (click)="closeSidebar()" type="button" title="Close drawer">
+              <i class="fas fa-arrow-left"></i>
+              <span>BACK</span>
+            </button>
+          </div>
+
+          <!-- 3D OPTION WHEEL WITH BIG TEXT -->
+          <div class="option-wheel-container">
+            <app-option-wheel
+              [items]="profileNavItems"
+              [selectedIndex]="activeTabIndex"
+              [fontSize]="1.55"
+              [spacing]="1.4"
+              [curve]="1.1"
+              [tilt]="6.5"
+              [blur]="1.6"
+              [fade]="0.26"
+              [inset]="32"
+              [smoothing]="190"
+              textColor="#8a8a8a"
+              activeColor="#39ff14"
+              (selectChange)="onNavSelect($event)"
+            >
+            </app-option-wheel>
+          </div>
+
+          <!-- DRAWER FOOTER: ACTIVE TAB SUMMARY -->
+          <div class="drawer-footer">
+            <div class="active-tab-preview">
+              <span class="preview-label">ACTIVE SECTION:</span>
+              <span class="preview-name"><i [class]="activeTabIcon + ' mr-2 text-green'"></i>{{ activeTabLabel }}</span>
+            </div>
+          </div>
+        </div>
       </aside>
 
       <!-- RIGHT CONTENT AREA -->

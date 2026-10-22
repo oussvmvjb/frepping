@@ -45,8 +45,7 @@
   }
 
   &:focus-visible {
-    outline: 2px solid #39ff14;
-    outline-offset: -2px;
+    outline: none;
   }
 }
 
@@ -77,17 +76,20 @@
     position: relative;
     width: 100%;
     height: 100%;
-    overflow: hidden;
-    background: #111;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.75);
-    transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+    overflow: visible;
+    background: transparent;
+    border: none;
+    outline: none;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    transition: transform 0.3s ease;
   }
 
   &:hover .dolly-card-inner {
-    border-color: rgba(57, 255, 20, 0.6);
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.85), 0 0 24px rgba(57, 255, 20, 0.25);
-    transform: scale(1.06);
+    border: none;
+    box-shadow: none;
+    transform: scale(1.08);
   }
 
   /* Reveal colour smoothly on hover */
@@ -97,7 +99,7 @@
 
   &:hover .dolly-img {
     filter: grayscale(0) !important;
-    transform: scale(1.05);
+    transform: scale(1.08);
   }
 
   /* Explore pill – visible on hover */
@@ -129,11 +131,14 @@
 .dolly-img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   display: block;
   user-select: none;
   -webkit-user-drag: none;
   will-change: transform, opacity;
+  background: transparent;
+  border: none;
+  box-shadow: none;
 }
 
 /* Category label under the image */

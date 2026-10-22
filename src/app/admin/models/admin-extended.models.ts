@@ -10,7 +10,7 @@ export type OrderStatus =
 
 export type PaymentStatus = 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED';
 export type PaymentMethod = 'CARD' | 'COD' | 'GIFT_CARD';
-export type FulfillmentStatus = 'PENDING' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
+export type FulfillmentStatus = 'PENDING' | 'UNFULFILLED' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
 export type UserRole = 'SUPER_ADMIN' | 'ADMIN' | 'SELLER' | 'CUSTOMER';
 export type DiscountType = 'PERCENT' | 'FIXED';
 

@@ -10,6 +10,7 @@ import { Category } from '../../models/category.model';
 import { FlexCarouselItem } from '../../components/flex-carousel/flex-carousel.component';
 import { DriftItem } from '../../shared/drift-wall/drift-wall.component';
 import { ModelViewerComponent } from '../../components/model-viewer/model-viewer.component';
+import { OutfitItem, OutfitRole } from '../../shared/outfit-scene/outfit-scene.component';
 
 @Component({
   selector: 'app-home',
@@ -44,6 +45,47 @@ export class HomeComponent implements OnInit, OnDestroy {
     { name: 'Hyper Pink', hex: 0xff007f },
     { name: 'Liquid Gold', hex: 0xffd700 }
   ];
+
+  // ── 3D Outfit Scene ──────────────────────────────────────────────────────
+  // Order in array doesn't matter — layout is driven by role (shoes→bottom→top)
+  outfitItems: OutfitItem[] = [
+    {
+      path:  'assets/3dmodel/complite/Meshy_AI_White_Adidas_Samba_Sn_1022112041_texture.glb',
+      label: 'White Adidas Samba',
+      role:  'shoes',
+      tweak: 1.0
+    },
+    {
+      path:  'assets/3dmodel/complite/Meshy_AI_Wide_Leg_Blue_Jeans_1022111857_texture.glb',
+      label: 'Wide Leg Blue Jeans',
+      role:  'bottom',
+      tweak: 1.0
+    },
+    {
+      path:  'assets/3dmodel/complite/Meshy_AI_White_Short_Sleeve_Bu_1022111329_texture.glb',
+      label: 'White Short Sleeve Shirt',
+      role:  'top',
+      tweak: 1.0
+    }
+  ];
+
+  /** Selected piece roles: all 3 selected by default */
+  selectedOutfitRoles = new Set<OutfitRole>(['shoes', 'bottom', 'top']);
+  /** Filtered items passed to app-outfit-scene */
+  activeOutfitItems: OutfitItem[] = [...this.outfitItems];
+
+  isPieceSelected(role: OutfitRole): boolean {
+    return this.selectedOutfitRoles.has(role);
+  }
+
+  toggleOutfitPiece(role: OutfitRole): void {
+    if (this.selectedOutfitRoles.has(role)) {
+      this.selectedOutfitRoles.delete(role);
+    } else {
+      this.selectedOutfitRoles.add(role);
+    }
+    this.activeOutfitItems = this.outfitItems.filter(item => this.selectedOutfitRoles.has(item.role));
+  }
 
   toggleBannerRotation(): void {
     this.bannerRotating = !this.bannerRotating;
@@ -171,16 +213,51 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.isLoadingArrivals = true;
     this.arrivalsError = null;
     this.productService
-      .getRecentProducts(8)
+      .getRecentProducts(20)
       .pipe(takeUntil(this.destroy$), finalize(() => (this.isLoadingArrivals = false)))
       .subscribe({
         next: (res) => {
-          this.newArrivals = res.items;
+          this.newArrivals = this.shuffleAndDiversifyProducts(res.items);
         },
         error: (err: Error) => {
           this.arrivalsError = err.message;
         },
       });
+  }
+
+  private shuffleAndDiversifyProducts(items: ApiProduct[]): ApiProduct[] {
+    if (!items || items.length <= 2) return items;
+
+    // Fisher-Yates random shuffle
+    const list = [...items];
+    for (let i = list.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [list[i], list[j]] = [list[j], list[i]];
+    }
+
+    // Secondary pass to prevent consecutive items of identical category or type
+    for (let i = 0; i < list.length - 1; i++) {
+      const catA = list[i].category?.name?.toLowerCase() || '';
+      const catB = list[i + 1].category?.name?.toLowerCase() || '';
+      const nameA = list[i].name?.toLowerCase() || '';
+      const nameB = list[i + 1].name?.toLowerCase() || '';
+
+      const isSameCategory = catA && catA === catB;
+      const isSameType = nameA.slice(0, 4) === nameB.slice(0, 4);
+
+      if (isSameCategory || isSameType) {
+        const swapIdx = list.findIndex((p, idx) => {
+          if (idx <= i + 1) return false;
+          const catC = p.category?.name?.toLowerCase() || '';
+          return catC !== catA;
+        });
+        if (swapIdx !== -1) {
+          [list[i + 1], list[swapIdx]] = [list[swapIdx], list[i + 1]];
+        }
+      }
+    }
+
+    return list;
   }
 
   loadCategories(): void {

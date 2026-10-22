@@ -28,6 +28,8 @@ import { StorePageComponent } from './pages/store-page/store-page.component';
 import { SellerDashboardComponent } from './pages/seller/seller-dashboard/seller-dashboard.component';
 import { CheckoutComponent } from './pages/checkout/checkout.component';
 import { ClothesRoomComponent } from './pages/clothes-room/clothes-room.component';
+import { OutfitSceneComponent } from './shared/outfit-scene/outfit-scene.component';
+import { OptionWheelComponent } from './shared/option-wheel/option-wheel.component';
 
 @NgModule({
   declarations: [
@@ -60,7 +62,9 @@ import { ClothesRoomComponent } from './pages/clothes-room/clothes-room.componen
     DitherVeilComponent,
     DriftWallComponent,
     LiquidEtherComponent,
-    ClothesRoomComponent
+    ClothesRoomComponent,
+    OutfitSceneComponent,
+    OptionWheelComponent
   ],
   providers: [
     { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true }

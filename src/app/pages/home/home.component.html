@@ -261,7 +261,7 @@
       [images]="categoryGalleryItems"
       [itemWidth]="170"
       [aspectRatio]="0.8"
-      [borderRadius]="10"
+      [borderRadius]="0"
       [grayscale]="1"
       [perspective]="1000"
       [spacing]="800"
@@ -472,21 +472,21 @@
       [items]="getCarouselItems()"
       [preset]="'liquid'"
       [intro]="'rise'"
-      [cardHeight]="0.5"
+      [cardHeight]="0.38"
       [gap]="12"
       [squeeze]="0.2"
       [focusOnClick]="true"
       [captions]="true"
-      [fit]="'natural'"
+      [fit]="'contain'"
       [radius]="0"
-      [lensWidth]="0.74"
-      [lensHeight]="1.18"
-      [tilt]="62"
+      [lensWidth]="0.5"
+      [lensHeight]="1"
+      [tilt]="40"
       [roundness]="1"
       [bend]="0.34"
       [reach]="0.38"
       [curl]="'twist'"
-      [dispersion]="0.45"
+      [dispersion]="0.15"
       [liquid]="0"
       [followCursor]="false"
       [autoplay]="false"
@@ -496,36 +496,58 @@
     </app-flex-carousel>
   </section>
 
-  <!-- COLLECTIONS (static content, not connected to backend) -->
-  <section class="collections-home">
+  <!-- 3D OUTFIT SCENE -->
+  <section class="outfit-scene-section">
     <div class="section-header">
       <h2 class="section-title">
         <span class="title-accent"></span>
-        <app-blur-text text="CURATED COLLECTIONS" animateBy="words" [delay]="40" [stepDuration]="0.35"></app-blur-text>
+        <app-blur-text text="3D OUTFIT SCENE" animateBy="words" [delay]="40" [stepDuration]="0.35"></app-blur-text>
         <span class="title-accent"></span>
       </h2>
-      <p class="section-subtitle">Handpicked styles for every vibe</p>
+      <p class="section-subtitle">Complete look — shirt, jeans &amp; kicks in one space</p>
     </div>
-    <div class="collections-grid-home">
-      <div *ngFor="let collection of collections"
-           class="collection-card-home"
-           (click)="goToCollection(collection.id)">
-        <div class="collection-image-home" [style.background-image]="'url(' + collection.image + ')'">
-          <div class="collection-overlay-home">
-            <div class="collection-content-home">
-              <h3 class="collection-name-home">{{ collection.name }}</h3>
-              <p class="collection-description-home">{{ collection.description }}</p>
-              <div class="collection-stats-home">
-                <span class="collection-count">{{ collection.itemCount }} items</span>
-                <span class="collection-price">From ${{ collection.startingPrice }}</span>
-              </div>
-              <button class="btn-collection-home">
-                EXPLORE COLLECTION <i class="fas fa-arrow-right"></i>
-              </button>
-            </div>
-          </div>
-          <div class="collection-gradient"></div>
+
+    <div class="outfit-scene-layout">
+      <!-- left info panel -->
+      <div class="outfit-info-panel">
+        <div class="outfit-badge">
+          <i class="fas fa-cube"></i>
+          <span>3D INTERACTIVE</span>
         </div>
+
+        <h3 class="outfit-name">THE FULL FIT</h3>
+        <p class="outfit-desc">
+          Explore a complete streetwear outfit in real-time 3D.
+          Drag to rotate, scroll to zoom — every stitch, every sole.
+        </p>
+
+        <ul class="outfit-pieces">
+          <li *ngFor="let piece of outfitItems; let i = index"
+              [class.selected]="isPieceSelected(piece.role)"
+              [class.deselected]="!isPieceSelected(piece.role)"
+              (click)="toggleOutfitPiece(piece.role)"
+              [attr.title]="isPieceSelected(piece.role) ? 'Click to remove ' + piece.label : 'Click to add ' + piece.label">
+            <span class="piece-index">0{{ i + 1 }}</span>
+            <span class="piece-label">{{ piece.label }}</span>
+            <span class="piece-toggle">
+              <i class="fas" [class.fa-check-circle]="isPieceSelected(piece.role)" [class.fa-circle]="!isPieceSelected(piece.role)"></i>
+            </span>
+          </li>
+        </ul>
+
+        <div class="outfit-toggle-hint">
+          <i class="fas fa-sliders-h"></i>
+          <span>Click any piece to add or remove it from the 3D scene</span>
+        </div>
+      </div>
+
+      <!-- 3D viewer -->
+      <div class="outfit-scene-canvas-wrap">
+        <app-outfit-scene
+          [items]="activeOutfitItems"
+          [autoRotate]="true"
+          [rotateSpeed]="0.7">
+        </app-outfit-scene>
       </div>
     </div>
   </section>

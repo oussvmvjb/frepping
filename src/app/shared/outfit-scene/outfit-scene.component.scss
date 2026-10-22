@@ -1,0 +1,100 @@
+:host {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.outfit-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+
+  canvas {
+    display: block;
+    width: 100% !important;
+    height: 100% !important;
+    border-radius: 20px;
+  }
+}
+
+/* ── Loading overlay ─────────────────────────────── */
+.outfit-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  border-radius: 20px;
+  background: rgba(6, 0, 16, 0.6);
+  backdrop-filter: blur(8px);
+  color: #39ff14;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.9rem;
+  letter-spacing: 0.12em;
+
+  .loader-ring {
+    width: 52px;
+    height: 52px;
+    border: 3px solid rgba(57, 255, 20, 0.15);
+    border-top-color: #39ff14;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Label pills ─────────────────────────────────── */
+.outfit-labels {
+  position: absolute;
+  bottom: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  pointer-events: none;
+
+  .label-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 14px;
+    border-radius: 999px;
+    background: rgba(57, 255, 20, 0.12);
+    border: 1px solid rgba(57, 255, 20, 0.35);
+    color: #39ff14;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    white-space: nowrap;
+    backdrop-filter: blur(6px);
+
+    i { font-size: 0.75rem; }
+  }
+}
+
+/* ── Hint bar ────────────────────────────────────── */
+.outfit-hint {
+  position: absolute;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(255,255,255,0.35);
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+  pointer-events: none;
+
+  i { font-size: 0.75rem; }
+}

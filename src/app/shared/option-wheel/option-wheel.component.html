@@ -1,0 +1,32 @@
+<div
+  #rootRef
+  role="listbox"
+  tabindex="0"
+  class="option-wheel"
+  [class.option-wheel--right]="side === 'right'"
+  [class.option-wheel--dragging]="isDragging"
+  [style.--ow-text-color]="textColor"
+  [style.--ow-active-color]="activeColor"
+  [style.--ow-font-size]="fontSize + 'rem'"
+  [style.--ow-inset]="inset + 'px'"
+  (pointerdown)="onPointerDown($event)"
+  (pointermove)="onPointerMove($event)"
+  (pointerup)="onPointerEnd()"
+  (pointercancel)="onPointerEnd()"
+  (keydown)="onKeyDown($event)"
+>
+  <div
+    *ngFor="let item of normalizedItems; let i = index"
+    class="option-wheel__item"
+    [class.option-wheel__item--selected]="currentIndex === i"
+    (click)="onItemClick(i, $event)"
+  >
+    <div class="item-content">
+      <i *ngIf="item.icon" [class]="item.icon + ' item-icon'"></i>
+      <span class="item-label">{{ item.label }}</span>
+      <span *ngIf="item.badge !== undefined && item.badge !== null && item.badge !== 0 && item.badge !== '0'" class="item-badge">
+        {{ item.badge }}
+      </span>
+    </div>
+  </div>
+</div>

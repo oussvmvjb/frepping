@@ -1,0 +1,103 @@
+.option-wheel {
+  --ow-text-color: #888888;
+  --ow-active-color: #39ff14;
+  --ow-font-size: 1.6rem;
+  --ow-inset: 30px;
+
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 360px;
+  overflow: hidden;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+  outline: none;
+}
+
+.option-wheel--dragging {
+  cursor: grabbing;
+}
+
+.option-wheel__item {
+  position: absolute;
+  top: 50%;
+  left: var(--ow-inset);
+  white-space: nowrap;
+  font-family: 'Rajdhani', 'Oswald', sans-serif;
+  font-size: var(--ow-font-size);
+  line-height: 1.1;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transform-origin: left center;
+  cursor: pointer;
+  will-change: transform, opacity, filter;
+  /* Blend between inactive and active neon color based on distance to center */
+  color: color-mix(in srgb, var(--ow-active-color) calc(var(--ow-p, 0) * 100%), var(--ow-text-color));
+  transition: text-shadow 0.2s ease, font-weight 0.2s ease;
+
+  .item-content {
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+
+    .item-icon {
+      font-size: calc(var(--ow-font-size) * 0.85);
+      width: 28px;
+      text-align: center;
+      transition: color 0.2s ease, transform 0.2s ease;
+      color: inherit;
+    }
+
+    .item-label {
+      font-family: inherit;
+      font-weight: inherit;
+      letter-spacing: inherit;
+      transition: transform 0.2s ease;
+    }
+
+    .item-badge {
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 12px;
+      background: rgba(57, 255, 20, 0.18);
+      color: #39ff14;
+      border: 1px solid rgba(57, 255, 20, 0.4);
+      margin-left: 6px;
+      vertical-align: middle;
+      box-shadow: 0 0 10px rgba(57, 255, 20, 0.2);
+    }
+  }
+
+  &:hover {
+    color: var(--ow-active-color);
+
+    .item-icon {
+      transform: scale(1.12);
+    }
+  }
+
+  &.option-wheel__item--selected {
+    font-weight: 800;
+    text-shadow: 0 0 20px rgba(57, 255, 20, 0.45);
+
+    .item-icon {
+      color: var(--ow-active-color);
+      text-shadow: 0 0 14px rgba(57, 255, 20, 0.6);
+      transform: scale(1.1);
+    }
+
+    .item-label {
+      letter-spacing: 0.1em;
+    }
+  }
+}
+
+.option-wheel--right .option-wheel__item {
+  left: auto;
+  right: var(--ow-inset);
+  transform-origin: right center;
+}

@@ -16,6 +16,7 @@ import {
   AddressCreate,
   SavedPaymentMethod
 } from "../../models/api.models";
+import { OptionWheelItem } from "../../shared/option-wheel/option-wheel.component";
 
 type ProfileTab = "profile" | "password" | "orders" | "favorites" | "addresses" | "cards";
 
@@ -28,6 +29,59 @@ export class ProfileComponent implements OnInit, OnDestroy {
   activeTab: ProfileTab = "profile";
   user: User | null = null;
   loadingUser = true;
+
+  // ── Hover Drawer & OptionWheel Navigation ──────────────────────────────
+  isSidebarOpen = false;
+
+  get profileNavItems(): OptionWheelItem[] {
+    return [
+      { id: 'profile',   label: 'PERSONAL INFO',       icon: 'fas fa-id-card' },
+      { id: 'password',  label: 'SECURITY / PASSWORD', icon: 'fas fa-lock' },
+      { id: 'orders',    label: 'MY ORDERS',           icon: 'fas fa-box',            badge: this.totalOrders },
+      { id: 'favorites', label: 'SAVED DROPS',         icon: 'fas fa-heart',          badge: this.totalFavorites },
+      { id: 'addresses', label: 'ADDRESSES',           icon: 'fas fa-map-marker-alt', badge: this.addresses.length },
+      { id: 'cards',     label: 'SAVED CARDS',         icon: 'fas fa-credit-card',    badge: this.cards.length },
+    ];
+  }
+
+  get activeTabIndex(): number {
+    const idx = this.profileNavItems.findIndex(item => item.id === this.activeTab);
+    return idx >= 0 ? idx : 0;
+  }
+
+  get activeTabIcon(): string {
+    const item = this.profileNavItems.find(it => it.id === this.activeTab);
+    return item?.icon || 'fas fa-id-card';
+  }
+
+  get activeTabLabel(): string {
+    const item = this.profileNavItems.find(it => it.id === this.activeTab);
+    return item?.label || 'PERSONAL INFO';
+  }
+
+  onSidebarMouseEnter(): void {
+    this.isSidebarOpen = true;
+  }
+
+  onSidebarMouseLeave(): void {
+    this.isSidebarOpen = false;
+  }
+
+  toggleSidebar(): void {
+    this.isSidebarOpen = !this.isSidebarOpen;
+  }
+
+  closeSidebar(): void {
+    this.isSidebarOpen = false;
+  }
+
+  onNavSelect(event: { index: number; item: OptionWheelItem | string }): void {
+    const item = event.item;
+    const tabId = typeof item === 'string' ? item : item.id;
+    if (tabId) {
+      this.switchTab(tabId as ProfileTab);
+    }
+  }
 
   // Profile Edit
   profileForm = {
@@ -101,6 +155,25 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadCurrentUser();
+    this.loadInitialStats();
+  }
+
+  loadInitialStats(): void {
+    this.orderService.getMyOrders({ page: 1, page_size: 1 })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({ next: res => this.totalOrders = res.total, error: () => {} });
+
+    this.likeService.getFavorites(1, 1)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({ next: res => this.totalFavorites = res.total, error: () => {} });
+
+    this.addressService.list()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({ next: list => this.addresses = list, error: () => {} });
+
+    this.paymentMethodService.list()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({ next: list => this.cards = list, error: () => {} });
   }
 
   ngOnDestroy(): void {

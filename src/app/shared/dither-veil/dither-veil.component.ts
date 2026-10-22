@@ -298,10 +298,18 @@ void main(){
   float low=order*(1.0-uRim);
   color=mix(color,uRimColor,step(low,shown)*step(0.001,uRim));
   color=mix(color,photo,step(low+uRim,shown));
+
+  // alpha: only draw where the image itself has pixels
+  float aCell  = step(0.5, textureLod(tImage, sampleUv, uLod).a) * framed;
+  float aPhoto = texture(tImage, photoUv).a * within(photoUv);
+  float alpha  = aCell;
+  alpha = mix(alpha, max(aCell, aPhoto), step(low,shown)*step(0.001,uRim));
+  alpha = mix(alpha, aPhoto, step(low+uRim,shown));
+
   vec2 aspect=vec2(uResolution.x/uResolution.y,1.0);
   float spread=length((cellUv-0.5)*aspect)/length(aspect*0.5);
   float appear=step(spread*0.72+bayer(cell+vec2(3.0,5.0))*0.28,uIntro*1.001);
-  fragColor=vec4(mix(uInk,color,appear),1.0);
+  fragColor=vec4(color, alpha*appear);
 }`;
 
 // ── Component ──────────────────────────────────────────────────────────────
@@ -427,7 +435,7 @@ export class DitherVeilComponent implements AfterViewInit, OnChanges, OnDestroy 
 
     let renderer: any;
     try {
-      renderer = new Renderer({ dpr, alpha: false, antialias: false });
+      renderer = new Renderer({ dpr, alpha: true, premultipliedAlpha: false, antialias: false });
     } catch {
       this.zone.run(() => this.imageError.emit());
       return;
