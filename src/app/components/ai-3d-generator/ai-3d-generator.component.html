@@ -1,0 +1,363 @@
+<div class="ai-studio-container" [class.embedded]="embeddedMode">
+  <!-- Top Header Bar -->
+  <header class="studio-header">
+    <div class="header-left">
+      <div class="studio-badge">
+        <i class="fas fa-cube"></i>
+        <span>MICROSOFT TRELLIS.2 &bull; ZERO-GPU AI 3D GENERATOR</span>
+      </div>
+      <h2 class="studio-title">
+        IMAGE TO <span class="neon-text">3D GARMENT</span> STUDIO
+      </h2>
+      <p class="studio-desc">
+        Transform 2D clothing photos into textured 3D .GLB models using Microsoft TRELLIS.2.
+      </p>
+    </div>
+
+    <div class="header-right" *ngIf="embeddedMode">
+      <button type="button" class="btn-close-modal" (click)="onCloseClicked()" title="Close Generator">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Grid Workspace -->
+  <div class="studio-grid">
+    <!-- LEFT PANEL: Image Upload & Generation Configuration -->
+    <section class="panel-upload">
+      <div class="card glass-card">
+        <div class="card-title-row">
+          <div class="card-title">
+            <i class="fas fa-cloud-arrow-up"></i>
+            <span>SOURCE IMAGE</span>
+          </div>
+          <span class="badge-format">PNG / JPEG / WEBP (MAX 15MB)</span>
+        </div>
+
+        <!-- Dropzone / Preview Area -->
+        <div
+          class="dropzone-area"
+          [class.has-file]="!!selectedFile"
+          (dragover)="onDragOver($event)"
+          (drop)="onDrop($event)"
+        >
+          <input
+            #fileInput
+            type="file"
+            class="hidden-file-input"
+            accept="image/png,image/jpeg,image/webp"
+            (change)="onFileSelected($event)"
+          />
+
+          <!-- Empty State: Prompt Upload -->
+          <div class="dropzone-empty" *ngIf="!imagePreviewUrl" (click)="fileInput.click()">
+            <div class="upload-icon-circle">
+              <i class="fas fa-camera"></i>
+            </div>
+            <p class="upload-prompt-primary">Drag & drop clothing photo or <span class="browse-link">browse</span></p>
+            <p class="upload-prompt-sub">Supports transparent PNG, JPEG, and WebP garments</p>
+          </div>
+
+          <!-- Active Preview State -->
+          <div class="dropzone-preview" *ngIf="imagePreviewUrl">
+            <img [src]="imagePreviewUrl" alt="Clothing Preview" class="preview-thumb" />
+            <div class="preview-overlay">
+              <div class="preview-meta">
+                <span class="file-name">{{ selectedFile?.name }}</span>
+                <span class="file-size">{{ ((selectedFile?.size || 0) / (1024 * 1024)).toFixed(2) }} MB</span>
+              </div>
+              <button type="button" class="btn-clear-upload" (click)="clearSelectedFile()" [disabled]="isGenerating">
+                <i class="fas fa-trash-alt"></i> Change Image
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Validation Error Alert -->
+        <div class="alert-error" *ngIf="fileError">
+          <i class="fas fa-exclamation-triangle"></i>
+          <span>{{ fileError }}</span>
+        </div>
+
+        <!-- Quick-Test Preset Garments -->
+        <div class="presets-section" *ngIf="!imagePreviewUrl && !isGenerating">
+          <span class="presets-label">QUICK TEST SAMPLES:</span>
+          <div class="preset-pills">
+            <button type="button" class="preset-btn" (click)="loadSampleImage('hoodie')">
+              <i class="fas fa-shirt"></i> Street Hoodie
+            </button>
+            <button type="button" class="preset-btn" (click)="loadSampleImage('tshirt')">
+              <i class="fas fa-tshirt"></i> Cyber T-Shirt
+            </button>
+            <button type="button" class="preset-btn" (click)="loadSampleImage('jacket')">
+              <i class="fas fa-vest"></i> Bomber Jacket
+            </button>
+          </div>
+        </div>
+
+        <!-- Garment Properties Form -->
+        <div class="config-section">
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label for="garmentName">GARMENT NAME</label>
+              <input
+                id="garmentName"
+                type="text"
+                class="cyber-input"
+                [(ngModel)]="clothingName"
+                placeholder="e.g. Siden-19 Street Hoodie"
+                [disabled]="isGenerating"
+              />
+            </div>
+            <div class="form-group">
+              <label for="garmentCategory">CATEGORY</label>
+              <select
+                id="garmentCategory"
+                class="cyber-select"
+                [(ngModel)]="clothingCategory"
+                [disabled]="isGenerating"
+              >
+                <option value="HOODIES">HOODIES</option>
+                <option value="OUTERWEAR">OUTERWEAR</option>
+                <option value="TOPS">TOPS</option>
+                <option value="BOTTOMS">BOTTOMS</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label>LATENT RESOLUTION</label>
+              <div class="radio-pill-group">
+                <label class="radio-pill" [class.selected]="resolution === '512'">
+                  <input type="radio" name="res" value="512" [(ngModel)]="resolution" [disabled]="isGenerating" />
+                  <span>512 (Fast)</span>
+                </label>
+                <label class="radio-pill" [class.selected]="resolution === '1024'">
+                  <input type="radio" name="res" value="1024" [(ngModel)]="resolution" [disabled]="isGenerating" />
+                  <span>1024 (Balanced)</span>
+                </label>
+                <label class="radio-pill" [class.selected]="resolution === '1536'">
+                  <input type="radio" name="res" value="1536" [(ngModel)]="resolution" [disabled]="isGenerating" />
+                  <span>1536 (Ultra)</span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Generated Model Quick-Load Banner -->
+        <div class="recent-model-banner" *ngIf="recentJobId && !hasModelLoaded && !isGenerating">
+          <div class="banner-info">
+            <i class="fas fa-circle-check neon-text"></i>
+            <div>
+              <span class="banner-title">PREVIOUS 3D MODEL READY</span>
+              <span class="banner-sub">ID: {{ recentJobId }}</span>
+            </div>
+          </div>
+          <button type="button" class="btn-load-recent" (click)="loadExistingJob(recentJobId)">
+            <i class="fas fa-cube"></i> LOAD IN 3D VIEWER
+          </button>
+        </div>
+
+        <!-- Action Button -->
+        <button
+          type="button"
+          class="btn-generate-3d"
+          [disabled]="!selectedFile || isGenerating"
+          (click)="startGeneration()"
+        >
+          <i class="fas" [ngClass]="isGenerating ? 'fa-spinner fa-spin' : 'fa-wand-magic-sparkles'"></i>
+          <span>{{ isGenerating ? 'GENERATING 3D MODEL...' : 'GENERATE 3D MODEL (TRELLIS.2)' }}</span>
+        </button>
+
+        <!-- Generation Error Alert -->
+        <div class="alert-error mt-3" *ngIf="generationError">
+          <div class="error-header">
+            <i class="fas fa-exclamation-circle"></i>
+            <strong>Generation Notice:</strong>
+          </div>
+          <p class="error-msg">{{ generationError }}</p>
+          <button type="button" class="btn-retry" (click)="startGeneration()">
+            <i class="fas fa-redo"></i> Retry Generation
+          </button>
+        </div>
+
+        <!-- Live Progress HUD -->
+        <div class="progress-hud" *ngIf="isGenerating || currentJob">
+          <div class="progress-header">
+            <span class="progress-status-pill" [class.pulse]="isGenerating">
+              {{ currentJob?.status | uppercase }}
+            </span>
+            <span class="progress-timer">
+              <i class="fas fa-clock"></i> {{ elapsedSeconds }}s elapsed
+            </span>
+            <span class="progress-pct">{{ currentJob?.progress || 0 }}%</span>
+          </div>
+
+          <!-- Progress Bar -->
+          <div class="progress-track">
+            <div
+              class="progress-fill"
+              [style.width.%]="currentJob?.progress || (isGenerating ? 15 : 0)"
+            ></div>
+          </div>
+
+          <!-- Progress Message -->
+          <p class="progress-msg">
+            <i class="fas fa-info-circle"></i>
+            {{ currentJob?.message || 'Connecting to Microsoft TRELLIS.2...' }}
+          </p>
+        </div>
+      </div>
+
+      <!-- Generated 3D Models Archive Card -->
+      <div class="card glass-card gallery-card mt-3" *ngIf="savedModels.length > 0">
+        <div class="card-title-row">
+          <div class="card-title">
+            <i class="fas fa-boxes-stacked neon-text"></i>
+            <span>GENERATED 3D MODELS ({{ savedModels.length }})</span>
+          </div>
+          <button type="button" class="btn-refresh-gallery" (click)="fetchSavedModels()" title="Refresh Models">
+            <i class="fas fa-sync" [class.fa-spin]="isLoadingSavedModels"></i>
+          </button>
+        </div>
+
+        <p class="gallery-desc">Click any generated model to load instantly into the 3D viewport:</p>
+
+        <div class="saved-models-list">
+          <div
+            class="saved-model-item"
+            *ngFor="let m of savedModels"
+            [class.active]="activeModelJobId === m.job_id"
+          >
+            <div class="item-left" (click)="previewSavedModel(m)">
+              <div class="model-icon-box">
+                <i class="fas fa-cube"></i>
+              </div>
+              <div class="model-details">
+                <span class="model-name">Garment {{ m.job_id.slice(0, 8) }}</span>
+                <span class="model-meta">{{ m.size_mb }} MB &bull; {{ m.created_at | date:'short' }}</span>
+              </div>
+            </div>
+
+            <div class="item-actions">
+              <button
+                type="button"
+                class="btn-preview-model"
+                (click)="previewSavedModel(m)"
+                title="Preview in 3D Viewport"
+              >
+                <i class="fas" [ngClass]="activeModelJobId === m.job_id ? 'fa-check' : 'fa-eye'"></i>
+                <span>{{ activeModelJobId === m.job_id ? 'VIEWING' : 'PREVIEW' }}</span>
+              </button>
+              <button
+                type="button"
+                class="btn-download-mini"
+                (click)="downloadSavedModel(m.job_id)"
+                title="Download GLB"
+              >
+                <i class="fas fa-download"></i>
+              </button>
+              <button
+                type="button"
+                class="btn-showroom-mini"
+                *ngIf="embeddedMode"
+                (click)="sendSavedModelToShowroom(m)"
+                title="Add to Clothes Room Carousel"
+              >
+                <i class="fas fa-plus"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT PANEL: 3D Three.js Interactive Viewport -->
+    <section class="panel-viewport">
+      <div class="card glass-card viewport-card" #viewportContainer>
+        <!-- Top Toolbar -->
+        <div class="viewport-hud-top">
+          <div class="hud-left">
+            <span class="live-dot" [class.dot-active]="hasModelLoaded"></span>
+            <span class="hud-label">
+              {{ hasModelLoaded ? 'INTERACTIVE THREE.JS VIEWPORT' : '3D OUTPUT PREVIEW' }}
+            </span>
+          </div>
+
+          <div class="hud-right" *ngIf="hasModelLoaded">
+            <button
+              type="button"
+              class="hud-btn"
+              [class.active]="autoRotate"
+              (click)="toggleAutoRotate()"
+              title="Toggle Auto 360° Rotation"
+            >
+              <i class="fas fa-rotate"></i>
+              <span>ROTATION</span>
+            </button>
+            <button
+              type="button"
+              class="hud-btn"
+              [class.active]="wireframeMode"
+              (click)="toggleWireframe()"
+              title="Toggle Wireframe Mesh"
+            >
+              <i class="fas fa-vector-square"></i>
+              <span>WIREFRAME</span>
+            </button>
+            <button
+              type="button"
+              class="hud-btn"
+              (click)="resetCamera()"
+              title="Reset Camera Framing"
+            >
+              <i class="fas fa-arrows-rotate"></i>
+              <span>RESET</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Canvas Container -->
+        <div class="viewport-canvas-wrapper">
+          <canvas #viewportCanvas class="webgl-canvas"></canvas>
+
+          <!-- Empty Placeholder before 3D model is generated -->
+          <div class="viewport-empty-state" *ngIf="!hasModelLoaded && !isModelLoading">
+            <div class="hologram-cube">
+              <i class="fas fa-cube"></i>
+            </div>
+            <h3 class="empty-title">AWAITING 3D GENERATION</h3>
+            <p class="empty-sub">
+              Upload a clothing image on the left and click "Generate 3D Model".
+              The resulting textured .GLB mesh will load directly into this viewer.
+            </p>
+          </div>
+
+          <!-- Model Loading Spinner Overlay -->
+          <div class="viewport-loading-overlay" *ngIf="isModelLoading">
+            <div class="cyber-spinner"></div>
+            <p>PARSING AND RENDERING .GLB MESH...</p>
+          </div>
+
+          <!-- Bottom Floating Action Bar -->
+          <div class="viewport-hud-bottom" *ngIf="hasModelLoaded">
+            <div class="controls-hint">
+              <span><i class="fas fa-mouse"></i> Left Click: Rotate</span>
+              <span><i class="fas fa-mouse-pointer"></i> Right Click: Pan</span>
+              <span><i class="fas fa-arrow-up-down"></i> Wheel: Zoom</span>
+            </div>
+
+            <div class="action-buttons">
+              <button type="button" class="btn-download-glb" (click)="downloadGlb()">
+                <i class="fas fa-download"></i>
+                <span>DOWNLOAD .GLB</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>

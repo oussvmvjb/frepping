@@ -18,6 +18,7 @@ import { RoleGuard } from './services/role.guard';
 import { TestViewerComponent } from './test-viewer/test-viewer.component';
 import { ModelViewerComponent } from './components/model-viewer/model-viewer.component';
 import { ClothesRoomComponent } from './pages/clothes-room/clothes-room.component';
+import { Ai3dPageComponent } from './pages/ai-3d/ai-3d.component';
 
 const routes: Routes = [
   // ── Public ──────────────────────────────────────────────────────────────
@@ -53,6 +54,7 @@ const routes: Routes = [
   // ── Dev/test routes ──────────────────────────────────────────────────────
   { path: 'test-3d', component: TestViewerComponent },
   { path: 'mod', component: ModelViewerComponent },
+  { path: 'ai-3d', component: Ai3dPageComponent },
 
   // ── Fallback ─────────────────────────────────────────────────────────────
   { path: '**', redirectTo: '' },

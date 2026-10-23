@@ -52,7 +52,7 @@ export class ClothesViewerComponent
   cursorRef?: ElementRef<HTMLDivElement>;
 
   // Discovered Models Registry
-  public readonly clothingModels: ClothingModelItem[] = CLOTHING_MODELS_REGISTRY;
+  @Input() clothingModels: ClothingModelItem[] = CLOTHING_MODELS_REGISTRY;
   public currentIndex = 0;
 
   // Loading & Error States
@@ -521,6 +521,23 @@ export class ClothesViewerComponent
     this.cdRef.markForCheck();
   }
 
+  /**
+   * Dynamically add a newly generated AI 3D clothing model to the carousel
+   */
+  public async addDynamicModel(item: ClothingModelItem): Promise<void> {
+    const newIndex = this.clothingModels.length - 1;
+    const slot = new THREE.Group();
+    slot.name = `slot-${newIndex}`;
+    this.carouselSlots.push(slot);
+    this.carouselRoot.add(slot);
+    try {
+      await this.loadSingleModel(newIndex);
+      this.selectModelIndex(newIndex, true);
+    } catch (err) {
+      console.error('[ClothesViewer] Error adding dynamic model:', err);
+    }
+  }
+
   public nextModel(fromGesture: boolean = false): void {
     const nextIdx = (this.currentIndex + 1) % this.clothingModels.length;
     this.selectModelIndex(nextIdx, true);
@@ -537,6 +554,11 @@ export class ClothesViewerComponent
       this.showGestureNotice('SWIPE LEFT ➔ PREVIOUS MODEL');
     }
   }
+
+  /**
+   * Dynamically add and display an AI-generated model in the 3D showroom carousel
+   */
+
 
   private showGestureNotice(text: string): void {
     this.gestureNotification = text;

@@ -30,6 +30,7 @@ import { CheckoutComponent } from './pages/checkout/checkout.component';
 import { ClothesRoomComponent } from './pages/clothes-room/clothes-room.component';
 import { OutfitSceneComponent } from './shared/outfit-scene/outfit-scene.component';
 import { OptionWheelComponent } from './shared/option-wheel/option-wheel.component';
+import { Ai3dPageComponent } from './pages/ai-3d/ai-3d.component';
 
 @NgModule({
   declarations: [
@@ -64,7 +65,8 @@ import { OptionWheelComponent } from './shared/option-wheel/option-wheel.compone
     LiquidEtherComponent,
     ClothesRoomComponent,
     OutfitSceneComponent,
-    OptionWheelComponent
+    OptionWheelComponent,
+    Ai3dPageComponent
   ],
   providers: [
     { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true }

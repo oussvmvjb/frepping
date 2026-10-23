@@ -98,6 +98,7 @@
             #viewer
             [selectedIndex]="selectedModelIndex"
             [autoRotate]="autoRotate"
+            [clothingModels]="clothingModels"
             (modelChanged)="onModelChanged($event)"
           ></app-clothes-viewer>
         </div>
@@ -105,6 +106,16 @@
         <!-- Stage Bottom Quick Control Toolbar -->
         <div class="stage-toolbar">
           <div class="toolbar-left">
+            <button
+              type="button"
+              class="hud-tool-btn ai-creator-btn"
+              (click)="openAiGenerator()"
+              title="Generate 3D Garment from Photo with Microsoft TRELLIS.2"
+            >
+              <i class="fas fa-wand-magic-sparkles"></i>
+              <span>AI 3D CREATOR</span>
+            </button>
+
             <button
               type="button"
               class="hud-tool-btn"
@@ -184,7 +195,17 @@
             <i class="fas fa-layer-group"></i>
             <span>3D SHOWROOM COLLECTION</span>
           </div>
-          <span class="card-chip chip-active">5 GARMENTS</span>
+          <span class="card-chip chip-active">{{ clothingModels.length }} GARMENTS</span>
+        </div>
+
+        <!-- AI Generator Callout -->
+        <div class="ai-callout-banner">
+          <div class="callout-text">
+            <strong>Custom 3D Streetwear:</strong> Reconstruct any garment into a 3D model.
+          </div>
+          <button type="button" class="btn-open-generator" (click)="openAiGenerator()">
+            <i class="fas fa-wand-magic-sparkles"></i> Create with AI
+          </button>
         </div>
 
         <div class="wardrobe-list">
@@ -361,5 +382,16 @@
         </button>
       </section>
     </aside>
+  </div>
+
+  <!-- Modal Overlay for AI 3D Generator -->
+  <div class="ai-modal-backdrop" *ngIf="showAiModal" (click)="closeAiGenerator()">
+    <div class="ai-modal-dialog" (click)="$event.stopPropagation()">
+      <app-ai-3d-generator
+        [embeddedMode]="true"
+        (modelGenerated)="onAiModelGenerated($event)"
+        (close)="closeAiGenerator()"
+      ></app-ai-3d-generator>
+    </div>
   </div>
 </div>
