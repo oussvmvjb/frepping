@@ -37,6 +37,10 @@
         </div>
 
         <div class="hero-actions">
+          <button type="button" class="btn-hero-settings" (click)="toggleMobileNav()" [class.active]="isMobileNavOpen">
+            <i class="fas fa-sliders-h mr-1"></i>
+            <span>SETTINGS</span>
+          </button>
           <a routerLink="/shop" class="btn-hero-primary">
             <i class="fas fa-shopping-bag mr-1"></i>
             <span>EXPLORE DROPS</span>
@@ -69,71 +73,89 @@
       </div>
     </header>
 
+    <!-- MOBILE SETTINGS / SECTIONS TRIGGER BAR (Phone size only) -->
+    <div class="profile-mobile-nav-bar">
+      <button type="button" class="btn-mobile-nav-toggle" (click)="toggleMobileNav()" [class.is-open]="isMobileNavOpen">
+        <div class="btn-mobile-left">
+          <div class="btn-mobile-icon">
+            <i class="fas fa-sliders-h"></i>
+          </div>
+          <div class="btn-mobile-info">
+            <span class="btn-mobile-tag">SETTINGS &bull; CURRENT SECTION</span>
+            <span class="btn-mobile-current">
+              <i [class]="getActiveItem()?.icon + ' mr-1 text-green'"></i>
+              {{ getActiveItem()?.label || 'PERSONAL INFO' }}
+            </span>
+          </div>
+        </div>
+        <div class="btn-mobile-right">
+          <span class="btn-mobile-action">CHANGE</span>
+          <i class="fas" [class.fa-chevron-down]="!isMobileNavOpen" [class.fa-chevron-up]="isMobileNavOpen"></i>
+        </div>
+      </button>
+    </div>
+
+    <!-- HORIZONTAL QUICK TABS BAR (Clean, compact, 1-tap navigation for mobile & desktop) -->
+    <nav class="profile-quick-tabs" aria-label="Profile Sections Tabs">
+      <button
+        *ngFor="let item of profileNavItems; trackBy: trackByNavId"
+        type="button"
+        class="quick-tab-pill"
+        [class.active]="activeTab === item.id"
+        (click)="switchTab(item.id)"
+      >
+        <i [class]="item.icon"></i>
+        <span>{{ item.label }}</span>
+        <span *ngIf="getItemBadge(item.id) as badge" class="pill-badge">{{ badge }}</span>
+      </button>
+    </nav>
+
+    <!-- MOBILE BACKDROP -->
+    <div class="profile-mobile-backdrop" *ngIf="isMobileNavOpen" (click)="closeMobileNav()"></div>
+
     <!-- MAIN PROFILE GRID -->
     <div class="profile-layout mt-6">
 
-      <!-- LEFT SIDEBAR TABS -->
-      <!-- LEFT SIDEBAR HOVER DOCK & 3D OPTION WHEEL DRAWER -->
-      <aside
-        class="profile-sidebar-drawer"
-        [class.is-open]="isSidebarOpen"
-        (mouseenter)="onSidebarMouseEnter()"
-        (mouseleave)="onSidebarMouseLeave()"
-      >
-        <!-- COLLAPSED PEEK DOCK: always visible on the left edge as a hover anchor -->
-        <div class="sidebar-dock-peek" (click)="toggleSidebar()">
-          <div class="dock-indicator-dot"></div>
-          <div class="dock-icon-wrap">
-            <i [class]="activeTabIcon"></i>
-          </div>
-          <div class="dock-label-vertical">
+      <!-- LEFT SIDEBAR NAVIGATION CARD (Desktop sidebar / Mobile modal) -->
+      <aside class="profile-nav-card" [class.mobile-open]="isMobileNavOpen">
+        <div class="nav-card-header">
+          <div class="nav-badge">
+            <i class="fas fa-sliders-h"></i>
             <span>SECTIONS</span>
           </div>
-          <div class="dock-chevron">
-            <i class="fas fa-chevron-right"></i>
-          </div>
+          <button type="button" class="mobile-close-btn" (click)="closeMobileNav()" title="Close menu">
+            <i class="fas fa-times"></i>
+          </button>
+          <h3 class="nav-card-title">ACCOUNT MENU</h3>
+          <p class="nav-card-sub">Select a section to manage</p>
         </div>
 
-        <!-- EXPANDED DRAWER: slides in on hover with 3D OptionWheel & big text -->
-        <div class="sidebar-drawer-body">
-          <div class="drawer-header">
-            <div class="drawer-header-info">
-              <span class="drawer-pill"><i class="fas fa-sliders-h"></i> NAVIGATION</span>
-              <h3 class="drawer-heading">PROFILE SECTIONS</h3>
-              <p class="drawer-caption">Hover &bull; scroll or drag wheel to select</p>
+        <nav class="profile-nav">
+          <button
+            *ngFor="let item of profileNavItems; trackBy: trackByNavId"
+            type="button"
+            class="nav-item"
+            [class.active]="activeTab === item.id"
+            (click)="switchTab(item.id)"
+          >
+            <div class="nav-item-icon">
+              <i [class]="item.icon"></i>
             </div>
-            <button class="drawer-back-btn" (click)="closeSidebar()" type="button" title="Close drawer">
-              <i class="fas fa-arrow-left"></i>
-              <span>BACK</span>
-            </button>
-          </div>
-
-          <!-- 3D OPTION WHEEL WITH BIG TEXT -->
-          <div class="option-wheel-container">
-            <app-option-wheel
-              [items]="profileNavItems"
-              [selectedIndex]="activeTabIndex"
-              [fontSize]="1.55"
-              [spacing]="1.4"
-              [curve]="1.1"
-              [tilt]="6.5"
-              [blur]="1.6"
-              [fade]="0.26"
-              [inset]="32"
-              [smoothing]="190"
-              textColor="#8a8a8a"
-              activeColor="#39ff14"
-              (selectChange)="onNavSelect($event)"
-            >
-            </app-option-wheel>
-          </div>
-
-          <!-- DRAWER FOOTER: ACTIVE TAB SUMMARY -->
-          <div class="drawer-footer">
-            <div class="active-tab-preview">
-              <span class="preview-label">ACTIVE SECTION:</span>
-              <span class="preview-name"><i [class]="activeTabIcon + ' mr-2 text-green'"></i>{{ activeTabLabel }}</span>
+            <div class="nav-item-content">
+              <span class="nav-item-label">{{ item.label }}</span>
             </div>
+            <span *ngIf="getItemBadge(item.id) as badge" class="nav-item-badge">
+              {{ badge }}
+            </span>
+            <i class="fas fa-chevron-right nav-item-arrow"></i>
+          </button>
+        </nav>
+
+        <!-- QUICK SHORTCUT / HELP FOOTER -->
+        <div class="nav-card-footer">
+          <div class="quick-status">
+            <span class="status-dot"></span>
+            <span class="status-text">Connected as <strong>{{ user?.role || 'AGENT' }}</strong></span>
           </div>
         </div>
       </aside>

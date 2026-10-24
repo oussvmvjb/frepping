@@ -16,7 +16,12 @@ import {
   AddressCreate,
   SavedPaymentMethod
 } from "../../models/api.models";
-import { OptionWheelItem } from "../../shared/option-wheel/option-wheel.component";
+export interface ProfileNavItem {
+  id: ProfileTab;
+  label: string;
+  icon: string;
+  badge?: number;
+}
 
 type ProfileTab = "profile" | "password" | "orders" | "favorites" | "addresses" | "cards";
 
@@ -30,57 +35,43 @@ export class ProfileComponent implements OnInit, OnDestroy {
   user: User | null = null;
   loadingUser = true;
 
-  // ── Hover Drawer & OptionWheel Navigation ──────────────────────────────
-  isSidebarOpen = false;
+  // ── Mobile Navigation Drawer State ─────────────────────────
+  isMobileNavOpen = false;
 
-  get profileNavItems(): OptionWheelItem[] {
-    return [
-      { id: 'profile',   label: 'PERSONAL INFO',       icon: 'fas fa-id-card' },
-      { id: 'password',  label: 'SECURITY / PASSWORD', icon: 'fas fa-lock' },
-      { id: 'orders',    label: 'MY ORDERS',           icon: 'fas fa-box',            badge: this.totalOrders },
-      { id: 'favorites', label: 'SAVED DROPS',         icon: 'fas fa-heart',          badge: this.totalFavorites },
-      { id: 'addresses', label: 'ADDRESSES',           icon: 'fas fa-map-marker-alt', badge: this.addresses.length },
-      { id: 'cards',     label: 'SAVED CARDS',         icon: 'fas fa-credit-card',    badge: this.cards.length },
-    ];
+  toggleMobileNav(): void {
+    this.isMobileNavOpen = !this.isMobileNavOpen;
   }
 
-  get activeTabIndex(): number {
-    const idx = this.profileNavItems.findIndex(item => item.id === this.activeTab);
-    return idx >= 0 ? idx : 0;
+  closeMobileNav(): void {
+    this.isMobileNavOpen = false;
   }
 
-  get activeTabIcon(): string {
-    const item = this.profileNavItems.find(it => it.id === this.activeTab);
-    return item?.icon || 'fas fa-id-card';
+  getActiveItem(): ProfileNavItem | undefined {
+    return this.profileNavItems.find(i => i.id === this.activeTab);
   }
 
-  get activeTabLabel(): string {
-    const item = this.profileNavItems.find(it => it.id === this.activeTab);
-    return item?.label || 'PERSONAL INFO';
-  }
+  // ── Stable Navigation Items (not a getter to avoid destroying DOM nodes on mouse movements) ──
+  readonly profileNavItems: ProfileNavItem[] = [
+    { id: 'profile',   label: 'PERSONAL INFO',       icon: 'fas fa-id-card' },
+    { id: 'password',  label: 'SECURITY / PASSWORD', icon: 'fas fa-lock' },
+    { id: 'orders',    label: 'MY ORDERS',           icon: 'fas fa-box' },
+    { id: 'favorites', label: 'SAVED DROPS',         icon: 'fas fa-heart' },
+    { id: 'addresses', label: 'ADDRESSES',           icon: 'fas fa-map-marker-alt' },
+    { id: 'cards',     label: 'SAVED CARDS',         icon: 'fas fa-credit-card' },
+  ];
 
-  onSidebarMouseEnter(): void {
-    this.isSidebarOpen = true;
-  }
-
-  onSidebarMouseLeave(): void {
-    this.isSidebarOpen = false;
-  }
-
-  toggleSidebar(): void {
-    this.isSidebarOpen = !this.isSidebarOpen;
-  }
-
-  closeSidebar(): void {
-    this.isSidebarOpen = false;
-  }
-
-  onNavSelect(event: { index: number; item: OptionWheelItem | string }): void {
-    const item = event.item;
-    const tabId = typeof item === 'string' ? item : item.id;
-    if (tabId) {
-      this.switchTab(tabId as ProfileTab);
+  getItemBadge(id: ProfileTab): number | undefined {
+    switch (id) {
+      case 'orders': return this.totalOrders > 0 ? this.totalOrders : undefined;
+      case 'favorites': return this.totalFavorites > 0 ? this.totalFavorites : undefined;
+      case 'addresses': return this.addresses.length > 0 ? this.addresses.length : undefined;
+      case 'cards': return this.cards.length > 0 ? this.cards.length : undefined;
+      default: return undefined;
     }
+  }
+
+  trackByNavId(_index: number, item: ProfileNavItem): string {
+    return item.id;
   }
 
   // Profile Edit
@@ -183,6 +174,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
   switchTab(tab: ProfileTab): void {
     this.activeTab = tab;
+    this.isMobileNavOpen = false;
     this.clearMessages();
     if (tab === "orders" && this.orders.length === 0) {
       this.loadOrders();
