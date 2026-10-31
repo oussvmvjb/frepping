@@ -269,6 +269,32 @@
 
       <!-- ── TAB 2: TEXTURES & FABRIC WEAVES ──────────────────────────────── -->
       <section class="tab-pane" *ngIf="activeTab === 'textures'">
+
+        <!-- ── TEXTURE SWITCHER ── -->
+        <div class="section-title">Texture Presets</div>
+        <p class="section-desc">Click a swatch to instantly switch the T-shirt texture.</p>
+
+        <div class="texture-swatch-grid">
+          <div
+            *ngFor="let swatch of textureSwatches"
+            class="texture-swatch"
+            [class.active]="activeTextureId === swatch.id"
+            (click)="switchTexture(swatch)"
+            [title]="swatch.label"
+          >
+            <div
+              class="swatch-thumb"
+              [style.backgroundImage]="swatch.thumb ? 'url(' + swatch.thumb + ')' : 'none'"
+              [style.background]="!swatch.thumb ? 'linear-gradient(135deg,#f0f0f0 0%,#cccccc 100%)' : null"
+            >
+              <span *ngIf="!swatch.thumb" class="swatch-no-tex">●</span>
+            </div>
+            <span class="swatch-label">{{ swatch.label }}</span>
+            <span class="swatch-active-dot" *ngIf="activeTextureId === swatch.id">✓</span>
+          </div>
+        </div>
+
+        <div class="divider"></div>
         <div class="section-title">Fabric Weave Presets</div>
         <p class="section-desc">
           Engineered physical textile simulations adjusting surface roughness, microfiber sheen, and weave depths.

@@ -182,6 +182,17 @@ export class TshirtMaterialService {
     };
   }
 
+  /**
+   * Swap the diffuse (base-color) texture in real-time.
+   * Pass null to clear and revert to a solid color.
+   */
+  setDiffuseTexture(tex: THREE.Texture | null): void {
+    for (const mat of this.materials) {
+      mat.map = tex;
+      mat.needsUpdate = true;
+    }
+  }
+
   getBaseNormalTexture(): THREE.Texture | null {
     return this.baseTextures.normal;
   }

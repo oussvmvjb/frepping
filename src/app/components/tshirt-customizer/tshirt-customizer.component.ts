@@ -106,6 +106,30 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
   fabricPresets = FABRIC_PRESETS;
   activePreset: FabricPreset = FABRIC_PRESETS[0];
 
+  // ── Texture Switcher ──────────────────────────────────────────────────────
+  textureSwatches: { id: string; label: string; thumb: string; url: string | null }[] = [
+    {
+      id: 'white-fabric',
+      label: 'White Cotton',
+      thumb: 'assets/t-shirt/textures/fabric-white.jpg',
+      url: 'assets/t-shirt/textures/fabric-white.jpg'
+    },
+    {
+      id: 'neon-waves',
+      label: 'Neon Waves',
+      thumb: 'assets/t-shirt/textures/fabric-neon-waves.jpg',
+      url: 'assets/t-shirt/textures/fabric-neon-waves.jpg'
+    },
+    {
+      id: 'solid',
+      label: 'Solid Color',
+      thumb: '',
+      url: null
+    }
+  ];
+  activeTextureId = 'white-fabric';
+  private loadedSwatchTextures = new Map<string, THREE.Texture>();
+
   // Uploaded Decals / Logo Management
   activeDecalIndex = -1;
   isDraggingFile = false;
@@ -491,6 +515,38 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
     this.materialService.applyFabricPreset(preset);
     const normalTex = this.materialService.getBaseNormalTexture();
     this.printService.setFabricNormalMap(normalTex);
+  }
+
+  /** Switch the full-body diffuse texture from a swatch click */
+  switchTexture(swatch: { id: string; label: string; thumb: string; url: string | null }): void {
+    this.activeTextureId = swatch.id;
+
+    if (!swatch.url) {
+      // Solid color mode — clear diffuse map
+      this.materialService.setDiffuseTexture(null);
+      return;
+    }
+
+    // Return cached texture if already loaded
+    if (this.loadedSwatchTextures.has(swatch.id)) {
+      this.materialService.setDiffuseTexture(this.loadedSwatchTextures.get(swatch.id)!);
+      return;
+    }
+
+    // Load fresh, cache, then apply
+    const loader = new THREE.TextureLoader();
+    loader.load(
+      swatch.url,
+      (tex) => {
+        tex.colorSpace = THREE.SRGBColorSpace;
+        tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+        tex.anisotropy = 8;
+        this.loadedSwatchTextures.set(swatch.id, tex);
+        this.materialService.setDiffuseTexture(tex);
+      },
+      undefined,
+      (err) => console.warn('Texture swatch load failed:', err)
+    );
   }
 
   onTextureRepeatChange(repeat: number): void {
@@ -1062,6 +1118,10 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
     this.materialService.dispose();
     this.textureService.dispose();
     this.designService.dispose();
+
+    // Dispose cached swatch textures
+    this.loadedSwatchTextures.forEach((tex) => tex.dispose());
+    this.loadedSwatchTextures.clear();
 
     if (this.tshirtMesh) {
       this.tshirtMesh.geometry.dispose();
