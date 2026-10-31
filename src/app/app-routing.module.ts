@@ -52,6 +52,22 @@ const routes: Routes = [
   },
 
   // ── Dev/test routes ──────────────────────────────────────────────────────
+  {
+    path: 'customizer',
+    loadComponent: () =>
+      import(
+        './components/tshirt-customizer/tshirt-customizer.component'
+      ).then((m) => m.TshirtCustomizerComponent),
+  },
+  { path: 'tshirt-customizer', redirectTo: 'customizer' },
+  {
+    path: 't-shirt',
+    loadComponent: () =>
+      import('./components/tshirt-viewer/tshirt-viewer.component').then(
+        (m) => m.TshirtViewerComponent
+      ),
+  },
+  { path: 'tshirt', redirectTo: 't-shirt' },
   { path: 'test-3d', component: TestViewerComponent },
   { path: 'mod', component: ModelViewerComponent },
   { path: 'ai-3d', component: Ai3dPageComponent },

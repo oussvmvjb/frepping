@@ -143,6 +143,8 @@ export class SidebarNavComponent implements OnInit, OnDestroy {
         label: 'EXPLORE',
         icon: 'fas fa-compass',
         children: [
+          { label: '3D T-Shirt Customizer', value: '/customizer', icon: 'fas fa-paint-brush' },
+          { label: '3D T-Shirt Viewer', value: '/t-shirt', icon: 'fas fa-tshirt' },
           { label: 'Clothes Room', value: '/clothes-room', icon: 'fas fa-hand-sparkles' },
           { label: 'AI 3D Studio', value: '/ai-3d', icon: 'fas fa-wand-magic-sparkles' },
           { label: '3D Try-On', value: '/try-on', icon: 'fas fa-vr-cardboard' },

@@ -31,6 +31,8 @@ import { ClothesRoomComponent } from './pages/clothes-room/clothes-room.componen
 import { OutfitSceneComponent } from './shared/outfit-scene/outfit-scene.component';
 import { OptionWheelComponent } from './shared/option-wheel/option-wheel.component';
 import { Ai3dPageComponent } from './pages/ai-3d/ai-3d.component';
+import { TshirtViewerComponent } from './components/tshirt-viewer/tshirt-viewer.component';
+import { TshirtCustomizerComponent } from './components/tshirt-customizer/tshirt-customizer.component';
 
 @NgModule({
   declarations: [
@@ -66,7 +68,9 @@ import { Ai3dPageComponent } from './pages/ai-3d/ai-3d.component';
     ClothesRoomComponent,
     OutfitSceneComponent,
     OptionWheelComponent,
-    Ai3dPageComponent
+    Ai3dPageComponent,
+    TshirtViewerComponent,
+    TshirtCustomizerComponent
   ],
   providers: [
     { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true }

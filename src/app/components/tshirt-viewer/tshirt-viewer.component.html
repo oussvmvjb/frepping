@@ -1,0 +1,176 @@
+<div class="tshirt-viewer-container" #containerRef>
+  <!-- Three.js Canvas -->
+  <canvas #canvasRef class="webgl-canvas"></canvas>
+
+  <!-- Loading Overlay -->
+  <div class="viewer-overlay loading-overlay" *ngIf="isLoading && !errorMessage">
+    <div class="spinner-card">
+      <div class="fabric-spinner">
+        <div class="spinner-ring"></div>
+        <div class="spinner-core"></div>
+      </div>
+      <div class="loading-title">Realistic 3D T-Shirt</div>
+      <div class="loading-step">{{ loadingStep }}</div>
+      <div class="progress-bar-wrapper">
+        <div class="progress-bar-fill" [style.width.%]="loadingProgress"></div>
+      </div>
+      <div class="progress-percent">{{ loadingProgress }}%</div>
+    </div>
+  </div>
+
+  <!-- Error Overlay -->
+  <div class="viewer-overlay error-overlay" *ngIf="errorMessage">
+    <div class="error-card">
+      <div class="error-icon">⚠️</div>
+      <h3 class="error-title">Viewer Error</h3>
+      <p class="error-desc">{{ errorMessage }}</p>
+      <button class="retry-btn" (click)="retry()">
+        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2">
+          <path d="M23 4v6h-6"></path>
+          <path d="M1 20v-6h6"></path>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+        </svg>
+        Retry Loading
+      </button>
+    </div>
+  </div>
+
+  <!-- UI Overlay Controls (only visible when not loading) -->
+  <div class="ui-layer" *ngIf="showControls && !isLoading && !errorMessage">
+    <!-- Top Bar: Quality Toggle & Stats -->
+    <div class="top-bar">
+      <div class="badge-group">
+        <div class="quality-badge" [class.active]="currentQuality === 'high'" (click)="switchQuality('high')">
+          <span class="dot"></span>
+          <span>High Poly (165k)</span>
+        </div>
+        <div class="quality-badge" [class.active]="currentQuality === 'low'" (click)="switchQuality('low')">
+          <span class="dot"></span>
+          <span>Low Poly (30k)</span>
+        </div>
+      </div>
+
+      <div class="stats-badge" *ngIf="vertexCount > 0">
+        {{ vertexCount | number }} Vertices
+      </div>
+    </div>
+
+    <!-- Bottom Center: Presets Toolbar -->
+    <div class="presets-bar">
+      <button
+        class="preset-btn"
+        [class.active]="activeAngle === 'front'"
+        (click)="setPresetAngle('front')"
+        title="View Front"
+      >
+        Front
+      </button>
+      <button
+        class="preset-btn"
+        [class.active]="activeAngle === 'back'"
+        (click)="setPresetAngle('back')"
+        title="View Back"
+      >
+        Back
+      </button>
+      <button
+        class="preset-btn"
+        [class.active]="activeAngle === 'left'"
+        (click)="setPresetAngle('left')"
+        title="View Left Side"
+      >
+        Left
+      </button>
+      <button
+        class="preset-btn"
+        [class.active]="activeAngle === 'right'"
+        (click)="setPresetAngle('right')"
+        title="View Right Side"
+      >
+        Right
+      </button>
+    </div>
+
+    <!-- Floating Action Tools (Right Side) -->
+    <div class="tools-sidebar">
+      <!-- Auto Rotate Toggle -->
+      <button
+        class="tool-btn"
+        [class.active]="autoRotate"
+        (click)="toggleAutoRotate()"
+        [title]="autoRotate ? 'Pause Auto-Spin' : 'Start Auto-Spin'"
+      >
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-1.19"></path>
+        </svg>
+        <span class="tool-label">Auto Spin</span>
+      </button>
+
+      <!-- Fabric Physics Toggle -->
+      <button
+        class="tool-btn"
+        [class.active]="enableFabricPhysics"
+        (click)="toggleFabricPhysics()"
+        [title]="enableFabricPhysics ? 'Disable Fabric Physics' : 'Enable Fabric Physics'"
+      >
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M2 12c2-3 5-3 7 0s5 3 7 0 5-3 6 0"></path>
+          <path d="M2 17c2-3 5-3 7 0s5 3 7 0 5-3 6 0"></path>
+        </svg>
+        <span class="tool-label">Cloth Physics</span>
+      </button>
+
+      <!-- Wireframe Mode Toggle -->
+      <button
+        class="tool-btn"
+        [class.active]="isWireframe"
+        (click)="toggleWireframe()"
+        title="Toggle Mesh Wireframe"
+      >
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+          <path d="M2 17l10 5 10-5"></path>
+          <path d="M2 12l10 5 10-5"></path>
+        </svg>
+        <span class="tool-label">Wireframe</span>
+      </button>
+
+      <!-- Zoom In -->
+      <button class="tool-btn" (click)="zoomIn()" title="Zoom In" *ngIf="enableZoom">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          <line x1="11" y1="8" x2="11" y2="14"></line>
+          <line x1="8" y1="11" x2="14" y2="11"></line>
+        </svg>
+        <span class="tool-label">Zoom +</span>
+      </button>
+
+      <!-- Zoom Out -->
+      <button class="tool-btn" (click)="zoomOut()" title="Zoom Out" *ngIf="enableZoom">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          <line x1="8" y1="11" x2="14" y2="11"></line>
+        </svg>
+        <span class="tool-label">Zoom -</span>
+      </button>
+
+      <!-- Reset View -->
+      <button class="tool-btn" (click)="resetCamera()" title="Reset Camera View">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+          <path d="M3 3v5h5"></path>
+        </svg>
+        <span class="tool-label">Reset</span>
+      </button>
+    </div>
+
+    <!-- Bottom Hint -->
+    <div class="interaction-hint">
+      <span class="hint-icon">↔</span>
+      <span>Drag horizontally to rotate • Scroll to zoom</span>
+    </div>
+  </div>
+</div>
+
