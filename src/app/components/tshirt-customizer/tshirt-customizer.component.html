@@ -1,10 +1,19 @@
-<div class="customizer-layout">
-  <!-- Hidden File Input for Image Upload -->
+<div class="customizer-layout" [class.mobile-fullscreen]="isMobileFullscreen">
+  <!-- Hidden File Input for Artwork/Logo Upload -->
   <input
     #fileInputRef
     type="file"
     accept="image/png,image/jpeg,image/webp,image/svg+xml"
     (change)="onFileSelected($event)"
+    style="display: none;"
+  />
+
+  <!-- Hidden File Input for Fabric Texture Upload -->
+  <input
+    #textureFileInputRef
+    type="file"
+    accept="image/png,image/jpeg,image/webp"
+    (change)="onTextureFileSelected($event)"
     style="display: none;"
   />
 
@@ -74,6 +83,15 @@
           <span class="tag-label">Size:</span> {{ config.size }} •
           <span class="tag-label">Fit:</span> {{ config.fitStyle | titlecase }}
         </div>
+
+        <!-- Mobile Toggle Button -->
+        <button
+          class="mobile-toggle-btn"
+          (click)="toggleMobileFullscreen()"
+          [title]="isMobileFullscreen ? 'Show Customizer Controls' : 'Full Screen 3D View'"
+        >
+          <span>{{ isMobileFullscreen ? '⚙️ Controls' : '🔍 Full 3D' }}</span>
+        </button>
       </div>
 
       <!-- Center-Bottom: Presets Camera Angle Toolbar -->
@@ -192,6 +210,11 @@
 
   <!-- ── RIGHT SIDEBAR: PROFESSIONAL CUSTOMIZER WORKSPACE ─────────────────── -->
   <aside class="sidebar-pane">
+    <!-- Mobile Sheet Handle -->
+    <div class="mobile-sheet-handle" (click)="toggleMobileFullscreen()">
+      <div class="handle-bar"></div>
+    </div>
+
     <!-- Header -->
     <div class="sidebar-header">
       <div class="header-titles">
@@ -292,6 +315,88 @@
             <span class="swatch-label">{{ swatch.label }}</span>
             <span class="swatch-active-dot" *ngIf="activeTextureId === swatch.id">✓</span>
           </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- ── UPLOAD CUSTOM TEXTURE SECTION ── -->
+        <div class="section-title">Upload Custom Texture</div>
+        <p class="section-desc">
+          Upload your own all-over sublimation print, graphic pattern, or fabric tile.
+        </p>
+
+        <!-- Texture Upload Dropzone -->
+        <div
+          class="upload-dropzone texture-dropzone"
+          [class.dragging]="isDraggingTextureFile"
+          (dragover)="$event.preventDefault(); isDraggingTextureFile = true"
+          (dragleave)="isDraggingTextureFile = false"
+          (drop)="onTextureFileDrop($event)"
+          (click)="triggerTextureFileInput()"
+        >
+          <div class="dropzone-icon">🎨</div>
+          <div class="dropzone-text">
+            <strong>Click to upload</strong> or drag & drop texture
+          </div>
+          <div class="dropzone-hint">PNG, JPG, WebP (Square tiles or 16:9 sublimation atlases)</div>
+        </div>
+
+        <!-- Custom Texture Controls (Active Upload) -->
+        <div class="custom-texture-controls" *ngIf="uploadedCustomTextureUrl">
+          <div class="custom-tex-preview-row">
+            <img [src]="uploadedCustomTextureUrl" class="custom-tex-thumb" alt="Custom texture" />
+            <div class="custom-tex-info">
+              <span class="custom-tex-name">{{ uploadedCustomTextureName }}</span>
+              <span class="custom-tex-mode-badge" [class.atlas]="customTextureMode === 'atlas'">
+                {{ customTextureMode === 'atlas' ? 'Garment Pattern' : 'Repeating Tile' }}
+              </span>
+            </div>
+            <button class="remove-tex-btn" (click)="removeCustomTexture()" title="Remove uploaded texture">✕</button>
+          </div>
+
+          <!-- Mode Picker -->
+          <div class="mapping-mode-picker">
+            <button
+              class="mode-btn"
+              [class.active]="customTextureMode === 'atlas'"
+              (click)="setCustomTextureMode('atlas')"
+            >
+              <span class="mode-icon">👕</span>
+              <div class="mode-text">
+                <strong>Garment Atlas</strong>
+                <small>Conforms to front, back & sleeves</small>
+              </div>
+            </button>
+            <button
+              class="mode-btn"
+              [class.active]="customTextureMode === 'tile'"
+              (click)="setCustomTextureMode('tile')"
+            >
+              <span class="mode-icon">🔁</span>
+              <div class="mode-text">
+                <strong>Repeating Tile</strong>
+                <small>Tiles across entire fabric</small>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Download Blueprint Card -->
+        <div class="blueprint-card">
+          <div class="blueprint-header">
+            <span class="blueprint-badge">📐 Template Guide</span>
+            <span class="blueprint-title">Need the exact sewing pattern?</span>
+          </div>
+          <p class="blueprint-desc">
+            Download the 2048x1152 UV outline template to design your custom print in Photoshop, Illustrator, or Figma.
+          </p>
+          <a
+            href="assets/t-shirt/textures/tshirt_sewing_atlas_template.png"
+            download="tshirt_sewing_atlas_template.png"
+            class="download-blueprint-btn"
+          >
+            📥 Download Blueprint Template
+          </a>
         </div>
 
         <div class="divider"></div>

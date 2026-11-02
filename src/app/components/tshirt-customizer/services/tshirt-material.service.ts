@@ -123,11 +123,15 @@ export class TshirtMaterialService {
       if (params.wireframe !== undefined) mat.wireframe = params.wireframe;
 
       if (params.repeat !== undefined) {
-        if (mat.map) mat.map.repeat.set(params.repeat, params.repeat);
+        if (mat.map && mat.map.wrapS === THREE.RepeatWrapping) {
+          mat.map.repeat.set(params.repeat, params.repeat);
+        }
         if (mat.normalMap) mat.normalMap.repeat.set(params.repeat, params.repeat);
       }
       if (params.rotation !== undefined) {
-        if (mat.map) mat.map.rotation = THREE.MathUtils.degToRad(params.rotation);
+        if (mat.map && mat.map.wrapS === THREE.RepeatWrapping) {
+          mat.map.rotation = THREE.MathUtils.degToRad(params.rotation);
+        }
         if (mat.normalMap) mat.normalMap.rotation = THREE.MathUtils.degToRad(params.rotation);
       }
       mat.needsUpdate = true;

@@ -52,6 +52,7 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
   @ViewChild('containerRef', { static: true }) containerRef!: ElementRef<HTMLDivElement>;
   @ViewChild('canvasRef', { static: true }) canvasRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('fileInputRef') fileInputRef!: ElementRef<HTMLInputElement>;
+  @ViewChild('textureFileInputRef') textureFileInputRef!: ElementRef<HTMLInputElement>;
 
   // Asset configurations
   @Input() highModelPath = 'assets/t-shirt/Hi_T-shirt.fbx';
@@ -71,6 +72,9 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
     { id: 'saved', label: 'Saved Designs', icon: 'bookmark' },
     { id: 'export', label: 'Export', icon: 'file_download' }
   ];
+
+  // Mobile Responsive State
+  isMobileFullscreen = false;
 
   // Garment Active Configuration State
   config: GarmentConfig = {
@@ -129,6 +133,12 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
   ];
   activeTextureId = 'white-fabric';
   private loadedSwatchTextures = new Map<string, THREE.Texture>();
+
+  // Uploaded Custom Fabric Texture State
+  isDraggingTextureFile = false;
+  uploadedCustomTextureUrl: string | null = null;
+  uploadedCustomTextureName = '';
+  customTextureMode: 'atlas' | 'tile' = 'atlas';
 
   // Uploaded Decals / Logo Management
   activeDecalIndex = -1;
@@ -425,6 +435,19 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
 
     const mesh = foundMesh as THREE.Mesh;
     const geometry = mesh.geometry.clone();
+
+    // Preserve original raw UVs
+    if (geometry.attributes['uv']) {
+      geometry.userData['rawUV'] = (geometry.attributes['uv'] as THREE.BufferAttribute).clone();
+      // Generate garment atlas UVs before center/scale so 3D coordinates reflect original geometry
+      const atlasUV = this.textureService.generateGarmentAtlasUV(geometry);
+      geometry.userData['atlasUV'] = atlasUV;
+
+      if (this.activeTextureId === 'neon-waves') {
+        geometry.attributes['uv'] = atlasUV;
+      }
+    }
+
     geometry.computeVertexNormals();
     geometry.center();
 
@@ -500,7 +523,24 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
 
   setTab(tab: CustomizerTab): void {
     this.activeTab = tab;
+    // On mobile, if in fullscreen mode, selecting a tab switches back to controls view
+    if (this.isMobileFullscreen) {
+      this.isMobileFullscreen = false;
+    }
   }
+
+  toggleMobileFullscreen(): void {
+    this.isMobileFullscreen = !this.isMobileFullscreen;
+    setTimeout(() => {
+      if (this.containerRef?.nativeElement && this.renderer && this.camera) {
+        const { clientWidth, clientHeight } = this.containerRef.nativeElement;
+        this.camera.aspect = clientWidth / clientHeight;
+        this.camera.updateProjectionMatrix();
+        this.renderer.setSize(clientWidth, clientHeight);
+      }
+    }, 150);
+  }
+  
 
   // --- 1. Color ---
   onColorChange(newColor: string): void {
@@ -523,13 +563,41 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
 
     if (!swatch.url) {
       // Solid color mode — clear diffuse map
+      if (this.tshirtMesh && this.tshirtMesh.geometry?.userData['rawUV']) {
+        this.tshirtMesh.geometry.attributes['uv'] = this.tshirtMesh.geometry.userData['rawUV'];
+        this.tshirtMesh.geometry.attributes['uv'].needsUpdate = true;
+      }
       this.materialService.setDiffuseTexture(null);
       return;
     }
 
+    const isAtlas = swatch.id === 'neon-waves' || (swatch.id === 'custom-upload' && this.customTextureMode === 'atlas');
+
+    // Switch geometry UV attribute to match the texture format
+    if (this.tshirtMesh && this.tshirtMesh.geometry) {
+      const geom = this.tshirtMesh.geometry;
+      if (isAtlas && geom.userData['atlasUV']) {
+        geom.attributes['uv'] = geom.userData['atlasUV'];
+        geom.attributes['uv'].needsUpdate = true;
+        // Reset base color to pure white so vivid neon artwork renders at full natural brightness
+        this.config.colorHex = '#ffffff';
+        this.materialService.setColor('#ffffff');
+      } else if (geom.userData['rawUV']) {
+        geom.attributes['uv'] = geom.userData['rawUV'];
+        geom.attributes['uv'].needsUpdate = true;
+      }
+    }
+
     // Return cached texture if already loaded
     if (this.loadedSwatchTextures.has(swatch.id)) {
-      this.materialService.setDiffuseTexture(this.loadedSwatchTextures.get(swatch.id)!);
+      const tex = this.loadedSwatchTextures.get(swatch.id)!;
+      if (isAtlas) {
+        tex.wrapS = THREE.ClampToEdgeWrapping;
+        tex.wrapT = THREE.ClampToEdgeWrapping;
+        tex.repeat.set(1, 1);
+        tex.offset.set(0, 0);
+      }
+      this.materialService.setDiffuseTexture(tex);
       return;
     }
 
@@ -539,8 +607,16 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
       swatch.url,
       (tex) => {
         tex.colorSpace = THREE.SRGBColorSpace;
-        tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
         tex.anisotropy = 8;
+        if (isAtlas) {
+          tex.wrapS = THREE.ClampToEdgeWrapping;
+          tex.wrapT = THREE.ClampToEdgeWrapping;
+          tex.repeat.set(1, 1);
+          tex.offset.set(0, 0);
+        } else {
+          tex.wrapS = THREE.RepeatWrapping;
+          tex.wrapT = THREE.RepeatWrapping;
+        }
         this.loadedSwatchTextures.set(swatch.id, tex);
         this.materialService.setDiffuseTexture(tex);
       },
@@ -562,6 +638,98 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
   onNormalScaleChange(normalScale: number): void {
     this.config.fabricCustomNormalScale = normalScale;
     this.materialService.updateFabricProperties({ normalScale });
+  }
+
+  // ── Upload Custom Fabric Texture ──────────────────────────────────────────
+  triggerTextureFileInput(): void {
+    if (this.textureFileInputRef?.nativeElement) {
+      this.textureFileInputRef.nativeElement.click();
+    }
+  }
+
+  onTextureFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      this.processTextureFile(input.files[0]);
+    }
+  }
+
+  onTextureFileDrop(event: DragEvent): void {
+    event.preventDefault();
+    this.isDraggingTextureFile = false;
+    if (event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0]) {
+      this.processTextureFile(event.dataTransfer.files[0]);
+    }
+  }
+
+  private processTextureFile(file: File): void {
+    if (!file.type.startsWith('image/')) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target?.result as string;
+      const img = new Image();
+      img.onload = () => {
+        // Auto-detect if image is a 16:9 sewing atlas (aspect > 1.4) or square/tileable pattern
+        const aspect = img.width && img.height ? img.width / img.height : 1.0;
+        this.customTextureMode = aspect > 1.35 ? 'atlas' : 'tile';
+
+        this.uploadedCustomTextureUrl = dataUrl;
+        this.uploadedCustomTextureName = file.name;
+
+        // Upsert custom swatch into textureSwatches list
+        const customSwatch = {
+          id: 'custom-upload',
+          label: file.name.replace(/\.[^/.]+$/, '').slice(0, 14),
+          thumb: dataUrl,
+          url: dataUrl
+        };
+
+        // Clear any previous cached instance so the new upload applies immediately
+        this.loadedSwatchTextures.delete('custom-upload');
+
+        const existingIdx = this.textureSwatches.findIndex((s) => s.id === 'custom-upload');
+        if (existingIdx >= 0) {
+          this.textureSwatches[existingIdx] = customSwatch;
+        } else {
+          // Insert after white-fabric and neon-waves
+          this.textureSwatches.splice(2, 0, customSwatch);
+        }
+
+        // Apply immediately
+        this.switchTexture(customSwatch);
+        this.cdr.detectChanges();
+      };
+      img.src = dataUrl;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  setCustomTextureMode(mode: 'atlas' | 'tile'): void {
+    this.customTextureMode = mode;
+    const customSwatch = this.textureSwatches.find((s) => s.id === 'custom-upload');
+    if (customSwatch && this.activeTextureId === 'custom-upload') {
+      // Re-apply with the chosen mode
+      this.switchTexture(customSwatch);
+      if (mode === 'tile') {
+        this.materialService.updateFabricProperties({
+          repeat: this.config.textureRepeat,
+          rotation: this.config.textureRotation
+        });
+      }
+    }
+  }
+
+  removeCustomTexture(): void {
+    this.uploadedCustomTextureUrl = null;
+    this.uploadedCustomTextureName = '';
+    this.loadedSwatchTextures.delete('custom-upload');
+    this.textureSwatches = this.textureSwatches.filter((s) => s.id !== 'custom-upload');
+
+    // Revert to default white cotton
+    const whiteSwatch = this.textureSwatches.find((s) => s.id === 'white-fabric') || this.textureSwatches[0];
+    this.switchTexture(whiteSwatch);
+    this.cdr.detectChanges();
   }
 
   // --- 3. Upload Artwork & Decals ---
@@ -1139,5 +1307,5 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
       this.renderer.forceContextLoss();
     }
   }
-}
 
+}

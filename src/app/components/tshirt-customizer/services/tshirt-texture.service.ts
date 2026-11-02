@@ -201,6 +201,76 @@ export class TshirtTextureService {
     return tex;
   }
 
+  /**
+   * Generates a surface-conforming Garment Atlas UV attribute.
+   * Maps 3D garment sections (front, back, left sleeve, right sleeve, collar, patch)
+   * to their respective pattern pieces on a 16:9 texture atlas.
+   */
+  generateGarmentAtlasUV(geometry: THREE.BufferGeometry): THREE.BufferAttribute {
+    const pos = geometry.attributes['position'] as THREE.BufferAttribute;
+    const rawUV = geometry.attributes['uv'] as THREE.BufferAttribute;
+    if (!pos || !rawUV) return rawUV;
+
+    const count = pos.count;
+    const atlasData = new Float32Array(count * 2);
+
+    for (let i = 0; i < count; i++) {
+      const x = pos.getX(i);
+      const y = pos.getY(i);
+      const z = pos.getZ(i);
+      const u = rawUV.getX(i);
+      const v = rawUV.getY(i);
+
+      let nu = u;
+      let nv = v;
+
+      if (v > 2.0) {
+        // Collar / Neckband (Raw U: [0.58, 1.04], V: [2.20, 2.22])
+        nu = ((u - 0.58) / 0.457) * (0.640 - 0.496) + 0.496;
+        nv = ((v - 2.201) / 0.019) * (0.988 - 0.912) + 0.912;
+      } else if (u < -0.5) {
+        // Left Sleeve (Person's right, negative X)
+        if (v > 1.326) {
+          // Upper sleeve
+          nu = ((u + 1.058) / 0.416) * (0.133 - 0.007) + 0.007;
+          nv = ((v - 1.326) / 0.327) * (0.960 - 0.385) + 0.385;
+        } else {
+          // Cuff / Lower sleeve
+          nu = ((u + 1.058) / 0.416) * (0.105 - 0.005) + 0.005;
+          nv = ((v - 1.304) / 0.023) * (0.380 - 0.035) + 0.035;
+        }
+      } else if (x > 70 && (y > 1200 || y > 0)) {
+        // Right Sleeve (Person's left, positive X)
+        if (v > 0.055) {
+          // Upper sleeve
+          nu = ((u + 0.208) / 0.416) * (0.993 - 0.870) + 0.870;
+          nv = ((v - 0.055) / 0.326) * (0.960 - 0.385) + 0.385;
+        } else {
+          // Cuff / Lower sleeve
+          nu = ((u + 0.208) / 0.416) * (0.995 - 0.895) + 0.895;
+          nv = Math.max(0.035, Math.min(0.380, ((v - 0.002) / 0.053) * (0.380 - 0.035) + 0.035));
+        }
+      } else if (u > 0.9 && v > 1.5) {
+        // Neck Patch / Tag
+        nu = ((u - 0.956) / 0.048) * (0.535 - 0.490) + 0.490;
+        nv = ((v - 1.567) / 0.025) * (0.885 - 0.765) + 0.765;
+      } else if (z >= -5) {
+        // Front Body
+        nu = ((u + 0.298) / 0.596) * (0.505 - 0.098) + 0.098;
+        nv = ((v + 0.247) / 0.661) * (0.985 - 0.012) + 0.012;
+      } else {
+        // Back Body
+        nu = ((u + 0.298) / 0.596) * (0.915 - 0.518) + 0.518;
+        nv = ((v + 0.292) / 0.689) * (0.895 - 0.012) + 0.012;
+      }
+
+      atlasData[i * 2] = Math.max(0, Math.min(1, nu));
+      atlasData[i * 2 + 1] = Math.max(0, Math.min(1, nv));
+    }
+
+    return new THREE.BufferAttribute(atlasData, 2);
+  }
+
   dispose(): void {
     this.loadedTextures.forEach((tex) => tex.dispose());
     this.loadedTextures.clear();
