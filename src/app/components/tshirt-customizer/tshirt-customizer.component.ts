@@ -13,12 +13,14 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import * as THREE from 'three';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 
 import {
   GarmentConfig,
   GarmentSize,
   FitStyle,
   ModelQuality,
+  GarmentType,
   PresetAngle,
   CustomizerTab,
   DesignDecal,
@@ -57,7 +59,15 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
   // Asset configurations
   @Input() highModelPath = 'assets/t-shirt/Hi_T-shirt.fbx';
   @Input() lowModelPath = 'assets/t-shirt/Low_T-shirt.fbx';
+  @Input() glbModelPath = 'assets/t-shirt/Hi_T-shirt_atlas.glb';
+  @Input() useGlbModel = true;   // ← set true to test the GLB atlas model
   @Input() texturesPath = 'assets/t-shirt/textures/';
+
+  // Garment Active Model & Hoodie Assets
+  @Input() activeGarment: GarmentType = 'tshirt';
+  @Input() hoodieModelPath = 'assets/hoodie/hoodie.glb';
+  @Input() hoodieFbxPath = 'assets/hoodie/hoodie.fbx';
+  @Input() hoodieTexturesPath = 'assets/hoodie/';
 
   // UI Tabs & State
   activeTab: CustomizerTab = 'colors';
@@ -113,16 +123,16 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
   // ── Texture Switcher ──────────────────────────────────────────────────────
   textureSwatches: { id: string; label: string; thumb: string; url: string | null }[] = [
     {
+      id: 'neon-waves',
+      label: 'Neon Waves (Atlas)',
+      thumb: 'assets/t-shirt/textures/fabric-neon-waves.jpg',
+      url: 'assets/t-shirt/textures/fabric-neon-waves.jpg'
+    },
+    {
       id: 'white-fabric',
       label: 'White Cotton',
       thumb: 'assets/t-shirt/textures/fabric-white.jpg',
       url: 'assets/t-shirt/textures/fabric-white.jpg'
-    },
-    {
-      id: 'neon-waves',
-      label: 'Neon Waves',
-      thumb: 'assets/t-shirt/textures/fabric-neon-waves.jpg',
-      url: 'assets/t-shirt/textures/fabric-neon-waves.jpg'
     },
     {
       id: 'solid',
@@ -131,7 +141,7 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
       url: null
     }
   ];
-  activeTextureId = 'white-fabric';
+  activeTextureId = 'neon-waves';
   private loadedSwatchTextures = new Map<string, THREE.Texture>();
 
   // Uploaded Custom Fabric Texture State
@@ -227,6 +237,7 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
   ngOnInit(): void {
     this.savedDesigns = this.exportService.getSavedDesigns();
     this.updateFittingSimulation();
+    this.updateTextureSwatchesForGarment();
   }
 
   ngAfterViewInit(): void {
@@ -234,7 +245,13 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
       this.initThree();
       this.initResizeObserver();
       this.initEventListeners();
-      this.loadModelWithTextures(this.config.modelQuality);
+      if (this.activeGarment === 'hoodie') {
+        this.loadHoodieModel();
+      } else if (this.useGlbModel) {
+        this.loadGlbModel();
+      } else {
+        this.loadModelWithTextures(this.config.modelQuality);
+      }
       this.animate();
     });
   }
@@ -346,6 +363,12 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
    * Load FBX model and PBR texture channels
    */
   loadModelWithTextures(quality: ModelQuality): void {
+    // Route to GLB loader when useGlbModel flag is set
+    if (this.useGlbModel) {
+      this.loadGlbModel();
+      return;
+    }
+
     this.config.modelQuality = quality;
     this.isLoading = true;
     this.loadingProgress = 15;
@@ -439,12 +462,19 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
     // Preserve original raw UVs
     if (geometry.attributes['uv']) {
       geometry.userData['rawUV'] = (geometry.attributes['uv'] as THREE.BufferAttribute).clone();
-      // Generate garment atlas UVs before center/scale so 3D coordinates reflect original geometry
-      const atlasUV = this.textureService.generateGarmentAtlasUV(geometry);
-      geometry.userData['atlasUV'] = atlasUV;
+      if (this.activeGarment === 'hoodie') {
+        geometry.userData['atlasUV'] = (geometry.attributes['uv'] as THREE.BufferAttribute).clone();
+      } else if (this.useGlbModel) {
+        // The GLB has baked sewing-pattern atlas UVs
+        geometry.userData['atlasUV'] = (geometry.attributes['uv'] as THREE.BufferAttribute).clone();
+      } else {
+        // Generate garment atlas UVs before center/scale so 3D coordinates reflect original FBX geometry
+        const atlasUV = this.textureService.generateGarmentAtlasUV(geometry);
+        geometry.userData['atlasUV'] = atlasUV;
+      }
 
-      if (this.activeTextureId === 'neon-waves') {
-        geometry.attributes['uv'] = atlasUV;
+      if (this.activeTextureId === 'neon-waves' || this.useGlbModel || this.activeGarment === 'hoodie') {
+        geometry.attributes['uv'] = geometry.userData['atlasUV'];
       }
     }
 
@@ -482,10 +512,218 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
     // Re-apply active customizations (color, size, fit, decals, fabric)
     this.applyAllCustomizations();
 
+    // Apply the active texture swatch (e.g. Neon Waves on Atlas GLB)
+    const initialSwatch = this.textureSwatches.find((s) => s.id === this.activeTextureId) || this.textureSwatches[0];
+    if (initialSwatch) {
+      this.switchTexture(initialSwatch);
+    }
+
     this.vertexCount = geometry.attributes['position']?.count || 0;
     this.isLoading = false;
     this.loadingProgress = 100;
     this.cdr.detectChanges();
+  }
+
+  /**
+   * Load the GLB atlas model (Hi_T-shirt_atlas.glb) for testing.
+   * Shares the same setupGarmentMesh pipeline after loading.
+   */
+  private loadGlbModel(): void {
+    this.isLoading = true;
+    this.loadingProgress = 10;
+    this.loadingStep = 'Loading GLB Atlas Model...';
+    this.errorMessage = null;
+    this.cdr.detectChanges();
+
+    if (this.tshirtMesh) {
+      this.mainGroup.remove(this.tshirtMesh);
+      this.tshirtMesh.geometry.dispose();
+      this.tshirtMesh = null;
+    }
+
+    const basePath = this.texturesPath.endsWith('/') ? this.texturesPath : this.texturesPath + '/';
+    const diffuseUrl = basePath + 'fabric-white.jpg';
+    const normalUrl  = basePath + 'FuseModel_Body_Normal.png';
+    const glossUrl   = basePath + 'FuseModel_Body_Gloss.png';
+    const opacityUrl = basePath + 'FuseModel_Body_Opacity.png';
+    const specularUrl = basePath + 'FuseModel_Body_Specular.png';
+
+    // Load PBR textures in parallel with the GLB
+    Promise.all([
+      this.textureService.loadTexture(diffuseUrl, true).catch(() => null),
+      this.textureService.loadTexture(normalUrl, false).catch(() => null),
+      this.textureService.loadTexture(glossUrl, false).catch(() => null),
+      this.textureService.loadTexture(opacityUrl, false).catch(() => null),
+      this.textureService.loadTexture(specularUrl, false).catch(() => null)
+    ]).then(([diffuseTex, normalTex, glossTex, opacityTex, specularTex]) => {
+      this.loadingProgress = 45;
+      this.loadingStep = 'Parsing GLB geometry...';
+      this.cdr.detectChanges();
+
+      const roughnessTex = glossTex
+        ? this.textureService.createRoughnessFromGloss(glossTex as THREE.Texture)
+        : null;
+
+      if (diffuseTex) {
+        this.materialService.setBaseTextures({
+          diffuse: diffuseTex as THREE.Texture,
+          normal: normalTex as THREE.Texture | null,
+          roughness: roughnessTex,
+          opacity: opacityTex as THREE.Texture | null,
+          specular: specularTex as THREE.Texture | null
+        });
+      }
+
+      const loader = new GLTFLoader();
+      loader.load(
+        this.glbModelPath,
+        (gltf) => {
+          this.loadingProgress = 80;
+          this.loadingStep = 'Setting up GLB mesh...';
+          this.cdr.detectChanges();
+
+          // Find the first mesh in the GLB scene
+          let foundMesh: THREE.Mesh | null = null;
+          gltf.scene.traverse((child) => {
+            if ((child as THREE.Mesh).isMesh && !foundMesh) {
+              foundMesh = child as THREE.Mesh;
+            }
+          });
+
+          if (!foundMesh) {
+            this.isLoading = false;
+            this.errorMessage = 'No mesh found in GLB file';
+            this.cdr.detectChanges();
+            return;
+          }
+
+          // Reuse the same FBX setup pipeline — it clones & centers the geometry
+          this.setupGarmentMesh(gltf.scene as unknown as THREE.Group);
+        },
+        (xhr) => {
+          if (xhr.lengthComputable && xhr.total > 0) {
+            this.loadingProgress = 45 + Math.round((xhr.loaded / xhr.total) * 35);
+            this.cdr.detectChanges();
+          }
+        },
+        (err) => {
+          console.error('GLB Load Error:', err);
+          this.isLoading = false;
+          this.errorMessage = `Failed to load GLB model: ${(err as unknown as Error).message || 'Check asset path'}`;
+          this.cdr.detectChanges();
+        }
+      );
+    });
+  }
+
+  /**
+   * Load the 3D Streetwear Hoodie Model & PBR Materials
+   */
+  loadHoodieModel(): void {
+    this.activeGarment = 'hoodie';
+    this.isLoading = true;
+    this.loadingProgress = 15;
+    this.loadingStep = 'Loading Streetwear Hoodie 3D Assets & PBR Materials...';
+    this.errorMessage = null;
+    this.cdr.detectChanges();
+
+    if (this.tshirtMesh) {
+      this.mainGroup.remove(this.tshirtMesh);
+      this.tshirtMesh.geometry.dispose();
+      this.tshirtMesh = null;
+    }
+
+    const basePath = this.hoodieTexturesPath.endsWith('/') ? this.hoodieTexturesPath : this.hoodieTexturesPath + '/';
+    const diffuseUrl = basePath + 'texture_diffuse.png';
+    const normalUrl = basePath + 'texture_normal.png';
+    const roughnessUrl = basePath + 'texture_roughness.png';
+    const metallicUrl = basePath + 'texture_metallic.png';
+
+    Promise.all([
+      this.textureService.loadTexture(diffuseUrl, true).catch(() => null),
+      this.textureService.loadTexture(normalUrl, false).catch(() => null),
+      this.textureService.loadTexture(roughnessUrl, false).catch(() => null),
+      this.textureService.loadTexture(metallicUrl, false).catch(() => null)
+    ]).then(([diffuseTex, normalTex, roughnessTex, metallicTex]) => {
+      this.loadingProgress = 50;
+      this.loadingStep = 'Parsing Hoodie 3D Geometry...';
+      this.cdr.detectChanges();
+
+      if (diffuseTex) {
+        this.materialService.setBaseTextures({
+          diffuse: diffuseTex,
+          normal: normalTex,
+          roughness: roughnessTex,
+          opacity: null,
+          specular: metallicTex
+        });
+      }
+
+      const loader = new GLTFLoader();
+      loader.load(
+        this.hoodieModelPath,
+        (gltf) => {
+          this.loadingProgress = 85;
+          this.loadingStep = 'Setting up Hoodie Mesh & Decals...';
+          this.cdr.detectChanges();
+
+          let foundMesh: THREE.Mesh | null = null;
+          gltf.scene.traverse((child) => {
+            if ((child as THREE.Mesh).isMesh && !foundMesh) {
+              foundMesh = child as THREE.Mesh;
+            }
+          });
+
+          if (!foundMesh) {
+            this.isLoading = false;
+            this.errorMessage = 'No mesh found in Hoodie model';
+            this.cdr.detectChanges();
+            return;
+          }
+
+          const mesh = foundMesh as THREE.Mesh;
+          mesh.updateMatrixWorld(true);
+          const geometry = mesh.geometry.clone();
+          // Apply node transform so hoodie stands upright Y-up
+          geometry.applyMatrix4(mesh.matrixWorld);
+
+          const group = new THREE.Group();
+          const cleanMesh = new THREE.Mesh(geometry, mesh.material);
+          group.add(cleanMesh);
+
+          this.setupGarmentMesh(group);
+        },
+        (xhr) => {
+          if (xhr.lengthComputable && xhr.total > 0) {
+            this.loadingProgress = 50 + Math.round((xhr.loaded / xhr.total) * 40);
+            this.cdr.detectChanges();
+          }
+        },
+        (err) => {
+          console.error('Hoodie GLB load failed, trying FBX fallback:', err);
+          this.loadHoodieFbxFallback();
+        }
+      );
+    }).catch((err) => {
+      console.error('Hoodie texture load failed:', err);
+      this.loadHoodieFbxFallback();
+    });
+  }
+
+  private loadHoodieFbxFallback(): void {
+    const fbxLoader = new FBXLoader();
+    fbxLoader.load(
+      this.hoodieFbxPath,
+      (fbx) => {
+        this.setupGarmentMesh(fbx);
+      },
+      undefined,
+      (err) => {
+        this.isLoading = false;
+        this.errorMessage = `Failed to load Hoodie: ${err.message || 'Check asset paths'}`;
+        this.cdr.detectChanges();
+      }
+    );
   }
 
   /**
@@ -542,6 +780,78 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
   }
   
 
+  // --- Model / Garment Switching ---
+  switchGarment(type: GarmentType): void {
+    if (this.activeGarment === type && !this.errorMessage) return;
+    this.activeGarment = type;
+    this.config.garmentType = type;
+    this.updateTextureSwatchesForGarment();
+
+    if (type === 'hoodie') {
+      this.loadHoodieModel();
+    } else {
+      if (this.useGlbModel) {
+        this.loadGlbModel();
+      } else {
+        this.loadModelWithTextures(this.config.modelQuality);
+      }
+    }
+  }
+
+  updateTextureSwatchesForGarment(): void {
+    if (this.activeGarment === 'hoodie') {
+      this.textureSwatches = [
+        {
+          id: 'hoodie-default',
+          label: 'Original Fleece',
+          thumb: 'assets/hoodie/texture_diffuse.png',
+          url: 'assets/hoodie/texture_diffuse.png'
+        },
+        {
+          id: 'white-fabric',
+          label: 'Clean White',
+          thumb: 'assets/t-shirt/textures/fabric-white.jpg',
+          url: 'assets/t-shirt/textures/fabric-white.jpg'
+        },
+        {
+          id: 'neon-waves',
+          label: 'Neon Streetwear',
+          thumb: 'assets/t-shirt/textures/fabric-neon-waves.jpg',
+          url: 'assets/t-shirt/textures/fabric-neon-waves.jpg'
+        },
+        {
+          id: 'solid',
+          label: 'Solid Color',
+          thumb: '',
+          url: null
+        }
+      ];
+      this.activeTextureId = 'hoodie-default';
+    } else {
+      this.textureSwatches = [
+        {
+          id: 'neon-waves',
+          label: 'Neon Waves (Atlas)',
+          thumb: 'assets/t-shirt/textures/fabric-neon-waves.jpg',
+          url: 'assets/t-shirt/textures/fabric-neon-waves.jpg'
+        },
+        {
+          id: 'white-fabric',
+          label: 'White Cotton',
+          thumb: 'assets/t-shirt/textures/fabric-white.jpg',
+          url: 'assets/t-shirt/textures/fabric-white.jpg'
+        },
+        {
+          id: 'solid',
+          label: 'Solid Color',
+          thumb: '',
+          url: null
+        }
+      ];
+      this.activeTextureId = 'neon-waves';
+    }
+  }
+
   // --- 1. Color ---
   onColorChange(newColor: string): void {
     this.config.colorHex = newColor;
@@ -571,7 +881,7 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
       return;
     }
 
-    const isAtlas = swatch.id === 'neon-waves' || (swatch.id === 'custom-upload' && this.customTextureMode === 'atlas');
+    const isAtlas = swatch.id === 'neon-waves' || swatch.id === 'hoodie-default' || (swatch.id === 'custom-upload' && this.customTextureMode === 'atlas');
 
     // Switch geometry UV attribute to match the texture format
     if (this.tshirtMesh && this.tshirtMesh.geometry) {
@@ -955,6 +1265,7 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
 
   // --- 9. Saved Designs & Export ---
   saveCurrentDesign(): void {
+    this.config.garmentType = this.activeGarment;
     const preview = this.exportService.captureCanvasImage(this.renderer, this.scene, this.camera);
     const saved = this.exportService.saveDesign(this.designNameInput, this.config, preview);
     this.savedDesigns.unshift(saved);
@@ -966,7 +1277,12 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
   loadSavedDesign(design: SavedDesign): void {
     this.config = JSON.parse(JSON.stringify(design.config));
     this.designNameInput = design.name;
-    this.applyAllCustomizations();
+    const targetGarment = design.config.garmentType || 'tshirt';
+    if (targetGarment !== this.activeGarment) {
+      this.switchGarment(targetGarment);
+    } else {
+      this.applyAllCustomizations();
+    }
     this.exportSuccessMsg = `Loaded "${design.name}"`;
     setTimeout(() => (this.exportSuccessMsg = null), 3500);
     this.cdr.detectChanges();
@@ -1080,13 +1396,27 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
     this.targetCameraDist = Math.min(6.0, this.targetCameraDist + 0.4);
   }
 
+  switchToGlb(): void {
+    if (this.useGlbModel && !this.errorMessage) return;
+    this.useGlbModel = true;
+    this.loadGlbModel();
+  }
+
   switchQuality(quality: ModelQuality): void {
-    if (quality === this.config.modelQuality && !this.errorMessage) return;
+    if (!this.useGlbModel && quality === this.config.modelQuality && !this.errorMessage) return;
+    this.useGlbModel = false;
+    this.config.modelQuality = quality;
     this.loadModelWithTextures(quality);
   }
 
   retry(): void {
-    this.loadModelWithTextures(this.config.modelQuality);
+    if (this.activeGarment === 'hoodie') {
+      this.loadHoodieModel();
+    } else if (this.useGlbModel) {
+      this.loadGlbModel();
+    } else {
+      this.loadModelWithTextures(this.config.modelQuality);
+    }
   }
 
   // ================= Animation & Render Loop =================

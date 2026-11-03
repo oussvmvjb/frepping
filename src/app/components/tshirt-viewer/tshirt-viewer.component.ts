@@ -15,9 +15,18 @@ import {
 import { CommonModule } from '@angular/common';
 import * as THREE from 'three';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import {
+  LiveClothEngine,
+  ClothMeta,
+  FabricId,
+  SizeId,
+  FitId,
+  FABRIC_PHYSICS
+} from '../tshirt-customizer/services/tshirt-live-cloth.engine';
 
 export type PresetAngle = 'front' | 'back' | 'left' | 'right';
-export type ModelQuality = 'high' | 'low';
+export type ModelQuality = 'glb' | 'high' | 'low';
 
 @Component({
   selector: 'app-tshirt-viewer',
@@ -33,8 +42,10 @@ export class TshirtViewerComponent implements OnInit, AfterViewInit, OnDestroy {
   // Asset configurations
   @Input() highModelPath = 'assets/t-shirt/Hi_T-shirt.fbx';
   @Input() lowModelPath = 'assets/t-shirt/Low_T-shirt.fbx';
+  @Input() glbModelPath = 'assets/t-shirt/Hi_T-shirt_atlas.glb';
   @Input() texturesPath = 'assets/t-shirt/textures/';
-  @Input() initialQuality: ModelQuality = 'high';
+  @Input() initialQuality: ModelQuality = 'glb';
+  @Input() useGlbModel = true;
 
   // Interaction options
   @Input() autoRotate = true;
@@ -52,7 +63,7 @@ export class TshirtViewerComponent implements OnInit, AfterViewInit, OnDestroy {
   @Output() loadError = new EventEmitter<string>();
 
   // UI state
-  currentQuality: ModelQuality = 'high';
+  currentQuality: ModelQuality = 'glb';
   isLoading = true;
   loadingProgress = 0;
   loadingStep = 'Initializing 3D environment...';
@@ -61,6 +72,16 @@ export class TshirtViewerComponent implements OnInit, AfterViewInit, OnDestroy {
   isWireframe = false;
   vertexCount = 0;
   isInteracting = false;
+
+  // Live Cloth Engine & Garment State
+  clothEngine: LiveClothEngine | null = null;
+  selectedFabric: FabricId = 'cotton';
+  selectedSize: SizeId = 'L';
+  selectedFit: FitId = 'regular';
+  activeTexture: 'neon-waves' | 'white-cotton' = 'neon-waves';
+  fabricPresetsList = Object.keys(FABRIC_PHYSICS) as FabricId[];
+  sizesList: SizeId[] = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+  fitsList: FitId[] = ['slim', 'regular', 'oversized'];
 
   // Three.js core
   private scene!: THREE.Scene;

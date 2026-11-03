@@ -5,6 +5,7 @@
 export type GarmentSize = 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL' | 'Custom';
 export type FitStyle = 'slim' | 'regular' | 'oversized';
 export type ModelQuality = 'high' | 'low';
+export type GarmentType = 'tshirt' | 'hoodie';
 export type PresetAngle = 'front' | 'back' | 'left' | 'right';
 export type DecalSide = 'front' | 'back' | 'sleeve-left' | 'sleeve-right';
 export type CustomizerTab = 
@@ -75,6 +76,7 @@ export interface FabricPreset {
  */
 export interface GarmentConfig {
   version: string;
+  garmentType?: GarmentType;
   modelQuality: ModelQuality;
   colorHex: string;
   fabricPresetId: string;

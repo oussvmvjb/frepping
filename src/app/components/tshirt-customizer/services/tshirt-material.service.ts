@@ -27,12 +27,12 @@ export class TshirtMaterialService {
    */
   setBaseTextures(textures: {
     diffuse: THREE.Texture;
-    normal: THREE.Texture;
-    roughness: THREE.Texture;
-    opacity: THREE.Texture;
-    specular: THREE.Texture;
+    normal: THREE.Texture | null;
+    roughness: THREE.Texture | null;
+    opacity: THREE.Texture | null;
+    specular: THREE.Texture | null;
   }): void {
-    this.baseTextures = textures;
+    this.baseTextures = textures as any;
   }
 
   /**

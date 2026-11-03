@@ -58,12 +58,42 @@
 
     <!-- Viewport Floating UI Overlay -->
     <div class="viewport-ui" *ngIf="!isLoading && !errorMessage">
-      <!-- Top Bar: Quality & Stats -->
+      <!-- Top Bar: Garment Selector, Quality & Stats -->
       <div class="vp-top-bar">
-        <div class="quality-pills">
+        <!-- Garment / Model Switcher (T-Shirt vs Hoodie) -->
+        <div class="garment-type-pills">
+          <button
+            class="garment-pill-btn"
+            [class.active]="activeGarment === 'tshirt'"
+            (click)="switchGarment('tshirt')"
+            title="Switch to 3D T-Shirt Studio"
+          >
+            <span class="garment-icon">👕</span>
+            <span>T-Shirt</span>
+          </button>
+          <button
+            class="garment-pill-btn"
+            [class.active]="activeGarment === 'hoodie'"
+            (click)="switchGarment('hoodie')"
+            title="Switch to 3D Streetwear Hoodie Studio"
+          >
+            <span class="garment-icon">🧥</span>
+            <span>Hoodie</span>
+          </button>
+        </div>
+
+        <div class="quality-pills" *ngIf="activeGarment === 'tshirt'">
           <button
             class="pill-btn"
-            [class.active]="config.modelQuality === 'high'"
+            [class.active]="useGlbModel"
+            (click)="switchToGlb()"
+          >
+            <span class="dot"></span>
+            <span>Atlas GLB (Test)</span>
+          </button>
+          <button
+            class="pill-btn"
+            [class.active]="!useGlbModel && config.modelQuality === 'high'"
             (click)="switchQuality('high')"
           >
             <span class="dot"></span>
@@ -71,12 +101,17 @@
           </button>
           <button
             class="pill-btn"
-            [class.active]="config.modelQuality === 'low'"
+            [class.active]="!useGlbModel && config.modelQuality === 'low'"
             (click)="switchQuality('low')"
           >
             <span class="dot"></span>
             <span>Low-Poly (30k)</span>
           </button>
+        </div>
+
+        <div class="quality-pills hoodie-badge-pill" *ngIf="activeGarment === 'hoodie'">
+          <span class="dot active"></span>
+          <span>Streetwear Hoodie (31k)</span>
         </div>
 
         <div class="stats-pill">
@@ -219,7 +254,7 @@
     <div class="sidebar-header">
       <div class="header-titles">
         <h2 class="sidebar-title">FREPPING 3D ATELIER</h2>
-        <span class="sidebar-subtitle">Precision Garment Customizer</span>
+        <span class="sidebar-subtitle">{{ activeGarment === 'hoodie' ? '3D Streetwear Hoodie Studio' : 'Precision Garment Customizer' }}</span>
       </div>
       <button class="reset-all-btn" (click)="resetAllToDefault()" title="Reset All Customizations">
         ↺ Reset
