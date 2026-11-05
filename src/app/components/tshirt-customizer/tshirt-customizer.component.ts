@@ -42,6 +42,7 @@ import { TshirtDesignService } from './services/tshirt-design.service';
 import { TshirtPrintService } from './services/tshirt-print.service';
 import { TshirtExportService } from './services/tshirt-export.service';
 import { AvatarTryOnService } from './services/avatar-try-on.service';
+import { TshirtFontService, CustomizerFont } from './services/tshirt-font.service';
 
 @Component({
   selector: 'app-tshirt-customizer',
@@ -60,7 +61,7 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
   @Input() highModelPath = 'assets/t-shirt/Hi_T-shirt.fbx';
   @Input() lowModelPath = 'assets/t-shirt/Low_T-shirt.fbx';
   @Input() glbModelPath = 'assets/t-shirt/Hi_T-shirt_atlas.glb';
-  @Input() useGlbModel = true;   // ← set true to test the GLB atlas model
+  @Input() useGlbModel = false;   // Default to Hi-Poly model (165k)
   @Input() texturesPath = 'assets/t-shirt/textures/';
 
   // Garment Active Model & Hoodie Assets
@@ -120,19 +121,19 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
   fabricPresets = FABRIC_PRESETS;
   activePreset: FabricPreset = FABRIC_PRESETS[0];
 
-  // ── Texture Switcher ──────────────────────────────────────────────────────
+  // ── Texture Switcher (Default: Clean White Cotton) ────────────────────────
   textureSwatches: { id: string; label: string; thumb: string; url: string | null }[] = [
-    {
-      id: 'neon-waves',
-      label: 'Neon Waves (Atlas)',
-      thumb: 'assets/t-shirt/textures/fabric-neon-waves.jpg',
-      url: 'assets/t-shirt/textures/fabric-neon-waves.jpg'
-    },
     {
       id: 'white-fabric',
       label: 'White Cotton',
       thumb: 'assets/t-shirt/textures/fabric-white.jpg',
       url: 'assets/t-shirt/textures/fabric-white.jpg'
+    },
+    {
+      id: 'neon-waves',
+      label: 'Neon Waves (Atlas)',
+      thumb: 'assets/t-shirt/textures/fabric-neon-waves.jpg',
+      url: 'assets/t-shirt/textures/fabric-neon-waves.jpg'
     },
     {
       id: 'solid',
@@ -141,7 +142,7 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
       url: null
     }
   ];
-  activeTextureId = 'neon-waves';
+  activeTextureId = 'white-fabric';
   private loadedSwatchTextures = new Map<string, THREE.Texture>();
 
   // Uploaded Custom Fabric Texture State
@@ -150,9 +151,34 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
   uploadedCustomTextureName = '';
   customTextureMode: 'atlas' | 'tile' = 'atlas';
 
-  // Uploaded Decals / Logo Management
+  // Uploaded Decals / Logo Management & Text Stickers
   activeDecalIndex = -1;
   isDraggingFile = false;
+
+  // Custom Text Sticker Studio
+  artworkTab: 'text' | 'upload' = 'text';
+  customText = 'FREPPING';
+  selectedFont: CustomizerFont | null = null;
+  textColor = '#39ff14';
+  textStrokeColor = '#000000';
+  textStrokeWidth = 6;
+  textHasShadow = true;
+  textPreviewDataUrl = '';
+  isGeneratingText = false;
+  fontCategoryFilter: 'all' | 'streetwear' | '3d' | 'graffiti' | 'bold' | 'techno' | 'script' = 'all';
+
+  readonly textColorPresets: string[] = [
+    '#ffffff', // Pure White
+    '#39ff14', // Neon Green (Frepping)
+    '#00ffff', // Cyber Cyan
+    '#ff0055', // Hot Pink
+    '#ffe600', // Electric Yellow
+    '#ff6600', // Blaze Orange
+    '#9900ff', // Cyber Purple
+    '#000000', // Jet Black
+    '#e2e8f0', // Silver
+    '#d97706'  // Metallic Gold
+  ];
 
   // Sizing & Measurements
   sizes: GarmentSize[] = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'Custom'];
@@ -231,13 +257,18 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
     public designService: TshirtDesignService,
     public printService: TshirtPrintService,
     public exportService: TshirtExportService,
-    public tryOnService: AvatarTryOnService
+    public tryOnService: AvatarTryOnService,
+    public fontService: TshirtFontService
   ) {}
 
   ngOnInit(): void {
     this.savedDesigns = this.exportService.getSavedDesigns();
     this.updateFittingSimulation();
     this.updateTextureSwatchesForGarment();
+    if (this.fontService.featuredFonts.length > 0) {
+      this.selectedFont = this.fontService.featuredFonts[0];
+      this.updateTextPreview();
+    }
   }
 
   ngAfterViewInit(): void {
@@ -247,10 +278,8 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
       this.initEventListeners();
       if (this.activeGarment === 'hoodie') {
         this.loadHoodieModel();
-      } else if (this.useGlbModel) {
-        this.loadGlbModel();
       } else {
-        this.loadModelWithTextures(this.config.modelQuality);
+        this.loadModelWithTextures('high');
       }
       this.animate();
     });
@@ -369,10 +398,10 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
       return;
     }
 
-    this.config.modelQuality = quality;
+    this.config.modelQuality = 'high';
     this.isLoading = true;
     this.loadingProgress = 15;
-    this.loadingStep = `Loading ${quality === 'high' ? 'High-Poly (165k)' : 'Low-Poly (30k)'} Garment Model...`;
+    this.loadingStep = 'Loading High-Poly (165k) Garment Model...';
     this.errorMessage = null;
     this.cdr.detectChanges();
 
@@ -382,7 +411,7 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
       this.tshirtMesh = null;
     }
 
-    const modelUrl = quality === 'high' ? this.highModelPath : this.lowModelPath;
+    const modelUrl = this.highModelPath;
     const basePath = this.texturesPath.endsWith('/') ? this.texturesPath : this.texturesPath + '/';
 
     const diffuseUrl = basePath + 'fabric-white.jpg'; // Default white fabric texture
@@ -481,13 +510,13 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
     geometry.computeVertexNormals();
     geometry.center();
 
-    // Normalize height to ~2.4 units
+    // Normalize model scale comfortably inside viewport (~1.82 units so it's smaller and nicely framed)
     geometry.computeBoundingBox();
     if (geometry.boundingBox) {
       const size = new THREE.Vector3();
       geometry.boundingBox.getSize(size);
       const maxDim = Math.max(size.x, size.y, size.z);
-      const scale = 2.4 / maxDim;
+      const scale = 1.82 / maxDim;
       geometry.scale(scale, scale, scale);
     }
 
@@ -781,6 +810,10 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
   
 
   // --- Model / Garment Switching ---
+  toggleGarment(): void {
+    this.switchGarment(this.activeGarment === 'tshirt' ? 'hoodie' : 'tshirt');
+  }
+
   switchGarment(type: GarmentType): void {
     if (this.activeGarment === type && !this.errorMessage) return;
     this.activeGarment = type;
@@ -790,11 +823,9 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
     if (type === 'hoodie') {
       this.loadHoodieModel();
     } else {
-      if (this.useGlbModel) {
-        this.loadGlbModel();
-      } else {
-        this.loadModelWithTextures(this.config.modelQuality);
-      }
+      this.useGlbModel = false;
+      this.config.modelQuality = 'high';
+      this.loadModelWithTextures('high');
     }
   }
 
@@ -802,16 +833,16 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
     if (this.activeGarment === 'hoodie') {
       this.textureSwatches = [
         {
-          id: 'hoodie-default',
-          label: 'Original Fleece',
-          thumb: 'assets/hoodie/texture_diffuse.png',
-          url: 'assets/hoodie/texture_diffuse.png'
-        },
-        {
           id: 'white-fabric',
           label: 'Clean White',
           thumb: 'assets/t-shirt/textures/fabric-white.jpg',
           url: 'assets/t-shirt/textures/fabric-white.jpg'
+        },
+        {
+          id: 'hoodie-default',
+          label: 'Original Fleece',
+          thumb: 'assets/hoodie/texture_diffuse.png',
+          url: 'assets/hoodie/texture_diffuse.png'
         },
         {
           id: 'neon-waves',
@@ -826,20 +857,20 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
           url: null
         }
       ];
-      this.activeTextureId = 'hoodie-default';
+      this.activeTextureId = 'white-fabric';
     } else {
       this.textureSwatches = [
-        {
-          id: 'neon-waves',
-          label: 'Neon Waves (Atlas)',
-          thumb: 'assets/t-shirt/textures/fabric-neon-waves.jpg',
-          url: 'assets/t-shirt/textures/fabric-neon-waves.jpg'
-        },
         {
           id: 'white-fabric',
           label: 'White Cotton',
           thumb: 'assets/t-shirt/textures/fabric-white.jpg',
           url: 'assets/t-shirt/textures/fabric-white.jpg'
+        },
+        {
+          id: 'neon-waves',
+          label: 'Neon Waves (Atlas)',
+          thumb: 'assets/t-shirt/textures/fabric-neon-waves.jpg',
+          url: 'assets/t-shirt/textures/fabric-neon-waves.jpg'
         },
         {
           id: 'solid',
@@ -848,7 +879,7 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
           url: null
         }
       ];
-      this.activeTextureId = 'neon-waves';
+      this.activeTextureId = 'white-fabric';
     }
   }
 
@@ -1104,6 +1135,20 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
 
   selectDecal(index: number): void {
     this.activeDecalIndex = index;
+    const decal = this.getActiveDecal();
+    if (decal && decal.isTextDecal && decal.textContent) {
+      this.customText = decal.textContent;
+      if (decal.textColor) this.textColor = decal.textColor;
+      if (decal.strokeColor) this.textStrokeColor = decal.strokeColor;
+      if (decal.strokeWidth !== undefined) this.textStrokeWidth = decal.strokeWidth;
+      const matchedFont = this.fontService.featuredFonts.find(
+        (f) => f.fontFamily === decal.fontFamily
+      );
+      if (matchedFont) {
+        this.selectedFont = matchedFont;
+      }
+      this.updateTextPreview();
+    }
   }
 
   getActiveDecal(): DesignDecal | null {
@@ -1197,6 +1242,178 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
     if (!decal) return;
     this.printService.sendBackward(decal.id, this.config.decals);
     this.activeDecalIndex = this.config.decals.findIndex((d) => d.id === decal.id);
+    this.cdr.detectChanges();
+  }
+
+  // --- Text Sticker Studio & Rotation / Scale Helpers ---
+  get filteredFonts(): CustomizerFont[] {
+    if (this.fontCategoryFilter === 'all') {
+      return this.fontService.featuredFonts;
+    }
+    return this.fontService.featuredFonts.filter(
+      (f) => f.category === this.fontCategoryFilter
+    );
+  }
+
+  async selectFont(font: CustomizerFont): Promise<void> {
+    this.selectedFont = font;
+    await this.fontService.ensureFontLoaded(font.fontFamily, font.url);
+    await this.updateTextPreview();
+    const active = this.getActiveDecal();
+    if (active && active.isTextDecal) {
+      active.fontFamily = font.fontFamily;
+      await this.updateActiveTextDecal();
+    }
+  }
+
+  async updateTextPreview(): Promise<void> {
+    if (!this.selectedFont || !this.customText.trim()) {
+      this.textPreviewDataUrl = '';
+      return;
+    }
+    try {
+      this.isGeneratingText = true;
+      const res = await this.fontService.renderTextSticker({
+        text: this.customText,
+        fontFamily: this.selectedFont.fontFamily,
+        fontUrl: this.selectedFont.url,
+        textColor: this.textColor,
+        strokeColor: this.textStrokeWidth > 0 ? this.textStrokeColor : undefined,
+        strokeWidth: this.textStrokeWidth,
+        shadow: this.textHasShadow
+      });
+      this.textPreviewDataUrl = res.dataUrl;
+    } catch (e) {
+      console.warn('Text preview render error:', e);
+    } finally {
+      this.isGeneratingText = false;
+      this.cdr.detectChanges();
+    }
+  }
+
+  async onTextParamChange(): Promise<void> {
+    await this.updateTextPreview();
+    const active = this.getActiveDecal();
+    if (active && active.isTextDecal) {
+      await this.updateActiveTextDecal();
+    }
+  }
+
+  async addTextSticker(): Promise<void> {
+    if (!this.selectedFont || !this.customText.trim()) return;
+
+    this.isGeneratingText = true;
+    try {
+      const res = await this.fontService.renderTextSticker({
+        text: this.customText,
+        fontFamily: this.selectedFont.fontFamily,
+        fontUrl: this.selectedFont.url,
+        textColor: this.textColor,
+        strokeColor: this.textStrokeWidth > 0 ? this.textStrokeColor : undefined,
+        strokeWidth: this.textStrokeWidth,
+        shadow: this.textHasShadow
+      });
+
+      const img = new Image();
+      img.onload = () => {
+        const aspect = res.aspectRatio || (res.width / res.height);
+        const baseWidth = Math.min(32.0, Math.max(14.0, this.customText.length * 2.2));
+        const baseHeight = Math.round((baseWidth / aspect) * 10) / 10;
+
+        const newDecal: DesignDecal = {
+          id: 'text_decal_' + Date.now(),
+          name: `Text: "${this.customText}"`,
+          dataUrl: res.dataUrl,
+          image: img,
+          side: 'front',
+          x: 0,
+          y: 0.12,
+          scale: 1.0,
+          widthCm: baseWidth,
+          heightCm: baseHeight,
+          aspectRatio: aspect,
+          lockAspectRatio: true,
+          rotation: 0,
+          opacity: 1.0,
+          zIndex: this.config.decals.length + 1,
+          isTextDecal: true,
+          textContent: this.customText,
+          fontFamily: this.selectedFont?.fontFamily,
+          textColor: this.textColor,
+          strokeColor: this.textStrokeColor,
+          strokeWidth: this.textStrokeWidth
+        };
+
+        this.config.decals.push(newDecal);
+        this.activeDecalIndex = this.config.decals.length - 1;
+        this.printService.applyPrint(newDecal, this.activeDecalIndex);
+        this.cdr.detectChanges();
+      };
+      img.src = res.dataUrl;
+    } finally {
+      this.isGeneratingText = false;
+      this.cdr.detectChanges();
+    }
+  }
+
+  async updateActiveTextDecal(): Promise<void> {
+    const decal = this.getActiveDecal();
+    if (!decal || !decal.isTextDecal || !this.selectedFont) return;
+
+    decal.textContent = this.customText;
+    decal.fontFamily = this.selectedFont.fontFamily;
+    decal.textColor = this.textColor;
+    decal.strokeColor = this.textStrokeColor;
+    decal.strokeWidth = this.textStrokeWidth;
+    decal.name = `Text: "${this.customText}"`;
+
+    const res = await this.fontService.renderTextSticker({
+      text: this.customText,
+      fontFamily: this.selectedFont.fontFamily,
+      fontUrl: this.selectedFont.url,
+      textColor: this.textColor,
+      strokeColor: this.textStrokeWidth > 0 ? this.textStrokeColor : undefined,
+      strokeWidth: this.textStrokeWidth,
+      shadow: this.textHasShadow
+    });
+
+    const img = new Image();
+    img.onload = () => {
+      decal.dataUrl = res.dataUrl;
+      decal.image = img;
+      decal.aspectRatio = res.aspectRatio;
+      if (decal.lockAspectRatio && decal.widthCm) {
+        decal.heightCm = Math.round((decal.widthCm / res.aspectRatio) * 10) / 10;
+      }
+      this.printService.applyPrint(decal, this.activeDecalIndex);
+      this.cdr.detectChanges();
+    };
+    img.src = res.dataUrl;
+  }
+
+  rotateActiveDecalBy(deltaDegrees: number): void {
+    const decal = this.getActiveDecal();
+    if (!decal) return;
+    let newRot = (decal.rotation || 0) + deltaDegrees;
+    while (newRot > 180) newRot -= 360;
+    while (newRot < -180) newRot += 360;
+    decal.rotation = Math.round(newRot);
+    this.updateActiveDecal();
+    this.cdr.detectChanges();
+  }
+
+  setDecalRotation(angle: number): void {
+    const decal = this.getActiveDecal();
+    if (!decal) return;
+    decal.rotation = angle;
+    this.updateActiveDecal();
+    this.cdr.detectChanges();
+  }
+
+  setDecalScalePreset(scale: number): void {
+    const decal = this.getActiveDecal();
+    if (!decal) return;
+    this.onDecalScaleChange(scale);
     this.cdr.detectChanges();
   }
 
@@ -1402,20 +1619,18 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
     this.loadGlbModel();
   }
 
-  switchQuality(quality: ModelQuality): void {
-    if (!this.useGlbModel && quality === this.config.modelQuality && !this.errorMessage) return;
+  switchQuality(quality: ModelQuality = 'high'): void {
     this.useGlbModel = false;
-    this.config.modelQuality = quality;
-    this.loadModelWithTextures(quality);
+    this.config.modelQuality = 'high';
+    this.loadModelWithTextures('high');
   }
 
   retry(): void {
     if (this.activeGarment === 'hoodie') {
       this.loadHoodieModel();
-    } else if (this.useGlbModel) {
-      this.loadGlbModel();
     } else {
-      this.loadModelWithTextures(this.config.modelQuality);
+      this.useGlbModel = false;
+      this.loadModelWithTextures('high');
     }
   }
 

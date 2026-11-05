@@ -60,64 +60,23 @@
     <div class="viewport-ui" *ngIf="!isLoading && !errorMessage">
       <!-- Top Bar: Garment Selector, Quality & Stats -->
       <div class="vp-top-bar">
-        <!-- Garment / Model Switcher (T-Shirt vs Hoodie) -->
-        <div class="garment-type-pills">
-          <button
-            class="garment-pill-btn"
-            [class.active]="activeGarment === 'tshirt'"
-            (click)="switchGarment('tshirt')"
-            title="Switch to 3D T-Shirt Studio"
-          >
-            <span class="garment-icon">👕</span>
-            <span>T-Shirt</span>
-          </button>
-          <button
-            class="garment-pill-btn"
-            [class.active]="activeGarment === 'hoodie'"
-            (click)="switchGarment('hoodie')"
-            title="Switch to 3D Streetwear Hoodie Studio"
-          >
-            <span class="garment-icon">🧥</span>
-            <span>Hoodie</span>
-          </button>
-        </div>
-
-        <div class="quality-pills" *ngIf="activeGarment === 'tshirt'">
-          <button
-            class="pill-btn"
-            [class.active]="useGlbModel"
-            (click)="switchToGlb()"
-          >
-            <span class="dot"></span>
-            <span>Atlas GLB (Test)</span>
-          </button>
-          <button
-            class="pill-btn"
-            [class.active]="!useGlbModel && config.modelQuality === 'high'"
-            (click)="switchQuality('high')"
-          >
-            <span class="dot"></span>
-            <span>Hi-Poly (165k)</span>
-          </button>
-          <button
-            class="pill-btn"
-            [class.active]="!useGlbModel && config.modelQuality === 'low'"
-            (click)="switchQuality('low')"
-          >
-            <span class="dot"></span>
-            <span>Low-Poly (30k)</span>
-          </button>
-        </div>
-
-        <div class="quality-pills hoodie-badge-pill" *ngIf="activeGarment === 'hoodie'">
-          <span class="dot active"></span>
-          <span>Streetwear Hoodie (31k)</span>
-        </div>
-
+        <!-- Size / Fit Badge (Left-Aligned on Screen) -->
         <div class="stats-pill">
-          <span class="tag-label">Size:</span> {{ config.size }} •
-          <span class="tag-label">Fit:</span> {{ config.fitStyle | titlecase }}
+          <span class="tag-label">Size:</span> <strong>{{ config.size }}</strong>
+          <span class="fit-label-text"> • {{ config.fitStyle | titlecase }}</span>
         </div>
+
+        <!-- Single Compact Garment Switcher (T-Shirt ⇄ Hoodie) -->
+        <button
+          class="garment-switch-btn"
+          (click)="toggleGarment()"
+          [title]="activeGarment === 'tshirt' ? 'Switch to Streetwear Hoodie' : 'Switch to 3D T-Shirt'"
+        >
+          <span class="switch-icon current-icon">{{ activeGarment === 'tshirt' ? '👕' : '🧥' }}</span>
+          <span class="switch-arrow">⇄</span>
+          <span class="switch-icon target-icon">{{ activeGarment === 'tshirt' ? '🧥' : '👕' }}</span>
+          <span class="switch-name">{{ activeGarment === 'tshirt' ? 'T-Shirt' : 'Hoodie' }}</span>
+        </button>
 
         <!-- Mobile Toggle Button -->
         <button
@@ -234,11 +193,6 @@
           </svg>
           <span class="tooltip">Reset View</span>
         </button>
-      </div>
-
-      <!-- Subtle Drag Guidance -->
-      <div class="vp-hint">
-        <span>↔ Drag to rotate • Scroll to zoom</span>
       </div>
     </div>
   </div>
@@ -491,15 +445,256 @@
         </div>
       </section>
 
-      <!-- ── TAB 3: ARTWORK & LOGO UPLOAD ─────────────────────────────────── -->
+      <!-- ── TAB 3: ARTWORK & LOGO UPLOAD & TEXT STICKER STUDIO ───────────── -->
       <section class="tab-pane" *ngIf="activeTab === 'designs'">
-        <div class="section-title">Custom Artwork & Logos</div>
+        <div class="section-title">Stickers, Text & Graphics</div>
         <p class="section-desc">
-          Upload transparent PNGs or JPG graphics. Decals conform smoothly to 3D fabric contours on the front, back, or sleeves without symmetry bleed.
+          Add custom typography stickers with streetwear & graffiti fonts, or upload your own logos. Stickers wrap seamlessly onto 3D fabric with full rotation and sizing control.
         </p>
 
-        <!-- Dropzone -->
+        <!-- Artwork Mode Sub-Tabs -->
+        <div class="artwork-subnav">
+          <button
+            type="button"
+            class="subnav-pill"
+            [class.active]="artworkTab === 'text'"
+            (click)="artworkTab = 'text'"
+          >
+            <span class="subnav-icon">✍️</span>
+            <span class="subnav-text">Text Sticker Studio</span>
+          </button>
+          <button
+            type="button"
+            class="subnav-pill"
+            [class.active]="artworkTab === 'upload'"
+            (click)="artworkTab = 'upload'"
+          >
+            <span class="subnav-icon">📁</span>
+            <span class="subnav-text">Upload Image / Logo</span>
+          </button>
+        </div>
+
+        <!-- ── SUB-MODE 1: TEXT STICKER STUDIO ── -->
+        <div class="text-sticker-studio" *ngIf="artworkTab === 'text'">
+          <!-- Text Input -->
+          <div class="control-row text-input-block">
+            <div class="control-label-row">
+              <span class="input-title">Your Custom Slogan / Word / Tag</span>
+              <span class="value-badge">{{ customText.length }}/32</span>
+            </div>
+            <div class="text-input-wrapper">
+              <input
+                type="text"
+                class="streetwear-text-input"
+                [(ngModel)]="customText"
+                (ngModelChange)="onTextParamChange()"
+                placeholder="TYPE SLOGAN, LOGO, BRAND..."
+                maxlength="32"
+              />
+            </div>
+          </div>
+
+          <!-- Live Sticker Preview -->
+          <div class="text-sticker-preview-card" *ngIf="textPreviewDataUrl">
+            <div class="preview-badge-row">
+              <span class="preview-badge">⚡ Sticker Preview</span>
+              <span class="preview-font-label" *ngIf="selectedFont">{{ selectedFont.name }}</span>
+            </div>
+            <div class="sticker-canvas-stage">
+              <img [src]="textPreviewDataUrl" alt="Text Sticker Preview" class="preview-sticker-img" />
+            </div>
+          </div>
+
+          <!-- Font Category Filter Pills -->
+          <div class="font-category-bar">
+            <button
+              type="button"
+              class="font-cat-btn"
+              [class.active]="fontCategoryFilter === 'all'"
+              (click)="fontCategoryFilter = 'all'"
+            >
+              All ({{ fontService.featuredFonts.length }})
+            </button>
+            <button
+              type="button"
+              class="font-cat-btn"
+              [class.active]="fontCategoryFilter === 'streetwear'"
+              (click)="fontCategoryFilter = 'streetwear'"
+            >
+              Streetwear
+            </button>
+            <button
+              type="button"
+              class="font-cat-btn"
+              [class.active]="fontCategoryFilter === '3d'"
+              (click)="fontCategoryFilter = '3d'"
+            >
+              3D Athletic
+            </button>
+            <button
+              type="button"
+              class="font-cat-btn"
+              [class.active]="fontCategoryFilter === 'graffiti'"
+              (click)="fontCategoryFilter = 'graffiti'"
+            >
+              Graffiti
+            </button>
+            <button
+              type="button"
+              class="font-cat-btn"
+              [class.active]="fontCategoryFilter === 'bold'"
+              (click)="fontCategoryFilter = 'bold'"
+            >
+              Heavy Bold
+            </button>
+            <button
+              type="button"
+              class="font-cat-btn"
+              [class.active]="fontCategoryFilter === 'techno'"
+              (click)="fontCategoryFilter = 'techno'"
+            >
+              Cyber
+            </button>
+            <button
+              type="button"
+              class="font-cat-btn"
+              [class.active]="fontCategoryFilter === 'script'"
+              (click)="fontCategoryFilter = 'script'"
+            >
+              Gothic/Script
+            </button>
+          </div>
+
+          <!-- Font Grid Selector -->
+          <div class="font-picker-grid">
+            <button
+              type="button"
+              *ngFor="let font of filteredFonts"
+              class="font-card-btn"
+              [class.active]="selectedFont?.id === font.id"
+              (click)="selectFont(font)"
+            >
+              <div class="font-card-header">
+                <span class="font-card-name">{{ font.name }}</span>
+                <span class="font-card-tag">{{ font.category }}</span>
+              </div>
+              <div class="font-sample-preview" [style.font-family]="font.fontFamily">
+                {{ customText || 'FREPPING' }}
+              </div>
+            </button>
+          </div>
+
+          <!-- Color & Styling Row -->
+          <div class="text-styling-section">
+            <div class="control-label-row">
+              <span>Text Color</span>
+              <span class="value-badge">{{ textColor }}</span>
+            </div>
+            <div class="color-swatch-row">
+              <button
+                type="button"
+                *ngFor="let c of textColorPresets"
+                class="color-dot-btn"
+                [class.active]="textColor === c"
+                [style.background-color]="c"
+                (click)="textColor = c; onTextParamChange()"
+                [title]="c"
+              ></button>
+              <input
+                type="color"
+                class="native-color-picker"
+                [(ngModel)]="textColor"
+                (ngModelChange)="onTextParamChange()"
+                title="Custom Color"
+              />
+            </div>
+
+            <!-- Outline / Stroke & Shadow -->
+            <div class="outline-settings-grid">
+              <div class="outline-half">
+                <div class="control-label-row">
+                  <span>Outline Stroke: {{ textStrokeWidth }}px</span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="14"
+                  step="1"
+                  class="slider"
+                  [(ngModel)]="textStrokeWidth"
+                  (ngModelChange)="onTextParamChange()"
+                />
+              </div>
+
+              <div class="outline-half" *ngIf="textStrokeWidth > 0">
+                <div class="control-label-row">
+                  <span>Outline Color</span>
+                </div>
+                <div class="stroke-color-row">
+                  <button
+                    type="button"
+                    class="color-dot-mini"
+                    [class.active]="textStrokeColor === '#000000'"
+                    style="background-color: #000000;"
+                    (click)="textStrokeColor = '#000000'; onTextParamChange()"
+                    title="Black Outline"
+                  ></button>
+                  <button
+                    type="button"
+                    class="color-dot-mini"
+                    [class.active]="textStrokeColor === '#ffffff'"
+                    style="background-color: #ffffff;"
+                    (click)="textStrokeColor = '#ffffff'; onTextParamChange()"
+                    title="White Outline"
+                  ></button>
+                  <button
+                    type="button"
+                    class="color-dot-mini"
+                    [class.active]="textStrokeColor === '#39ff14'"
+                    style="background-color: #39ff14;"
+                    (click)="textStrokeColor = '#39ff14'; onTextParamChange()"
+                    title="Neon Green Outline"
+                  ></button>
+                  <input
+                    type="color"
+                    class="native-color-picker-mini"
+                    [(ngModel)]="textStrokeColor"
+                    (ngModelChange)="onTextParamChange()"
+                    title="Custom Outline Color"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div class="shadow-toggle-row">
+              <label class="checkbox-label">
+                <input
+                  type="checkbox"
+                  [(ngModel)]="textHasShadow"
+                  (ngModelChange)="onTextParamChange()"
+                />
+                <span>Drop Shadow Effect</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Add Text Sticker Action -->
+          <div class="add-sticker-btn-wrapper">
+            <button
+              type="button"
+              class="primary-btn add-sticker-btn"
+              [disabled]="!customText.trim() || isGeneratingText"
+              (click)="addTextSticker()"
+            >
+              <span class="btn-icon">⚡</span>
+              <span>Add Text Sticker to {{ activeGarment === 'hoodie' ? 'Hoodie' : 'T-Shirt' }}</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- ── SUB-MODE 2: IMAGE / LOGO DROPZONE ── -->
         <div
+          *ngIf="artworkTab === 'upload'"
           class="upload-dropzone"
           [class.dragging]="isDraggingFile"
           (dragover)="$event.preventDefault(); isDraggingFile = true"
@@ -516,7 +711,7 @@
 
         <!-- Decal Items List -->
         <div class="decals-container" *ngIf="config.decals.length > 0">
-          <div class="section-subtitle">Active Designs ({{ config.decals.length }})</div>
+          <div class="section-subtitle">Active Designs & Stickers ({{ config.decals.length }})</div>
 
           <div class="decal-chips">
             <button
@@ -611,11 +806,71 @@
               </div>
             </div>
 
-            <!-- Proportional Scale -->
-            <div class="control-row">
+            <!-- ── QUICK TURN / ROTATE ("TORN IT") BUTTONS ── -->
+            <div class="control-row quick-torn-section">
               <div class="control-label-row">
-                <span>Print Scale Factor</span>
+                <span class="control-highlight">🔄 Turn / Rotate ("Torn It")</span>
+                <span class="value-badge">{{ activeDecal.rotation }}°</span>
+              </div>
+              <div class="quick-angle-button-bar">
+                <button type="button" class="angle-btn" (click)="rotateActiveDecalBy(-90)" title="Rotate -90°">-90°</button>
+                <button type="button" class="angle-btn" (click)="rotateActiveDecalBy(-45)" title="Rotate -45°">-45°</button>
+                <button type="button" class="angle-btn" (click)="rotateActiveDecalBy(-15)" title="Rotate -15°">-15°</button>
+                <button type="button" class="angle-btn reset-btn" (click)="setDecalRotation(0)" title="Reset rotation straight">0° Reset</button>
+                <button type="button" class="angle-btn" (click)="rotateActiveDecalBy(15)" title="Rotate +15°">+15°</button>
+                <button type="button" class="angle-btn" (click)="rotateActiveDecalBy(45)" title="Rotate +45°">+45°</button>
+                <button type="button" class="angle-btn" (click)="rotateActiveDecalBy(90)" title="Rotate +90°">+90°</button>
+              </div>
+              <input
+                type="range"
+                min="-180"
+                max="180"
+                step="5"
+                class="slider"
+                [(ngModel)]="activeDecal.rotation"
+                (ngModelChange)="updateActiveDecal()"
+              />
+            </div>
+
+            <!-- ── QUICK CHANGE SIZE PRESET PILLS ── -->
+            <div class="control-row quick-size-section">
+              <div class="control-label-row">
+                <span class="control-highlight">📐 Change Size Presets</span>
                 <span class="value-badge">{{ activeDecal.scale | number:'1.2-2' }}x</span>
+              </div>
+              <div class="quick-size-pill-bar">
+                <button
+                  type="button"
+                  class="size-pill-btn"
+                  [class.active]="activeDecal.scale <= 0.75"
+                  (click)="setDecalScalePreset(0.6)"
+                >
+                  Small
+                </button>
+                <button
+                  type="button"
+                  class="size-pill-btn"
+                  [class.active]="activeDecal.scale > 0.75 && activeDecal.scale <= 1.25"
+                  (click)="setDecalScalePreset(1.0)"
+                >
+                  Medium
+                </button>
+                <button
+                  type="button"
+                  class="size-pill-btn"
+                  [class.active]="activeDecal.scale > 1.25 && activeDecal.scale <= 1.85"
+                  (click)="setDecalScalePreset(1.5)"
+                >
+                  Large
+                </button>
+                <button
+                  type="button"
+                  class="size-pill-btn"
+                  [class.active]="activeDecal.scale > 1.85"
+                  (click)="setDecalScalePreset(2.3)"
+                >
+                  Oversized
+                </button>
               </div>
               <input
                 type="range"
@@ -692,23 +947,6 @@
                 step="0.02"
                 class="slider"
                 [(ngModel)]="activeDecal.y"
-                (ngModelChange)="updateActiveDecal()"
-              />
-            </div>
-
-            <!-- Rotation -->
-            <div class="control-row">
-              <div class="control-label-row">
-                <span>Rotation Angle</span>
-                <span class="value-badge">{{ activeDecal.rotation }}°</span>
-              </div>
-              <input
-                type="range"
-                min="-180"
-                max="180"
-                step="5"
-                class="slider"
-                [(ngModel)]="activeDecal.rotation"
                 (ngModelChange)="updateActiveDecal()"
               />
             </div>

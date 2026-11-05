@@ -40,6 +40,13 @@ export interface DesignDecal {
   opacity: number; // Opacity (0 to 1)
   zIndex?: number; // Layer order (for Bring Forward / Send Backward)
   blendMode?: 'normal' | 'multiply' | 'screen';
+  // Text sticker metadata
+  isTextDecal?: boolean;
+  textContent?: string;
+  fontFamily?: string;
+  textColor?: string;
+  strokeColor?: string;
+  strokeWidth?: number;
 }
 
 /**
