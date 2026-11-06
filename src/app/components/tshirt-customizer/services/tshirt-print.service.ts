@@ -15,6 +15,8 @@ export class TshirtPrintService {
 
   // Raycaster for finding exact 3D surface points and surface normals
   private raycaster = new THREE.Raycaster();
+  // Local proxy mesh for local-coordinate raycasting and projection (avoids double-transformations)
+  private localProxyMesh = new THREE.Mesh();
 
   constructor(private materialService: TshirtMaterialService) {}
 
@@ -23,6 +25,9 @@ export class TshirtPrintService {
    */
   setTargetMesh(mesh: THREE.Mesh, fabricNormalMap?: THREE.Texture | null): void {
     this.targetMesh = mesh;
+    this.localProxyMesh.geometry = mesh.geometry;
+    this.localProxyMesh.matrixWorld.identity();
+    this.localProxyMesh.matrix.identity();
     if (fabricNormalMap) {
       this.fabricNormalMap = fabricNormalMap;
     }
@@ -104,9 +109,13 @@ export class TshirtPrintService {
     // 4. Remove previous decal mesh for this ID
     this.removeDecalMesh(decal.id);
 
-    // 5. Load or retrieve high-quality texture
+    // 5. Load or retrieve high-quality texture with cache invalidation on dataUrl change
     let texture = this.decalTextures.get(decal.id);
-    if (!texture) {
+    const cachedUrl = texture?.userData?.['dataUrl'];
+    if (!texture || cachedUrl !== decal.dataUrl) {
+      if (texture) {
+        texture.dispose();
+      }
       const loader = new THREE.TextureLoader();
       texture = loader.load(decal.dataUrl);
       texture.colorSpace = THREE.SRGBColorSpace;
@@ -114,21 +123,37 @@ export class TshirtPrintService {
       texture.minFilter = THREE.LinearMipmapLinearFilter;
       texture.magFilter = THREE.LinearFilter;
       texture.anisotropy = 8;
+      texture.userData = { dataUrl: decal.dataUrl };
       this.decalTextures.set(decal.id, texture);
     }
 
     try {
-      // 6. Generate Surface-Conforming Geometry
+      // 6. Generate Surface-Conforming Geometry in LOCAL space using localProxyMesh
       const decalGeometry = new DecalGeometry(
-        this.targetMesh,
+        this.localProxyMesh,
         hitPoint,
         dummy.rotation,
         decalSize
       );
 
+      // Micro-offset along local surface normal (0.0008) to guarantee 100% surface adherence without z-fighting
+      const posAttr = decalGeometry.attributes['position'] as THREE.BufferAttribute;
+      const normAttr = decalGeometry.attributes['normal'] as THREE.BufferAttribute;
+      if (posAttr && normAttr) {
+        for (let i = 0; i < posAttr.count; i++) {
+          posAttr.setXYZ(
+            i,
+            posAttr.getX(i) + normAttr.getX(i) * 0.0008,
+            posAttr.getY(i) + normAttr.getY(i) * 0.0008,
+            posAttr.getZ(i) + normAttr.getZ(i) * 0.0008
+          );
+        }
+        posAttr.needsUpdate = true;
+      }
+
       // 7. Realistic Fabric-Printed Material
-      // - Uses fabric normal map so the micro-creases and textile weave show through the printed ink!
-      // - PolygonOffset ensures zero physical gap (0.000) and zero z-fighting!
+      // - Uses fabric normal map so micro-creases and textile weave show through
+      // - PolygonOffset ensures zero physical gap and zero z-fighting
       const layerRank = decal.zIndex !== undefined ? decal.zIndex : layerIndex + 1;
       const decalMaterial = new THREE.MeshPhysicalMaterial({
         map: texture,
@@ -138,11 +163,11 @@ export class TshirtPrintService {
         opacity: decal.opacity !== undefined ? decal.opacity : 1.0,
         depthTest: true,
         depthWrite: false,
-        // Zero physical gap: depth bias handles z-fighting sub-pixel
+        // Depth bias handles z-fighting sub-pixel
         polygonOffset: true,
-        polygonOffsetFactor: -1.0 - layerRank * 0.5,
-        polygonOffsetUnits: -1.0,
-        // Textile ink properties (matte screenprint / DTG ink, not plastic)
+        polygonOffsetFactor: -2.0 - layerRank * 0.5,
+        polygonOffsetUnits: -2.0,
+        // Textile ink properties (matte screenprint / DTG ink)
         roughness: 0.85,
         metalness: 0.0,
         sheen: 0.35,
@@ -150,12 +175,15 @@ export class TshirtPrintService {
         sheenColor: new THREE.Color(0xf1f5f9)
       });
 
-      // Inject fabric motion shader so decal vertices sway and ripple synchronously with garment
+      // Inject fabric motion shader so decal vertices sway synchronously with garment
       this.materialService.injectFabricPhysicsShader(decalMaterial);
 
       const decalMesh = new THREE.Mesh(decalGeometry, decalMaterial);
       decalMesh.name = `Decal_${decal.id}`;
       decalMesh.renderOrder = layerRank;
+      decalMesh.position.set(0, 0, 0);
+      decalMesh.rotation.set(0, 0, 0);
+      decalMesh.scale.set(1, 1, 1);
 
       this.targetMesh.add(decalMesh);
       this.decalMeshes.set(decal.id, decalMesh);
@@ -165,56 +193,61 @@ export class TshirtPrintService {
   }
 
   /**
-   * Cast rays from outside the garment towards the target placement zone
-   * Returns exact 3D surface point and surface normal on the actual deformed geometry
+   * Cast rays from outside the garment towards the target placement zone in LOCAL coordinate space.
+   * Returns exact 3D surface point and surface normal on the actual deformed geometry.
    */
   private sampleGarmentSurface(
     decal: DesignDecal
   ): { hitPoint: THREE.Vector3; hitNormal: THREE.Vector3 } | null {
     if (!this.targetMesh) return null;
 
+    // Ensure localProxyMesh geometry is in sync with targetMesh
+    this.localProxyMesh.geometry = this.targetMesh.geometry;
+    this.localProxyMesh.matrixWorld.identity();
+    this.localProxyMesh.matrix.identity();
+
     const origin = new THREE.Vector3();
     const direction = new THREE.Vector3();
 
-    // Normalized bounds mapping:
-    // Garment height ~2.4, chest center is at Y = 0.35
+    // Normalized bounds mapping in the model's LOCAL space:
+    // Garment normalized height ~1.82, centered around 0. Chest center is Y = 0.22.
     switch (decal.side) {
       case 'front': {
-        // Front: Ray originates from Z = +3.0 pointing backwards (0, 0, -1)
-        const targetX = decal.x * 0.45;
-        const targetY = 0.35 + decal.y * 0.45;
-        origin.set(targetX, targetY, 3.0);
+        // Front: Ray originates from local Z = +2.5 pointing backwards (0, 0, -1)
+        const targetX = decal.x * 0.38;
+        const targetY = 0.22 + decal.y * 0.38;
+        origin.set(targetX, targetY, 2.5);
         direction.set(0, 0, -1);
         break;
       }
       case 'back': {
-        // Back: Ray originates from Z = -3.0 pointing forwards (0, 0, 1)
-        const targetX = -decal.x * 0.45;
-        const targetY = 0.35 + decal.y * 0.45;
-        origin.set(targetX, targetY, -3.0);
+        // Back: Ray originates from local Z = -2.5 pointing forwards (0, 0, 1)
+        const targetX = -decal.x * 0.38;
+        const targetY = 0.22 + decal.y * 0.38;
+        origin.set(targetX, targetY, -2.5);
         direction.set(0, 0, 1);
         break;
       }
       case 'sleeve-left': {
-        // Left Sleeve: Ray originates from X = +3.0 pointing inwards (-1, 0, 0)
-        const targetY = 0.35 + decal.y * 0.22;
-        const targetZ = 0.05 + decal.x * 0.15;
-        origin.set(3.0, targetY, targetZ);
+        // Left Sleeve (model's left): Ray originates from local X = +2.5 pointing inwards (-1, 0, 0)
+        const targetY = 0.22 + decal.y * 0.18;
+        const targetZ = 0.05 + decal.x * 0.12;
+        origin.set(2.5, targetY, targetZ);
         direction.set(-1, 0, 0);
         break;
       }
       case 'sleeve-right': {
-        // Right Sleeve: Ray originates from X = -3.0 pointing inwards (+1, 0, 0)
-        const targetY = 0.35 + decal.y * 0.22;
-        const targetZ = 0.05 - decal.x * 0.15;
-        origin.set(-3.0, targetY, targetZ);
+        // Right Sleeve (model's right): Ray originates from local X = -2.5 pointing inwards (+1, 0, 0)
+        const targetY = 0.22 + decal.y * 0.18;
+        const targetZ = 0.05 - decal.x * 0.12;
+        origin.set(-2.5, targetY, targetZ);
         direction.set(1, 0, 0);
         break;
       }
     }
 
     this.raycaster.set(origin, direction.normalize());
-    const intersections = this.raycaster.intersectObject(this.targetMesh, false);
+    const intersections = this.raycaster.intersectObject(this.localProxyMesh, false);
 
     if (intersections.length > 0) {
       const hit = intersections[0];
@@ -230,7 +263,7 @@ export class TshirtPrintService {
     }
 
     // Fallback: If off the edge, project onto approximate curved bounding surface
-    const fallbackPoint = origin.clone().addScaledVector(direction, 2.7);
+    const fallbackPoint = origin.clone().addScaledVector(direction, 2.2);
     const fallbackNormal = direction.clone().negate();
     return { hitPoint: fallbackPoint, hitNormal: fallbackNormal };
   }
