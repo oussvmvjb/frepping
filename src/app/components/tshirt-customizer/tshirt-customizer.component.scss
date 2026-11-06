@@ -2452,3 +2452,434 @@
 }
 
 
+
+/* --------------------------------------------------------------------------
+   CANVA-LIKE 2D INTERACTIVE STICKER CANVAS OVERLAY
+   -------------------------------------------------------------------------- */
+
+.sticker-canvas-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 15;
+  overflow: hidden;
+}
+
+.canva-sticker-box {
+  position: absolute;
+  pointer-events: auto;
+  user-select: none;
+  touch-action: none;
+  cursor: grab;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: box-shadow 0.15s ease;
+
+  &:active {
+    cursor: grabbing;
+  }
+
+  &.selected {
+    cursor: move;
+  }
+}
+
+.canva-sticker-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  display: block;
+}
+
+/* Canva Selection Outline */
+.canva-border-outline {
+  position: absolute;
+  inset: -3px;
+  border: 2px solid #39ff14;
+  border-radius: 4px;
+  pointer-events: none;
+  box-shadow: 0 0 10px rgba(57, 255, 20, 0.4);
+}
+
+/* Top Rotation Handle & Connecting Stem */
+.canva-rotate-stem {
+  position: absolute;
+  top: -22px;
+  left: 50%;
+  width: 2px;
+  height: 20px;
+  background: #39ff14;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.canva-rotate-handle {
+  position: absolute;
+  top: -34px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 24px;
+  height: 24px;
+  background: #111;
+  border: 2px solid #39ff14;
+  border-radius: 50%;
+  cursor: crosshair;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+  z-index: 20;
+
+  .handle-icon {
+    width: 13px;
+    height: 13px;
+    fill: #39ff14;
+    pointer-events: none;
+  }
+
+  &:hover {
+    background: #39ff14;
+    transform: translateX(-50%) scale(1.15);
+    .handle-icon {
+      fill: #000;
+    }
+  }
+}
+
+/* Corner Handles */
+.canva-handle {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: #ffffff;
+  border: 2px solid #39ff14;
+  border-radius: 2px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+  z-index: 20;
+  transition: transform 0.1s ease;
+
+  &:hover {
+    transform: scale(1.3);
+    background: #39ff14;
+  }
+
+  &.corner-tl {
+    top: -6px;
+    left: -6px;
+    cursor: nwse-resize;
+  }
+  &.corner-tr {
+    top: -6px;
+    right: -6px;
+    cursor: nesw-resize;
+  }
+  &.corner-bl {
+    bottom: -6px;
+    left: -6px;
+    cursor: nesw-resize;
+  }
+  &.corner-br {
+    bottom: -6px;
+    right: -6px;
+    cursor: nwse-resize;
+  }
+}
+
+/* Quick Delete Button */
+.canva-quick-delete-btn {
+  position: absolute;
+  top: -12px;
+  right: -12px;
+  width: 22px;
+  height: 22px;
+  background: #ef4444;
+  color: #fff;
+  border: 1.5px solid #fff;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+  z-index: 22;
+  transition: transform 0.15s ease, background-color 0.15s ease;
+
+  &:hover {
+    background: #dc2626;
+    transform: scale(1.2);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   FONT SEARCH BAR & COUNTER
+   -------------------------------------------------------------------------- */
+
+.font-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0 14px 0;
+
+  .font-search-input-wrap {
+    flex: 1;
+    position: relative;
+    display: flex;
+    align-items: center;
+
+    .search-icon {
+      position: absolute;
+      left: 10px;
+      font-size: 0.85rem;
+      pointer-events: none;
+      opacity: 0.6;
+    }
+
+    .font-search-input {
+      width: 100%;
+      background: #18181b;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 8px;
+      padding: 8px 30px 8px 32px;
+      color: #fff;
+      font-size: 0.82rem;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+
+      &:focus {
+        border-color: #39ff14;
+        box-shadow: 0 0 0 2px rgba(57, 255, 20, 0.2);
+      }
+
+      &::placeholder {
+        color: rgba(255, 255, 255, 0.35);
+      }
+    }
+
+    .search-clear-btn {
+      position: absolute;
+      right: 8px;
+      background: none;
+      border: none;
+      color: rgba(255, 255, 255, 0.5);
+      cursor: pointer;
+      font-size: 0.75rem;
+      padding: 4px;
+
+      &:hover {
+        color: #fff;
+      }
+    }
+  }
+
+  .font-count-pill {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #a1a1aa;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 6px 10px;
+    border-radius: 6px;
+    white-space: nowrap;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   DEDICATED 2D DESIGN CANVAS (CANVA-LIKE WORKSPACE)
+   -------------------------------------------------------------------------- */
+.canvas-side-switcher {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+  margin-bottom: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 4px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+
+  .canvas-side-btn {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    padding: 6px 4px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+    text-align: center;
+
+    &:hover {
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    &.active {
+      background: #39ff14;
+      color: #000000;
+      box-shadow: 0 0 10px rgba(57, 255, 20, 0.3);
+    }
+  }
+}
+
+.design-canvas-wrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 4.8;
+  max-height: 420px;
+  background: radial-gradient(circle at 50% 50%, #1c1c22 0%, #0d0d10 100%);
+  border: 1.5px solid rgba(57, 255, 20, 0.3);
+  border-radius: 14px;
+  overflow: hidden;
+  margin: 12px 0 18px 0;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), inset 0 0 20px rgba(57, 255, 20, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+}
+
+.design-canvas-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  opacity: 0.35;
+  filter: drop-shadow(0 0 12px rgba(57, 255, 20, 0.15));
+  pointer-events: none;
+}
+
+.design-canvas-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  z-index: 10;
+}
+
+.canvas-toolbar {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(14, 14, 18, 0.85);
+  backdrop-filter: blur(8px);
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  z-index: 25;
+
+  .canvas-tool-btn {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #e2e8f0;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.74rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+
+    &:hover:not(:disabled) {
+      background: #39ff14;
+      color: #000;
+      border-color: #39ff14;
+    }
+
+    &:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+  }
+
+  .canvas-info {
+    margin-left: auto;
+    font-size: 0.72rem;
+    color: #94a3b8;
+    font-weight: 500;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   COMPACT FONT CATALOG LIST (32px ROW, ALL 640+ FONTS)
+   -------------------------------------------------------------------------- */
+.font-compact-list {
+  display: flex;
+  flex-direction: column;
+  max-height: 280px;
+  overflow-y: auto;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background: #111114;
+  margin-bottom: 16px;
+  scrollbar-width: thin;
+  scrollbar-color: #39ff14 rgba(255, 255, 255, 0.05);
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(57, 255, 20, 0.4);
+    border-radius: 3px;
+  }
+}
+
+.font-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 34px;
+  padding: 0 12px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  color: #cbd5e1;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, padding-left 0.15s ease;
+
+  &:hover {
+    background: rgba(57, 255, 20, 0.08);
+    color: #ffffff;
+    padding-left: 16px;
+  }
+
+  &.active {
+    background: rgba(57, 255, 20, 0.16);
+    color: #39ff14;
+    border-left: 3px solid #39ff14;
+    font-weight: 600;
+  }
+
+  .font-item-name {
+    font-size: 0.84rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 75%;
+  }
+
+  .font-item-cat {
+    font-size: 0.65rem;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: rgba(255, 255, 255, 0.04);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+}

@@ -7,7 +7,8 @@ import {
   OnDestroy,
   ViewChild,
   ChangeDetectorRef,
-  NgZone
+  NgZone,
+  HostListener
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -28,7 +29,8 @@ import {
   FabricPreset,
   SavedDesign,
   BodyMeasurements,
-  AvatarFittingResult
+  AvatarFittingResult,
+  DecalSide
 } from './models/tshirt-customizer.models';
 
 import {
@@ -56,6 +58,46 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
   @ViewChild('canvasRef', { static: true }) canvasRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('fileInputRef') fileInputRef!: ElementRef<HTMLInputElement>;
   @ViewChild('textureFileInputRef') textureFileInputRef!: ElementRef<HTMLInputElement>;
+  @ViewChild('stickerOverlayRef') stickerOverlayRef?: ElementRef<HTMLDivElement>;
+  @ViewChild('designCanvasRef') designCanvasRef?: ElementRef<HTMLDivElement>;
+
+  // Undo / Redo stacks
+  undoStack: string[] = [];
+  redoStack: string[] = [];
+
+  // Design canvas 2D drag/resize/rotate state
+  private _dc_dragIdx = -1;
+  private _dc_dragOX = 0;
+  private _dc_dragOY = 0;
+  private _dc_resizeIdx = -1;
+  private _dc_resizeCorner = '';
+  private _dc_resizeStartX = 0;
+  private _dc_resizeStartY = 0;
+  private _dc_resizeStartW = 0;
+  private _dc_resizeStartH = 0;
+  private _dc_resizeStartCX = 0;
+  private _dc_resizeStartCY = 0;
+  private _dc_rotateIdx = -1;
+  private _dc_rotateStartAngle = 0;
+  private _dc_rotateInitRot = 0;
+
+  // ── Canva-Like 2-D Sticker Drag / Resize state ──────────────────────────
+  private _dragDecalIndex = -1;
+  private _dragOffsetX = 0;
+  private _dragOffsetY = 0;
+  private _resizeDecalIndex = -1;
+  private _resizeCorner = '';
+  private _resizeStartX = 0;
+  private _resizeStartY = 0;
+  private _resizeStartW = 0;
+  private _resizeStartH = 0;
+  private _resizeStartCX = 0;
+  private _resizeStartCY = 0;
+  private _rotateDecalIndex = -1;
+  private _rotateStartAngle = 0;
+  private _rotateInitialRot = 0;
+  private _boundMouseMove = this._onOverlayMouseMove.bind(this);
+  private _boundMouseUp   = this._onOverlayMouseUp.bind(this);
 
   // Asset configurations
   @Input() highModelPath = 'assets/t-shirt/Hi_T-shirt.fbx';
@@ -157,6 +199,16 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
 
   // Custom Text Sticker Studio
   artworkTab: 'text' | 'upload' = 'text';
+  activeDesignSide: DecalSide = 'front';
+
+  setActiveDesignSide(side: DecalSide): void {
+    this.activeDesignSide = side;
+    if (side === 'front') this.setPresetAngle('front');
+    else if (side === 'back') this.setPresetAngle('back');
+    else if (side === 'sleeve-left') this.setPresetAngle('left');
+    else if (side === 'sleeve-right') this.setPresetAngle('right');
+    this.cdr.detectChanges();
+  }
   customText = 'FREPPING';
   selectedFont: CustomizerFont | null = null;
   textColor = '#39ff14';
@@ -166,6 +218,7 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
   textPreviewDataUrl = '';
   isGeneratingText = false;
   fontCategoryFilter: 'all' | 'streetwear' | '3d' | 'graffiti' | 'bold' | 'techno' | 'script' = 'all';
+  fontSearchQuery = '';
 
   readonly textColorPresets: string[] = [
     '#ffffff', // Pure White
@@ -290,6 +343,8 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
     if (this.resizeObserver) this.resizeObserver.disconnect();
     this.removeEventListeners();
     this.disposeThree();
+    window.removeEventListener('mousemove', this._boundMouseMove);
+    window.removeEventListener('mouseup',   this._boundMouseUp);
   }
 
   /**
@@ -1110,7 +1165,7 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
           name: file.name.replace(/\.[^/.]+$/, ''),
           dataUrl,
           image: img,
-          side: 'front',
+          side: this.activeDesignSide,
           x: 0,
           y: 0,
           scale: 1.0,
@@ -1125,6 +1180,7 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
 
         this.config.decals.push(newDecal);
         this.activeDecalIndex = this.config.decals.length - 1;
+        this.initDecalScreenPos(newDecal);
         this.printService.applyPrint(newDecal, this.config.decals.length - 1);
         this.cdr.detectChanges();
       };
@@ -1167,12 +1223,33 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
 
   removeActiveDecal(): void {
     if (this.activeDecalIndex >= 0 && this.config.decals[this.activeDecalIndex]) {
+      this.pushUndoState();
       const decal = this.config.decals[this.activeDecalIndex];
       this.printService.removeDecal(decal.id);
       this.config.decals.splice(this.activeDecalIndex, 1);
       this.activeDecalIndex = this.config.decals.length > 0 ? 0 : -1;
       this.cdr.detectChanges();
     }
+  }
+
+  duplicateActiveDecal(): void {
+    const decal = this.getActiveDecal();
+    if (!decal) return;
+    this.pushUndoState();
+    const copy: DesignDecal = {
+      ...JSON.parse(JSON.stringify(decal)),
+      id: (decal.isTextDecal ? 'text_decal_' : 'decal_') + Date.now(),
+      name: decal.name + ' (Copy)',
+      x: Math.min(0.8, decal.x + 0.08),
+      y: Math.max(-0.8, decal.y - 0.08),
+      canvasX: (decal.canvasX ?? 160) + 16,
+      canvasY: (decal.canvasY ?? 160) + 16
+    };
+    if (decal.image) copy.image = decal.image;
+    this.config.decals.push(copy);
+    this.activeDecalIndex = this.config.decals.length - 1;
+    this.printService.applyPrint(copy, this.activeDecalIndex);
+    this.cdr.detectChanges();
   }
 
   onDecalWidthChange(width: number): void {
@@ -1247,12 +1324,15 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
 
   // --- Text Sticker Studio & Rotation / Scale Helpers ---
   get filteredFonts(): CustomizerFont[] {
-    if (this.fontCategoryFilter === 'all') {
-      return this.fontService.featuredFonts;
+    let list = this.fontService.featuredFonts;
+    if (this.fontCategoryFilter !== 'all') {
+      list = list.filter((f) => f.category === this.fontCategoryFilter);
     }
-    return this.fontService.featuredFonts.filter(
-      (f) => f.category === this.fontCategoryFilter
-    );
+    if (this.fontSearchQuery && this.fontSearchQuery.trim()) {
+      const q = this.fontSearchQuery.trim().toLowerCase();
+      list = list.filter((f) => f.name.toLowerCase().includes(q) || f.fontFamily.toLowerCase().includes(q));
+    }
+    return list;
   }
 
   async selectFont(font: CustomizerFont): Promise<void> {
@@ -1325,7 +1405,7 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
           name: `Text: "${this.customText}"`,
           dataUrl: res.dataUrl,
           image: img,
-          side: 'front',
+          side: this.activeDesignSide,
           x: 0,
           y: 0.12,
           scale: 1.0,
@@ -1346,6 +1426,7 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
 
         this.config.decals.push(newDecal);
         this.activeDecalIndex = this.config.decals.length - 1;
+        this.initDecalScreenPos(newDecal);
         this.printService.applyPrint(newDecal, this.activeDecalIndex);
         this.cdr.detectChanges();
       };
@@ -1853,4 +1934,476 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
     }
   }
 
+  // ══════════════════════════════════════════════════════════════════════════
+  // ── Canva-Like 2-D Sticker Overlay ───────────────────────────────────────
+  // ══════════════════════════════════════════════════════════════════════════
+
+  /**
+   * Returns the bounding rect of the garment viewport (overlay coordinate space).
+   */
+  private _overlayRect(): DOMRect {
+    const el = this.stickerOverlayRef?.nativeElement ?? this.containerRef.nativeElement;
+    return el.getBoundingClientRect();
+  }
+
+  /**
+   * Initialise screenX/Y/W/H for a freshly-added decal, placing it in the
+   * centre of the overlay at a sensible default size.
+   */
+  initDecalScreenPos(decal: DesignDecal): void {
+    const r = this._overlayRect();
+    const defW = Math.min(r.width * 0.35, 180);
+    const defH = decal.aspectRatio ? defW / decal.aspectRatio : defW;
+    decal.screenW = defW;
+    decal.screenH = defH;
+    decal.screenX = r.width  / 2;
+    decal.screenY = r.height / 2;
+
+    const dcr = this._designCanvasRect();
+    const cw = dcr.width > 0 ? dcr.width : 320;
+    const ch = dcr.height > 0 ? dcr.height : 380;
+    const cdefW = Math.min(cw * 0.45, 140);
+    const cdefH = decal.aspectRatio ? cdefW / decal.aspectRatio : cdefW;
+    decal.canvasW = cdefW;
+    decal.canvasH = cdefH;
+    decal.canvasX = cw / 2;
+    decal.canvasY = ch * 0.42;
+  }
+
+  /** Clamp a sticker so its bounding box stays within the overlay */
+  private _clampDecal(d: DesignDecal): void {
+    const r = this._overlayRect();
+    const hw = (d.screenW ?? 100) / 2;
+    const hh = (d.screenH ?? 100) / 2;
+    d.screenX = Math.max(hw, Math.min(r.width  - hw, d.screenX ?? r.width / 2));
+    d.screenY = Math.max(hh, Math.min(r.height - hh, d.screenY ?? r.height / 2));
+  }
+
+  // ── Drag ─────────────────────────────────────────────────────────────────
+
+  onStickerMouseDown(e: MouseEvent, index: number): void {
+    e.preventDefault();
+    e.stopPropagation();
+    this.selectDecal(index);
+    const d = this.config.decals[index];
+    const r = this._overlayRect();
+    this._dragDecalIndex = index;
+    this._dragOffsetX = e.clientX - r.left - (d.screenX ?? r.width / 2);
+    this._dragOffsetY = e.clientY - r.top  - (d.screenY ?? r.height / 2);
+    window.addEventListener('mousemove', this._boundMouseMove);
+    window.addEventListener('mouseup',   this._boundMouseUp);
+  }
+
+  onStickerTouchStart(e: TouchEvent, index: number): void {
+    e.preventDefault();
+    this.selectDecal(index);
+    const t = e.touches[0];
+    const d = this.config.decals[index];
+    const r = this._overlayRect();
+    this._dragDecalIndex = index;
+    this._dragOffsetX = t.clientX - r.left - (d.screenX ?? r.width / 2);
+    this._dragOffsetY = t.clientY - r.top  - (d.screenY ?? r.height / 2);
+  }
+
+  onStickerTouchMove(e: TouchEvent): void {
+    if (this._dragDecalIndex < 0) return;
+    e.preventDefault();
+    const t = e.touches[0];
+    const r = this._overlayRect();
+    const d = this.config.decals[this._dragDecalIndex];
+    d.screenX = t.clientX - r.left - this._dragOffsetX;
+    d.screenY = t.clientY - r.top  - this._dragOffsetY;
+    this._clampDecal(d);
+    this.cdr.detectChanges();
+  }
+
+  onStickerTouchEnd(e: TouchEvent): void {
+    if (this._dragDecalIndex >= 0) {
+      this._syncDecalFromScreen(this._dragDecalIndex);
+    }
+    this._dragDecalIndex = -1;
+  }
+
+  // ── Resize ───────────────────────────────────────────────────────────────
+
+  onResizeStart(e: MouseEvent, index: number, corner: string): void {
+    e.preventDefault();
+    e.stopPropagation();
+    const d = this.config.decals[index];
+    this._resizeDecalIndex = index;
+    this._resizeCorner    = corner;
+    this._resizeStartX    = e.clientX;
+    this._resizeStartY    = e.clientY;
+    this._resizeStartW    = d.screenW ?? 120;
+    this._resizeStartH    = d.screenH ?? 120;
+    this._resizeStartCX   = d.screenX ?? 0;
+    this._resizeStartCY   = d.screenY ?? 0;
+    window.addEventListener('mousemove', this._boundMouseMove);
+    window.addEventListener('mouseup',   this._boundMouseUp);
+  }
+
+  // ── Rotate ───────────────────────────────────────────────────────────────
+
+  onRotateStart(e: MouseEvent, index: number): void {
+    e.preventDefault();
+    e.stopPropagation();
+    const d = this.config.decals[index];
+    const r = this._overlayRect();
+    const cx = r.left + (d.screenX ?? 0);
+    const cy = r.top  + (d.screenY ?? 0);
+    this._rotateDecalIndex  = index;
+    this._rotateStartAngle  = Math.atan2(e.clientY - cy, e.clientX - cx) * (180 / Math.PI);
+    this._rotateInitialRot  = d.rotation ?? 0;
+    window.addEventListener('mousemove', this._boundMouseMove);
+    window.addEventListener('mouseup',   this._boundMouseUp);
+  }
+
+  // ── Shared move/up ───────────────────────────────────────────────────────
+
+  private _onOverlayMouseMove(e: MouseEvent): void {
+    // Drag
+    if (this._dragDecalIndex >= 0) {
+      const r = this._overlayRect();
+      const d = this.config.decals[this._dragDecalIndex];
+      d.screenX = e.clientX - r.left - this._dragOffsetX;
+      d.screenY = e.clientY - r.top  - this._dragOffsetY;
+      this._clampDecal(d);
+      this.cdr.detectChanges();
+      return;
+    }
+
+    // Resize
+    if (this._resizeDecalIndex >= 0) {
+      const d = this.config.decals[this._resizeDecalIndex];
+      const dx = e.clientX - this._resizeStartX;
+      const dy = e.clientY - this._resizeStartY;
+      const c  = this._resizeCorner;
+      let newW = this._resizeStartW;
+      let newH = this._resizeStartH;
+
+      if (c === 'br') { newW = Math.max(40, this._resizeStartW + dx); }
+      else if (c === 'bl') { newW = Math.max(40, this._resizeStartW - dx); }
+      else if (c === 'tr') { newW = Math.max(40, this._resizeStartW + dx); }
+      else if (c === 'tl') { newW = Math.max(40, this._resizeStartW - dx); }
+
+      if (d.lockAspectRatio && d.aspectRatio) {
+        newH = newW / d.aspectRatio;
+      } else {
+        if (c === 'br') { newH = Math.max(30, this._resizeStartH + dy); }
+        else if (c === 'tr') { newH = Math.max(30, this._resizeStartH - dy); }
+        else { newH = Math.max(30, this._resizeStartH + dy); }
+      }
+
+      // Adjust centre so the opposite corner is anchored
+      const r = this._overlayRect();
+      if (c === 'tl') {
+        d.screenX = this._resizeStartCX + (this._resizeStartW - newW) / 2;
+        d.screenY = this._resizeStartCY + (this._resizeStartH - newH) / 2;
+      } else if (c === 'tr') {
+        d.screenX = this._resizeStartCX + (newW - this._resizeStartW) / 2;
+        d.screenY = this._resizeStartCY + (this._resizeStartH - newH) / 2;
+      } else if (c === 'bl') {
+        d.screenX = this._resizeStartCX + (this._resizeStartW - newW) / 2;
+        d.screenY = this._resizeStartCY + (newH - this._resizeStartH) / 2;
+      } else {
+        d.screenX = this._resizeStartCX + (newW - this._resizeStartW) / 2;
+        d.screenY = this._resizeStartCY + (newH - this._resizeStartH) / 2;
+      }
+
+      d.screenW = newW;
+      d.screenH = newH;
+      this._clampDecal(d);
+      this.cdr.detectChanges();
+      return;
+    }
+
+    // Rotate
+    if (this._rotateDecalIndex >= 0) {
+      const d = this.config.decals[this._rotateDecalIndex];
+      const r = this._overlayRect();
+      const cx = r.left + (d.screenX ?? 0);
+      const cy = r.top  + (d.screenY ?? 0);
+      const angle = Math.atan2(e.clientY - cy, e.clientX - cx) * (180 / Math.PI);
+      let newRot = this._rotateInitialRot + (angle - this._rotateStartAngle);
+      while (newRot >  180) newRot -= 360;
+      while (newRot < -180) newRot += 360;
+      d.rotation = Math.round(newRot);
+      this.cdr.detectChanges();
+    }
+  }
+
+  private _onOverlayMouseUp(_e: MouseEvent): void {
+    if (this._dragDecalIndex >= 0) {
+      this._syncDecalFromScreen(this._dragDecalIndex);
+      this._dragDecalIndex = -1;
+    }
+    if (this._resizeDecalIndex >= 0) {
+      this._syncDecalFromScreen(this._resizeDecalIndex);
+      this._resizeDecalIndex = -1;
+    }
+    if (this._rotateDecalIndex >= 0) {
+      this.updateActiveDecal();
+      this._rotateDecalIndex = -1;
+    }
+    window.removeEventListener('mousemove', this._boundMouseMove);
+    window.removeEventListener('mouseup',   this._boundMouseUp);
+  }
+
+  /**
+   * After drag/resize ends: convert screen-space position back to 3D (x,y) and
+   * re-apply the decal to the Three.js mesh.
+   */
+  private _syncDecalFromScreen(index: number): void {
+    const d = this.config.decals[index];
+    const r = this._overlayRect();
+    if (!r.width || !r.height) return;
+
+    // Map centre [0..1] → decal x/y in [-1..1] space
+    d.x = ((d.screenX ?? r.width  / 2) / r.width  - 0.5) * 2;
+    d.y = -((d.screenY ?? r.height / 2) / r.height - 0.5) * 2; // flip Y
+
+    // Map screenW to scale relative to full overlay width
+    if (d.screenW !== undefined) {
+      d.scale = d.screenW / (r.width * 0.35); // 35% of width = scale 1.0
+    }
+
+    this.printService.applyPrint(d, index);
+    this.cdr.detectChanges();
+  }
+
+  // ── TrackBy Helpers ────────────────────────────────────────────────────────
+  trackByDecalId(index: number, decal: DesignDecal): string {
+    return decal.id || `${index}`;
+  }
+
+  trackByFontId(index: number, font: CustomizerFont): string {
+    return font.id || font.fontFamily;
+  }
+
+  @HostListener('window:keydown', ['$event'])
+  onKeyDown(e: KeyboardEvent): void {
+    const target = e.target as HTMLElement;
+    const isInput = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable);
+
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+      if (isInput) return;
+      e.preventDefault();
+      if (e.shiftKey) {
+        this.redo();
+      } else {
+        this.undo();
+      }
+    } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+      if (isInput) return;
+      e.preventDefault();
+      this.redo();
+    } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'd') {
+      if (isInput) return;
+      e.preventDefault();
+      this.duplicateActiveDecal();
+    } else if ((e.key === 'Delete' || e.key === 'Backspace') && !isInput) {
+      if (this.activeDecalIndex >= 0) {
+        e.preventDefault();
+        this.removeActiveDecal();
+      }
+    }
+  }
+
+  // ── Undo / Redo System ─────────────────────────────────────────────────────
+  pushUndoState(): void {
+    this.undoStack.push(JSON.stringify(this.config.decals));
+    if (this.undoStack.length > 30) this.undoStack.shift();
+    this.redoStack = [];
+  }
+
+  undo(): void {
+    if (this.undoStack.length === 0) return;
+    this.redoStack.push(JSON.stringify(this.config.decals));
+    const prev = this.undoStack.pop()!;
+    this.config.decals = JSON.parse(prev);
+    if (this.activeDecalIndex >= this.config.decals.length) {
+      this.activeDecalIndex = this.config.decals.length - 1;
+    }
+    this.printService.reprojectAll(this.config.decals);
+    this.cdr.detectChanges();
+  }
+
+  redo(): void {
+    if (this.redoStack.length === 0) return;
+    this.undoStack.push(JSON.stringify(this.config.decals));
+    const next = this.redoStack.pop()!;
+    this.config.decals = JSON.parse(next);
+    if (this.activeDecalIndex >= this.config.decals.length) {
+      this.activeDecalIndex = this.config.decals.length - 1;
+    }
+    this.printService.reprojectAll(this.config.decals);
+    this.cdr.detectChanges();
+  }
+
+  // ── Dedicated 2D Design Canvas (Canva-Like Editor) ─────────────────────────
+  private _designCanvasRect(): DOMRect {
+    if (this.designCanvasRef?.nativeElement) {
+      return this.designCanvasRef.nativeElement.getBoundingClientRect();
+    }
+    return { width: 320, height: 380, left: 0, top: 0, right: 320, bottom: 380, x: 0, y: 0, toJSON: () => {} } as DOMRect;
+  }
+
+  private _clampDesignDecal(d: DesignDecal): void {
+    const r = this._designCanvasRect();
+    const w = r.width || 320;
+    const h = r.height || 380;
+    const hw = (d.canvasW ?? 80) / 2;
+    const hh = (d.canvasH ?? 80) / 2;
+    d.canvasX = Math.max(hw, Math.min(w - hw, d.canvasX ?? w / 2));
+    d.canvasY = Math.max(hh, Math.min(h - hh, d.canvasY ?? h * 0.42));
+  }
+
+  onDesignStickerMouseDown(e: MouseEvent, index: number): void {
+    e.preventDefault();
+    e.stopPropagation();
+    this.pushUndoState();
+    this.selectDecal(index);
+    const d = this.config.decals[index];
+    const r = this._designCanvasRect();
+    this._dc_dragIdx = index;
+    this._dc_dragOX = e.clientX - r.left - (d.canvasX ?? r.width / 2);
+    this._dc_dragOY = e.clientY - r.top  - (d.canvasY ?? r.height * 0.42);
+  }
+
+  onDesignResizeStart(e: MouseEvent, index: number, corner: string): void {
+    e.preventDefault();
+    e.stopPropagation();
+    this.pushUndoState();
+    const d = this.config.decals[index];
+    this._dc_resizeIdx = index;
+    this._dc_resizeCorner = corner;
+    this._dc_resizeStartX = e.clientX;
+    this._dc_resizeStartY = e.clientY;
+    this._dc_resizeStartW = d.canvasW ?? 100;
+    this._dc_resizeStartH = d.canvasH ?? 100;
+    this._dc_resizeStartCX = d.canvasX ?? 0;
+    this._dc_resizeStartCY = d.canvasY ?? 0;
+  }
+
+  onDesignRotateStart(e: MouseEvent, index: number): void {
+    e.preventDefault();
+    e.stopPropagation();
+    this.pushUndoState();
+    const d = this.config.decals[index];
+    const r = this._designCanvasRect();
+    const cx = r.left + (d.canvasX ?? 0);
+    const cy = r.top  + (d.canvasY ?? 0);
+    this._dc_rotateIdx = index;
+    this._dc_rotateStartAngle = Math.atan2(e.clientY - cy, e.clientX - cx) * (180 / Math.PI);
+    this._dc_rotateInitRot = d.rotation ?? 0;
+  }
+
+  onDesignCanvasMouseMove(e: MouseEvent): void {
+    if (this._dc_dragIdx >= 0) {
+      const r = this._designCanvasRect();
+      const d = this.config.decals[this._dc_dragIdx];
+      d.canvasX = e.clientX - r.left - this._dc_dragOX;
+      d.canvasY = e.clientY - r.top  - this._dc_dragOY;
+      this._clampDesignDecal(d);
+      this._syncDecalFromDesignCanvas(this._dc_dragIdx, false);
+      this.cdr.detectChanges();
+      return;
+    }
+
+    if (this._dc_resizeIdx >= 0) {
+      const d = this.config.decals[this._dc_resizeIdx];
+      const dx = e.clientX - this._dc_resizeStartX;
+      const dy = e.clientY - this._dc_resizeStartY;
+      const c  = this._dc_resizeCorner;
+      let newW = this._dc_resizeStartW;
+      let newH = this._dc_resizeStartH;
+
+      if (c === 'br') { newW = Math.max(30, this._dc_resizeStartW + dx); }
+      else if (c === 'bl') { newW = Math.max(30, this._dc_resizeStartW - dx); }
+      else if (c === 'tr') { newW = Math.max(30, this._dc_resizeStartW + dx); }
+      else if (c === 'tl') { newW = Math.max(30, this._dc_resizeStartW - dx); }
+
+      if (d.lockAspectRatio && d.aspectRatio) {
+        newH = newW / d.aspectRatio;
+      } else {
+        if (c === 'br' || c === 'bl') { newH = Math.max(20, this._dc_resizeStartH + dy); }
+        else { newH = Math.max(20, this._dc_resizeStartH - dy); }
+      }
+
+      if (c === 'tl') {
+        d.canvasX = this._dc_resizeStartCX + (this._dc_resizeStartW - newW) / 2;
+        d.canvasY = this._dc_resizeStartCY + (this._dc_resizeStartH - newH) / 2;
+      } else if (c === 'tr') {
+        d.canvasX = this._dc_resizeStartCX + (newW - this._dc_resizeStartW) / 2;
+        d.canvasY = this._dc_resizeStartCY + (this._dc_resizeStartH - newH) / 2;
+      } else if (c === 'bl') {
+        d.canvasX = this._dc_resizeStartCX + (this._dc_resizeStartW - newW) / 2;
+        d.canvasY = this._dc_resizeStartCY + (newH - this._dc_resizeStartH) / 2;
+      } else {
+        d.canvasX = this._dc_resizeStartCX + (newW - this._dc_resizeStartW) / 2;
+        d.canvasY = this._dc_resizeStartCY + (newH - this._dc_resizeStartH) / 2;
+      }
+
+      d.canvasW = newW;
+      d.canvasH = newH;
+      this._clampDesignDecal(d);
+      this._syncDecalFromDesignCanvas(this._dc_resizeIdx, false);
+      this.cdr.detectChanges();
+      return;
+    }
+
+    if (this._dc_rotateIdx >= 0) {
+      const d = this.config.decals[this._dc_rotateIdx];
+      const r = this._designCanvasRect();
+      const cx = r.left + (d.canvasX ?? 0);
+      const cy = r.top  + (d.canvasY ?? 0);
+      const angle = Math.atan2(e.clientY - cy, e.clientX - cx) * (180 / Math.PI);
+      let newRot = this._dc_rotateInitRot + (angle - this._dc_rotateStartAngle);
+      while (newRot >  180) newRot -= 360;
+      while (newRot < -180) newRot += 360;
+      d.rotation = Math.round(newRot);
+      this.updateActiveDecal();
+      this.cdr.detectChanges();
+    }
+  }
+
+  onDesignCanvasMouseUp(e?: MouseEvent): void {
+    if (this._dc_dragIdx >= 0) {
+      this._syncDecalFromDesignCanvas(this._dc_dragIdx, true);
+      this._dc_dragIdx = -1;
+    }
+    if (this._dc_resizeIdx >= 0) {
+      this._syncDecalFromDesignCanvas(this._dc_resizeIdx, true);
+      this._dc_resizeIdx = -1;
+    }
+    if (this._dc_rotateIdx >= 0) {
+      this.updateActiveDecal();
+      this._dc_rotateIdx = -1;
+    }
+  }
+
+  private _syncDecalFromDesignCanvas(index: number, applyImmediate = true): void {
+    const d = this.config.decals[index];
+    if (!d) return;
+    const r = this._designCanvasRect();
+    const w = r.width || 320;
+    const h = r.height || 380;
+
+    // Map canvasX, canvasY into [-1, 1] range for 3D decal placement
+    d.x = ((d.canvasX ?? w / 2) / w - 0.5) * 2;
+    d.y = -((d.canvasY ?? h * 0.42) / h - 0.42) * 2; // centered vertically around chest
+
+    // Scale calculation
+    if (d.canvasW !== undefined) {
+      d.scale = Math.max(0.2, Math.min(3.0, (d.canvasW / (w * 0.4))));
+      d.widthCm = Math.round(22.0 * d.scale * 10) / 10;
+      if (d.aspectRatio) {
+        d.heightCm = Math.round((d.widthCm / d.aspectRatio) * 10) / 10;
+      }
+    }
+
+    if (applyImmediate) {
+      this.printService.applyPrint(d, index);
+    }
+  }
 }

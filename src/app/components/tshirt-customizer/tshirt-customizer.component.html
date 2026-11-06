@@ -452,6 +452,85 @@
           Add custom typography stickers with streetwear & graffiti fonts, or upload your own logos. Stickers wrap seamlessly onto 3D fabric with full rotation and sizing control.
         </p>
 
+        <!-- 2D DESIGN CANVAS -->
+        <div class="canvas-side-switcher">
+          <button
+            type="button"
+            class="canvas-side-btn"
+            [class.active]="activeDesignSide === 'front'"
+            (click)="setActiveDesignSide('front')"
+          >
+            👕 Front Chest
+          </button>
+          <button
+            type="button"
+            class="canvas-side-btn"
+            [class.active]="activeDesignSide === 'back'"
+            (click)="setActiveDesignSide('back')"
+          >
+            🔄 Back
+          </button>
+          <button
+            type="button"
+            class="canvas-side-btn"
+            [class.active]="activeDesignSide === 'sleeve-left'"
+            (click)="setActiveDesignSide('sleeve-left')"
+          >
+            👈 Left Sleeve
+          </button>
+          <button
+            type="button"
+            class="canvas-side-btn"
+            [class.active]="activeDesignSide === 'sleeve-right'"
+            (click)="setActiveDesignSide('sleeve-right')"
+          >
+            👉 Right Sleeve
+          </button>
+        </div>
+
+        <div class="design-canvas-wrapper" #designCanvasRef
+          (mousemove)="onDesignCanvasMouseMove($event)"
+          (mouseup)="onDesignCanvasMouseUp($event)"
+          (mouseleave)="onDesignCanvasMouseUp($event)"
+        >
+          <img class="design-canvas-bg" src="assets/t-shirt/textures/tshirt_pattern_overlay_transparent.png" alt="" draggable="false" />
+          <div class="design-canvas-overlay">
+            <ng-container *ngFor="let d of config.decals; let i = index; trackBy: trackByDecalId">
+              <div
+                *ngIf="(d.side || 'front') === activeDesignSide"
+                class="canva-sticker-box"
+                [class.selected]="activeDecalIndex === i"
+                [style.left.px]="d.canvasX"
+                [style.top.px]="d.canvasY"
+                [style.width.px]="d.canvasW"
+                [style.height.px]="d.canvasH"
+                [style.transform]="'translate(-50%, -50%) rotate(' + (d.rotation || 0) + 'deg)'"
+                (mousedown)="onDesignStickerMouseDown($event, i)"
+                (click)="$event.stopPropagation(); selectDecal(i)"
+              >
+                <img [src]="d.dataUrl" class="canva-sticker-img" [alt]="d.name" draggable="false" />
+                <ng-container *ngIf="activeDecalIndex === i">
+                  <div class="canva-border-outline"></div>
+                  <div class="canva-rotate-stem"></div>
+                  <div class="canva-handle canva-rotate-handle" (mousedown)="onDesignRotateStart($event, i)">
+                    <svg viewBox="0 0 24 24" class="handle-icon"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
+                  </div>
+                  <div class="canva-handle corner-tl" (mousedown)="onDesignResizeStart($event, i, 'tl')"></div>
+                  <div class="canva-handle corner-tr" (mousedown)="onDesignResizeStart($event, i, 'tr')"></div>
+                  <div class="canva-handle corner-bl" (mousedown)="onDesignResizeStart($event, i, 'bl')"></div>
+                  <div class="canva-handle corner-br" (mousedown)="onDesignResizeStart($event, i, 'br')"></div>
+                  <button class="canva-quick-delete-btn" (click)="removeActiveDecal(); $event.stopPropagation()">✕</button>
+                </ng-container>
+              </div>
+            </ng-container>
+          </div>
+          <div class="canvas-toolbar">
+            <button class="canvas-tool-btn" (click)="undo()" [disabled]="undoStack.length === 0" title="Undo (Ctrl+Z)">↩ Undo</button>
+            <button class="canvas-tool-btn" (click)="redo()" [disabled]="redoStack.length === 0" title="Redo (Ctrl+Y)">↪ Redo</button>
+            <span class="canvas-info">{{ config.decals.length }} total item{{ config.decals.length !== 1 ? 's' : '' }}</span>
+          </div>
+        </div>
+
         <!-- Artwork Mode Sub-Tabs -->
         <div class="artwork-subnav">
           <button
@@ -565,22 +644,37 @@
             </button>
           </div>
 
-          <!-- Font Grid Selector -->
-          <div class="font-picker-grid">
+          <!-- Font Search Input & Stats -->
+          <div class="font-search-bar">
+            <div class="font-search-input-wrap">
+              <span class="search-icon">🔍</span>
+              <input
+                type="text"
+                class="font-search-input"
+                placeholder="Search across all 600+ fonts..."
+                [(ngModel)]="fontSearchQuery"
+              />
+              <button
+                *ngIf="fontSearchQuery"
+                class="search-clear-btn"
+                (click)="fontSearchQuery = ''"
+                type="button"
+              >✕</button>
+            </div>
+            <span class="font-count-pill">{{ filteredFonts.length }} fonts</span>
+          </div>
+
+          <!-- Compact Font List -->
+          <div class="font-compact-list">
             <button
               type="button"
-              *ngFor="let font of filteredFonts"
-              class="font-card-btn"
+              *ngFor="let font of filteredFonts; trackBy: trackByFontId"
+              class="font-list-item"
               [class.active]="selectedFont?.id === font.id"
               (click)="selectFont(font)"
             >
-              <div class="font-card-header">
-                <span class="font-card-name">{{ font.name }}</span>
-                <span class="font-card-tag">{{ font.category }}</span>
-              </div>
-              <div class="font-sample-preview" [style.font-family]="font.fontFamily">
-                {{ customText || 'FREPPING' }}
-              </div>
+              <span class="font-item-name" [style.font-family]="font.fontFamily">{{ font.name }}</span>
+              <span class="font-item-cat">{{ font.category }}</span>
             </button>
           </div>
 
@@ -754,6 +848,9 @@
 
             <!-- Quick Position Actions -->
             <div class="quick-actions-row">
+              <button class="action-pill-btn" (click)="duplicateActiveDecal()" title="Duplicate this sticker (Ctrl+D)">
+                📋 Duplicate
+              </button>
               <button class="action-pill-btn" (click)="centerActiveDecal()">
                 ◎ Center Design
               </button>

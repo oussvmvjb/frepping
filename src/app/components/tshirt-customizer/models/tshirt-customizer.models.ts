@@ -47,6 +47,16 @@ export interface DesignDecal {
   textColor?: string;
   strokeColor?: string;
   strokeWidth?: number;
+  // 2D overlay screen-space position (Canva-like editor)
+  screenX?: number;   // px from overlay left (centre of sticker)
+  screenY?: number;   // px from overlay top  (centre of sticker)
+  screenW?: number;   // display width  in px
+  screenH?: number;   // display height in px
+  // Dedicated 2D Design Canvas positioning
+  canvasX?: number;   // px from canvas left (centre of sticker)
+  canvasY?: number;   // px from canvas top (centre of sticker)
+  canvasW?: number;   // display width in px on 2D canvas
+  canvasH?: number;   // display height in px on 2D canvas
 }
 
 /**
