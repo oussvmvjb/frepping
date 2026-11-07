@@ -24,7 +24,7 @@
   position: relative;
   height: 100%;
   background-color: #0a0a0a;
-  background-image: 
+  background-image:
     linear-gradient(rgba(57, 255, 20, 0.035) 1px, transparent 1px),
     linear-gradient(90deg, rgba(57, 255, 20, 0.035) 1px, transparent 1px),
     radial-gradient(circle at 50% 45%, rgba(57, 255, 20, 0.09) 0%, rgba(10, 10, 10, 0.95) 70%);
@@ -43,7 +43,8 @@
   height: 100% !important;
   outline: none;
   cursor: grab;
-  touch-action: none; /* Prevents mobile browser gesture conflicts */
+  touch-action: none;
+  /* Prevents mobile browser gesture conflicts */
 
   &:active {
     cursor: grabbing;
@@ -102,12 +103,21 @@
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes pulse {
-  from { transform: scale(0.85); opacity: 0.6; }
-  to { transform: scale(1.15); opacity: 1; }
+  from {
+    transform: scale(0.85);
+    opacity: 0.6;
+  }
+
+  to {
+    transform: scale(1.15);
+    opacity: 1;
+  }
 }
 
 .loading-title {
@@ -176,8 +186,15 @@
 }
 
 @keyframes slideDown {
-  from { transform: translate(-50%, -10px); opacity: 0; }
-  to { transform: translate(-50%, 0); opacity: 1; }
+  from {
+    transform: translate(-50%, -10px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translate(-50%, 0);
+    opacity: 1;
+  }
 }
 
 /* Viewport UI Controls */
@@ -250,6 +267,45 @@
       letter-spacing: 0.5px;
       color: #39ff14;
       text-transform: uppercase;
+    }
+  }
+
+  .hoodie-style-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 13px;
+    background: rgba(18, 18, 24, 0.92);
+    border: 1px solid rgba(56, 189, 248, 0.4);
+    border-radius: 12px;
+    color: #38bdf8;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
+    transition: all 0.2s ease;
+
+    &:hover {
+      border-color: #38bdf8;
+      background: rgba(56, 189, 248, 0.16);
+      box-shadow: 0 0 16px rgba(56, 189, 248, 0.35);
+      color: #ffffff;
+      transform: translateY(-1px);
+    }
+
+    &:active {
+      transform: scale(0.97);
+    }
+
+    .hoodie-style-icon {
+      font-size: 1rem;
+      line-height: 1;
+    }
+
+    .hoodie-style-label {
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
   }
 
@@ -663,6 +719,7 @@
   &::-webkit-scrollbar {
     width: 6px;
   }
+
   &::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.12);
     border-radius: 3px;
@@ -674,8 +731,15 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .section-title {
@@ -1704,9 +1768,18 @@
 
 /* ── SCROLLBARS ─────────────────────────────────────────────────────────── */
 .sidebar-pane {
-  &::-webkit-scrollbar { width: 5px; }
-  &::-webkit-scrollbar-track { background: #111; }
-  &::-webkit-scrollbar-thumb { background: #39ff14; border-radius: 3px; }
+  &::-webkit-scrollbar {
+    width: 5px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #111;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #39ff14;
+    border-radius: 3px;
+  }
 }
 
 .tab-content-area {
@@ -1735,6 +1808,7 @@
 
 /* ── UPLOAD DROPZONE ────────────────────────────────────────────────────── */
 .upload-dropzone {
+
   &:hover,
   &.dragging {
     border-color: #39ff14;
@@ -1890,7 +1964,10 @@
     overflow-x: auto;
     padding-bottom: 4px;
     scrollbar-width: none;
-    &::-webkit-scrollbar { display: none; }
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
 
     .font-cat-btn {
       padding: 6px 10px;
@@ -2254,6 +2331,7 @@
     height: 100dvh !important;
     min-height: unset;
   }
+
   .customizer-layout.mobile-fullscreen .sidebar-pane {
     display: none !important;
   }
@@ -2287,11 +2365,13 @@
     padding: 5px 4px;
     gap: 4px;
   }
+
   .vp-tools-sidebar .tool-icon-btn {
     width: 32px;
     height: 32px;
     font-size: 0.85rem;
   }
+
   .vp-tools-sidebar .tooltip {
     display: none !important;
   }
@@ -2311,6 +2391,7 @@
     white-space: normal;
     z-index: 10;
   }
+
   .vp-presets-bar .angle-btn {
     padding: 6px 8px;
     font-size: 0.7rem;
@@ -2327,6 +2408,7 @@
     gap: 6px;
     padding: 6px 8px;
   }
+
   .vp-top-bar .stats-pill {
     font-size: 0.72rem;
     padding: 4px 8px;
@@ -2346,19 +2428,24 @@
       display: none;
     }
   }
+
   .vp-top-bar .garment-switch-btn {
     padding: 5px 9px;
     gap: 5px;
+
     .switch-icon {
       font-size: 0.95rem;
+
       &.target-icon {
         font-size: 0.8rem;
       }
     }
+
     .switch-name {
       font-size: 0.7rem;
     }
   }
+
   .vp-hint {
     display: none !important;
   }
@@ -2367,6 +2454,7 @@
   .sidebar-header {
     padding: 10px 14px;
   }
+
   .sidebar-header .sidebar-title {
     font-size: 0.95rem;
   }
@@ -2376,8 +2464,12 @@
     padding: 0 6px;
     overflow-x: auto;
     scrollbar-width: none;
-    &::-webkit-scrollbar { display: none; }
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
   }
+
   .customizer-tabs .tab-btn {
     padding: 10px 8px;
     font-size: 0.7rem;
@@ -2406,6 +2498,7 @@
     grid-template-columns: repeat(4, 1fr);
     gap: 6px;
   }
+
   .size-chips-grid .size-chip {
     padding: 10px 4px;
     font-size: 0.8rem;
@@ -2437,12 +2530,15 @@
   .texture-swatch-grid {
     grid-template-columns: repeat(3, 1fr);
   }
+
   .customizer-tabs .tab-btn {
     padding: 9px 6px;
     font-size: 0.64rem;
   }
+
   .vp-presets-bar {
     left: 4px;
+
     .angle-btn {
       padding: 5px 6px;
       font-size: 0.65rem;
@@ -2544,6 +2640,7 @@
   &:hover {
     background: #39ff14;
     transform: translateX(-50%) scale(1.15);
+
     .handle-icon {
       fill: #000;
     }
@@ -2572,16 +2669,19 @@
     left: -6px;
     cursor: nwse-resize;
   }
+
   &.corner-tr {
     top: -6px;
     right: -6px;
     cursor: nesw-resize;
   }
+
   &.corner-bl {
     bottom: -6px;
     left: -6px;
     cursor: nesw-resize;
   }
+
   &.corner-br {
     bottom: -6px;
     right: -6px;
@@ -2832,6 +2932,7 @@
   &::-webkit-scrollbar {
     width: 6px;
   }
+
   &::-webkit-scrollbar-thumb {
     background: rgba(57, 255, 20, 0.4);
     border-radius: 3px;

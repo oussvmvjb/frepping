@@ -17,10 +17,42 @@ export class TshirtMaterialService {
 
   public customUniforms = {
     uTime: { value: 0 },
+    uWindEnabled: { value: 1.0 },
+    uWindIntensity: { value: 0.65 },
+    uWindSpeed: { value: 1.8 },
+    uWindDirection: { value: new THREE.Vector2(0.707, 0.707) },
+    uBoundsMin: { value: new THREE.Vector3(-0.9, -0.9, -0.3) },
+    uBoundsMax: { value: new THREE.Vector3(0.9, 0.9, 0.3) },
     uAngularVelocity: { value: 0 },
     uFabricIntensity: { value: 1.0 },
     uSway: { value: new THREE.Vector2(0, 0) }
   };
+
+  /**
+   * Set actual geometry bounds for normalized cloth physics displacement
+   */
+  setBounds(bounds: { min: THREE.Vector3; max: THREE.Vector3 } | null): void {
+    if (!bounds) return;
+    this.customUniforms.uBoundsMin.value.copy(bounds.min);
+    this.customUniforms.uBoundsMax.value.copy(bounds.max);
+  }
+
+  setWindEnabled(enabled: boolean): void {
+    this.customUniforms.uWindEnabled.value = enabled ? 1.0 : 0.0;
+  }
+
+  setWindIntensity(val: number): void {
+    this.customUniforms.uWindIntensity.value = Math.max(0, val);
+  }
+
+  setWindSpeed(val: number): void {
+    this.customUniforms.uWindSpeed.value = Math.max(0.1, val);
+  }
+
+  setWindDirection(deg: number): void {
+    const rad = THREE.MathUtils.degToRad(deg);
+    this.customUniforms.uWindDirection.value.set(Math.cos(rad), Math.sin(rad)).normalize();
+  }
 
   /**
    * Initialize and register base textures
@@ -144,14 +176,26 @@ export class TshirtMaterialService {
   public injectFabricPhysicsShader(material: THREE.MeshPhysicalMaterial): void {
     material.onBeforeCompile = (shader) => {
       shader.uniforms['uTime'] = this.customUniforms.uTime;
-      shader.uniforms['uAngularVelocity'] = this.customUniforms.uAngularVelocity;
+      shader.uniforms['uWindEnabled'] = this.customUniforms.uWindEnabled;
+      shader.uniforms['uWindIntensity'] = this.customUniforms.uWindIntensity;
+      shader.uniforms['uWindSpeed'] = this.customUniforms.uWindSpeed;
+      shader.uniforms['uWindDirection'] = this.customUniforms.uWindDirection;
+      shader.uniforms['uBoundsMin'] = this.customUniforms.uBoundsMin;
+      shader.uniforms['uBoundsMax'] = this.customUniforms.uBoundsMax;
       shader.uniforms['uFabricIntensity'] = this.customUniforms.uFabricIntensity;
+      shader.uniforms['uAngularVelocity'] = this.customUniforms.uAngularVelocity;
       shader.uniforms['uSway'] = this.customUniforms.uSway;
 
       shader.vertexShader = `
         uniform float uTime;
-        uniform float uAngularVelocity;
+        uniform float uWindEnabled;
+        uniform float uWindIntensity;
+        uniform float uWindSpeed;
+        uniform vec2 uWindDirection;
+        uniform vec3 uBoundsMin;
+        uniform vec3 uBoundsMax;
         uniform float uFabricIntensity;
+        uniform float uAngularVelocity;
         uniform vec2 uSway;
         ${shader.vertexShader}
       `;
@@ -159,24 +203,65 @@ export class TshirtMaterialService {
       const clothDisplacementCode = `
         #include <begin_vertex>
 
-        float sleeveWeight = smoothstep(0.35, 1.15, abs(position.x));
-        float hemWeight = smoothstep(-0.2, -1.1, position.y);
-        float shoulderHold = smoothstep(0.4, 0.9, position.y);
+        if (uWindEnabled > 0.01 && uWindIntensity > 0.001) {
+          // Normalize coordinates using actual geometry bounding box
+          vec3 bMin = uBoundsMin;
+          vec3 bSize = max(uBoundsMax - uBoundsMin, vec3(0.001));
+          float normY = clamp((position.y - bMin.y) / bSize.y, 0.0, 1.0);
+          float halfW = bSize.x * 0.5;
+          float normAbsX = clamp(abs(position.x - (bMin.x + halfW)) / halfW, 0.0, 1.0);
 
-        float clothFlexibility = clamp((sleeveWeight * 1.15 + hemWeight * 0.85) * (1.0 - shoulderHold * 0.6), 0.0, 1.0);
+          // 1. Bottom hem (normY 0.0 -> 0.38): highest natural freedom to sway
+          float hemWeight = 1.0 - smoothstep(0.0, 0.38, normY);
 
-        float rotationLag = -uAngularVelocity * 0.06 * clothFlexibility;
-        float ripple1 = sin(uTime * 3.2 + position.y * 7.0 + position.x * 4.0) * 0.007 * clothFlexibility;
-        float ripple2 = cos(uTime * 4.5 + position.x * 8.0) * 0.004 * sleeveWeight;
-        float airLift = abs(uAngularVelocity) * 0.018 * hemWeight;
+          // 2. Sleeves (normAbsX > 0.42, normY between 0.30 and 0.85): natural sleeve flutter
+          float sleeveWeight = smoothstep(0.42, 0.80, normAbsX) * smoothstep(0.28, 0.82, normY);
 
-        vec3 fabricOffset = vec3(
-          ripple2 + (uSway.x * 0.03 * clothFlexibility),
-          airLift,
-          rotationLag + ripple1 + (uSway.y * 0.03 * clothFlexibility)
-        ) * uFabricIntensity;
+          // 3. Lower & mid torso: gentle organic breathing fabric waves
+          float torsoWeight = (1.0 - smoothstep(0.12, 0.62, normY)) * (1.0 - smoothstep(normAbsX, 0.22, 0.52));
 
-        transformed += fabricOffset;
+          // 4. Collar & Shoulder line: anatomical pinning (remains completely stable)
+          float shoulderLine = smoothstep(0.68, 0.95, normY);
+          float collarCenter = 1.0 - smoothstep(normAbsX, 0.10, 0.32);
+          float pinFactor = clamp(shoulderLine * 0.92 + collarCenter * shoulderLine * 0.5, 0.0, 1.0);
+
+          // Combined cloth flexibility: hem & sleeves move most, collar/shoulders stay pinned
+          float clothFlex = clamp(hemWeight * 1.1 + sleeveWeight * 1.25 + torsoWeight * 0.55, 0.0, 1.0);
+          clothFlex *= (1.0 - pinFactor * 0.96);
+
+          // Multi-frequency organic wind simulation
+          vec2 windDir = normalize(uWindDirection);
+          float t = uTime * uWindSpeed;
+
+          // Traveling wind gust wave along wind direction
+          float spatialPhase = (position.x * windDir.x + position.z * windDir.y) * 2.8;
+          float wave1 = sin(spatialPhase - t * 2.3) * 0.013;
+
+          // Transverse ripple across fabric
+          float wave2 = cos(position.y * 5.5 + position.x * 3.8 - t * 3.6) * 0.007;
+
+          // Subtle fabric micro-crease wave
+          float wave3 = sin(position.x * 9.0 + position.y * 7.5 + position.z * 11.0 + t * 4.9) * 0.003;
+
+          // Aerodynamic sleeve edge flutter
+          float sleeveFlutter = sin(position.x * 7.0 - t * 4.2) * 0.011 * sleeveWeight;
+
+          // Natural bottom hem billow
+          float hemBillow = (sin(position.x * 4.5 - t * 2.6) + cos(position.z * 4.0 - t * 3.1) * 0.5) * 0.012 * hemWeight;
+
+          vec3 windDir3D = normalize(vec3(windDir.x, 0.08, windDir.y));
+          float effectiveIntensity = uWindIntensity * (uFabricIntensity > 0.0 ? uFabricIntensity : 1.0);
+
+          vec3 clothDisp = (
+            windDir3D * (wave1 + hemBillow) +
+            normal * (wave2 * 0.7 + wave3 * 1.1)
+          ) * clothFlex * effectiveIntensity;
+
+          clothDisp.x += sleeveFlutter * sign(position.x) * effectiveIntensity;
+          clothDisp.y += abs(wave1 + hemBillow) * 0.22 * hemWeight * effectiveIntensity;
+
+          transformed += clothDisp;
+        }
       `;
 
       shader.vertexShader = shader.vertexShader.replace(

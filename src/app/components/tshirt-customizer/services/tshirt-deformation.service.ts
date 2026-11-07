@@ -106,6 +106,13 @@ export const FIT_MODIFIERS: Record<FitStyle, Partial<GarmentMeasurements>> = {
   }
 };
 
+export interface GeometryBounds {
+  min: THREE.Vector3;
+  max: THREE.Vector3;
+  size: THREE.Vector3;
+  center: THREE.Vector3;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -114,21 +121,65 @@ export class TshirtDeformationService {
   private basePositions: Float32Array | null = null;
   private currentMesh: THREE.Mesh | null = null;
   private baseMeasurements: GarmentMeasurements = { ...SIZE_PRESETS.L };
+  private baseBounds: GeometryBounds | null = null;
 
   /**
-   * Register mesh and capture un-deformed base vertex positions
+   * Register mesh and capture un-deformed base vertex positions and real bounding box
    */
   registerMesh(mesh: THREE.Mesh): void {
     this.currentMesh = mesh;
     const posAttr = mesh.geometry.attributes['position'];
     if (!posAttr) return;
 
+    const count = posAttr.count;
     this.basePositions = new Float32Array(posAttr.array.length);
     this.basePositions.set(posAttr.array);
+
+    // Compute actual, pristine geometry bounding box from base vertex positions
+    let minX = Infinity, minY = Infinity, minZ = Infinity;
+    let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
+
+    for (let i = 0; i < count; i++) {
+      const idx = i * 3;
+      const x = this.basePositions[idx];
+      const y = this.basePositions[idx + 1];
+      const z = this.basePositions[idx + 2];
+
+      if (x < minX) minX = x;
+      if (x > maxX) maxX = x;
+      if (y < minY) minY = y;
+      if (y > maxY) maxY = y;
+      if (z < minZ) minZ = z;
+      if (z > maxZ) maxZ = z;
+    }
+
+    this.baseBounds = {
+      min: new THREE.Vector3(minX, minY, minZ),
+      max: new THREE.Vector3(maxX, maxY, maxZ),
+      size: new THREE.Vector3(maxX - minX, maxY - minY, maxZ - minZ),
+      center: new THREE.Vector3((minX + maxX) / 2, (minY + maxY) / 2, (minZ + maxZ) / 2)
+    };
+
+    const triangleCount = mesh.geometry.index ? mesh.geometry.index.count / 3 : count / 3;
+    console.log('[TshirtDeformationService] Registered mesh geometry:', {
+      vertexCount: count,
+      triangleCount,
+      boundsMin: { x: +minX.toFixed(4), y: +minY.toFixed(4), z: +minZ.toFixed(4) },
+      boundsMax: { x: +maxX.toFixed(4), y: +maxY.toFixed(4), z: +maxZ.toFixed(4) },
+      boundsSize: { x: +(maxX - minX).toFixed(4), y: +(maxY - minY).toFixed(4), z: +(maxZ - minZ).toFixed(4) },
+      boundsCenter: { x: +((minX + maxX) / 2).toFixed(4), y: +((minY + maxY) / 2).toFixed(4), z: +((minZ + maxZ) / 2).toFixed(4) }
+    });
   }
 
   /**
-   * Reset to pristine original geometry
+   * Return the computed base geometry bounds
+   */
+  getBaseBounds(): GeometryBounds | null {
+    return this.baseBounds;
+  }
+
+  /**
+   * Reset to pristine original geometry (Size L Regular)
    */
   resetToBaseGeometry(): void {
     if (!this.currentMesh || !this.basePositions) return;
@@ -162,12 +213,20 @@ export class TshirtDeformationService {
    * Apply anatomical parametric deformation to the 3D garment mesh
    */
   applyDeformation(measurements: GarmentMeasurements): void {
-    if (!this.currentMesh || !this.basePositions) return;
+    if (!this.currentMesh || !this.basePositions || !this.baseBounds) return;
 
     const posAttr = this.currentMesh.geometry.attributes['position'];
     const currentPositions = posAttr.array as Float32Array;
     const base = this.basePositions;
     const count = posAttr.count;
+    const bounds = this.baseBounds;
+
+    const bSizeX = bounds.size.x;
+    const bSizeY = bounds.size.y;
+    const bMinY = bounds.min.y;
+    const bCenterX = bounds.center.x;
+    const bCenterZ = bounds.center.z;
+    const halfW = bSizeX * 0.5;
 
     // Measurement delta ratios relative to base Model Size L
     const deltaChest = (measurements.chest - this.baseMeasurements.chest) / this.baseMeasurements.chest;
@@ -178,10 +237,24 @@ export class TshirtDeformationService {
     const deltaSleeveWidth = (measurements.sleeveWidth - this.baseMeasurements.sleeveWidth) / this.baseMeasurements.sleeveWidth;
     const deltaNeck = (measurements.neckOpening - this.baseMeasurements.neckOpening) / this.baseMeasurements.neckOpening;
 
-    // Center geometry normalization constants (normalized height ~2.4, Y in [-1.2, 1.2], X in [-1.25, 1.25])
-    const minY = -1.2;
-    const maxY = 1.2;
-    const totalHeight = maxY - minY;
+    // If exactly Size L Regular (baseline), restore pristine base positions directly
+    const isBaseline =
+      Math.abs(deltaChest) < 1e-5 &&
+      Math.abs(deltaWaist) < 1e-5 &&
+      Math.abs(deltaShoulder) < 1e-5 &&
+      Math.abs(deltaLength) < 1e-5 &&
+      Math.abs(deltaSleeveLen) < 1e-5 &&
+      Math.abs(deltaSleeveWidth) < 1e-5 &&
+      Math.abs(deltaNeck) < 1e-5;
+
+    if (isBaseline) {
+      currentPositions.set(base);
+      posAttr.needsUpdate = true;
+      this.currentMesh.geometry.computeVertexNormals();
+      this.currentMesh.geometry.computeBoundingBox();
+      this.currentMesh.geometry.computeBoundingSphere();
+      return;
+    }
 
     for (let i = 0; i < count; i++) {
       const idx = i * 3;
@@ -189,72 +262,73 @@ export class TshirtDeformationService {
       const y0 = base[idx + 1];
       const z0 = base[idx + 2];
 
-      const normY = THREE.MathUtils.clamp((y0 - minY) / totalHeight, 0, 1);
-      const absX = Math.abs(x0);
-      const distXZ = Math.sqrt(x0 * x0 + z0 * z0);
+      const relX = x0 - bCenterX;
+      const relY = y0 - bMinY; // 0 at hem, bSizeY at shoulder/collar
+      const relZ = z0 - bCenterZ;
 
-      // Anatomical Regions:
-      // 1. Torso Core vs Sleeves vs Collar
-      const isSleeve = THREE.MathUtils.smoothstep(absX, 0.42, 0.95);
-      const isCollar = THREE.MathUtils.smoothstep(normY, 0.82, 0.98) * (1.0 - THREE.MathUtils.smoothstep(distXZ, 0.18, 0.45));
+      // Actual normalized coordinates derived from the real geometry bounds
+      const normY = THREE.MathUtils.clamp(relY / bSizeY, 0, 1);
+      const absRelX = Math.abs(relX);
+      const normAbsX = THREE.MathUtils.clamp(absRelX / halfW, 0, 1);
 
-      // 2. Chest Region (normY ~0.45 to ~0.78, within torso)
-      const chestBell = Math.exp(-Math.pow((normY - 0.62) / 0.18, 2)) * (1.0 - isSleeve);
+      // Anatomical Regions with strictly ordered smoothstep thresholds (min < max):
+      // 1. Sleeve vs Torso: Smooth blend across the armpit / shoulder seam (0.45 -> 0.68)
+      const sleeveWeight = THREE.MathUtils.smoothstep(normAbsX, 0.45, 0.68) * THREE.MathUtils.smoothstep(normY, 0.38, 0.88);
 
-      // 3. Waist / Hem Region (normY ~0.0 to ~0.48)
-      const waistBell = THREE.MathUtils.smoothstep(normY, 0.52, 0.08) * (1.0 - isSleeve);
+      // 2. Waist / Hem Region (normY 0.0 to 0.55): Smooth falloff upward into chest
+      const waistWeight = (1.0 - THREE.MathUtils.smoothstep(normY, 0.18, 0.55)) * (1.0 - sleeveWeight);
 
-      // 4. Shoulder Yoke Region (normY ~0.72 to ~0.95, mid to outer X)
-      const shoulderWeight = THREE.MathUtils.smoothstep(normY, 0.70, 0.92) * THREE.MathUtils.smoothstep(absX, 0.25, 0.75);
+      // 3. Chest Region: Centered at normY = 0.62 with a smooth bell curve
+      const chestWeight = Math.exp(-Math.pow((normY - 0.62) / 0.16, 2)) * (1.0 - sleeveWeight);
 
-      // 5. Sleeve Extension & Width
-      const sleeveArmFactor = isSleeve;
+      // 4. Shoulder Yoke Region: Upper torso near the shoulder line
+      const shoulderWeight = THREE.MathUtils.smoothstep(normY, 0.68, 0.94) * THREE.MathUtils.smoothstep(normAbsX, 0.15, 0.52);
 
-      // ---- Apply Parametric Deformations ----
+      // 5. Collar / Neckline: Top center
+      const collarWeight = THREE.MathUtils.smoothstep(normY, 0.76, 0.96) * (1.0 - THREE.MathUtils.smoothstep(normAbsX, 0.08, 0.26));
+
+      // ---- Parametric Displacement Accumulator ----
       let dx = 0;
       let dy = 0;
       let dz = 0;
 
-      // Chest expansion (radial in X & Z)
-      const chestRadial = chestBell * deltaChest * 0.42;
-      dx += x0 * chestRadial;
-      dz += z0 * chestRadial * 1.15; // Chest expands slightly more in front/back depth
+      // Chest expansion / contraction (radial in X & Z, preserving curvature)
+      const chestFactor = deltaChest * chestWeight;
+      dx += relX * chestFactor * 0.40;
+      dz += relZ * chestFactor * 0.52;
 
-      // Waist expansion/tapering (radial in X & Z)
-      const waistRadial = waistBell * deltaWaist * 0.45;
-      dx += x0 * waistRadial;
-      dz += z0 * waistRadial * 1.05;
+      // Waist expansion / tapering (radial in X & Z)
+      const waistFactor = deltaWaist * waistWeight;
+      dx += relX * waistFactor * 0.42;
+      dz += relZ * waistFactor * 0.46;
 
-      // Shoulder width (horizontal X scaling with smooth sleeve origin displacement)
-      dx += Math.sign(x0) * Math.abs(x0) * deltaShoulder * shoulderWeight * 0.45;
-      // Also shift entire sleeve outward if shoulders widen
-      if (absX > 0.45) {
-        dx += Math.sign(x0) * (deltaShoulder * 0.18 * isSleeve);
-      }
+      // Shoulder width: smoothly broadens the upper yoke laterally
+      const shoulderFactor = deltaShoulder * shoulderWeight;
+      dx += Math.sign(relX) * shoulderFactor * (halfW * 0.35);
 
-      // Shirt Length (moves lower vertices downward proportional to distance from chest)
-      const lengthFalloff = THREE.MathUtils.smoothstep(normY, 0.70, 0.0);
-      dy += deltaLength * 0.35 * lengthFalloff * (1.0 - isSleeve * 0.8);
+      // Smooth outer shoulder carry: sleeves smoothly follow the widening shoulder seam
+      const sleeveCarry = THREE.MathUtils.smoothstep(normAbsX, 0.40, 0.70) * THREE.MathUtils.smoothstep(normY, 0.50, 0.92);
+      dx += Math.sign(relX) * (deltaShoulder * sleeveCarry * halfW * 0.28);
 
-      // Sleeve Length (displaces sleeve vertices along arm angle down and out)
-      if (absX > 0.42) {
-        const sleeveTipFactor = THREE.MathUtils.smoothstep(absX, 0.50, 1.15);
-        dx += Math.sign(x0) * (deltaSleeveLen * 0.28 * sleeveTipFactor);
-        dy -= deltaSleeveLen * 0.18 * sleeveTipFactor; // Sleeves angle slightly downward
-        
-        // Sleeve Width (thickens sleeve circumference radially)
-        const armCenterY = 0.55;
-        const armDistY = y0 - armCenterY;
-        dy += armDistY * deltaSleeveWidth * 0.4 * sleeveTipFactor;
-        dz += z0 * deltaSleeveWidth * 0.45 * sleeveTipFactor;
-      }
+      // Shirt length: hem extends downward, collar remains anchored to shoulders
+      const lengthWeight = (1.0 - THREE.MathUtils.smoothstep(normY, 0.45, 0.88)) * (1.0 - sleeveWeight * 0.9);
+      dy -= deltaLength * lengthWeight * (bSizeY * 0.32);
 
-      // Neck Opening
-      if (isCollar > 0.01) {
-        const neckRadial = isCollar * deltaNeck * 0.35;
-        dx += x0 * neckRadial;
-        dz += z0 * neckRadial;
-      }
+      // Sleeve length: extends smoothly along arm drape angle (outward in X, slightly downward in Y)
+      const sleeveTipFactor = THREE.MathUtils.smoothstep(normAbsX, 0.48, 0.92) * THREE.MathUtils.smoothstep(normY, 0.45, 0.85);
+      dx += Math.sign(relX) * deltaSleeveLen * sleeveTipFactor * (halfW * 0.30);
+      dy -= deltaSleeveLen * sleeveTipFactor * (bSizeY * 0.16);
+
+      // Sleeve width: radial circumference expansion around the sleeve axis
+      const armCenterY = bMinY + bSizeY * 0.62;
+      const distArmY = y0 - armCenterY;
+      dy += distArmY * deltaSleeveWidth * sleeveWeight * 0.35;
+      dz += relZ * deltaSleeveWidth * sleeveWeight * 0.40;
+
+      // Neck opening: subtle radial adjustment around neckline
+      const neckFactor = deltaNeck * collarWeight;
+      dx += relX * neckFactor * 0.25;
+      dz += relZ * neckFactor * 0.25;
 
       currentPositions[idx] = x0 + dx;
       currentPositions[idx + 1] = y0 + dy;
@@ -269,6 +343,7 @@ export class TshirtDeformationService {
 
   dispose(): void {
     this.basePositions = null;
+    this.baseBounds = null;
     this.currentMesh = null;
   }
 }

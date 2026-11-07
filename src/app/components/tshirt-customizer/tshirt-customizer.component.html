@@ -1304,19 +1304,103 @@
           />
         </div>
 
+        <div class="divider"></div>
+
+        <div class="section-title">Cloth Wind Simulation</div>
+        <p class="section-desc">
+          Real-time GPU fabric wave dynamics with natural organic breeze, fluttering sleeves, and anchored collar.
+        </p>
+
+        <!-- Wind Enable Switch -->
         <div class="control-row">
           <div class="control-label-row">
-            <span>Cloth Motion Intensity</span>
-            <span class="value-badge">{{ config.clothPhysicsIntensity | number:'1.1-1' }}x</span>
+            <span>Wind Simulation</span>
+            <button
+              class="pill-btn"
+              [class.active]="config.clothPhysicsEnabled"
+              (click)="toggleClothPhysics()"
+            >
+              <span class="dot"></span>
+              {{ config.clothPhysicsEnabled ? 'ENABLED' : 'PAUSED' }}
+            </button>
           </div>
-          <input
-            type="range"
-            min="0"
-            max="2.5"
-            step="0.1"
-            class="slider"
-            [(ngModel)]="config.clothPhysicsIntensity"
-          />
+        </div>
+
+        <div *ngIf="config.clothPhysicsEnabled">
+          <!-- Wind Intensity -->
+          <div class="control-row">
+            <div class="control-label-row">
+              <span>Wind Intensity</span>
+              <span class="value-badge">{{ config.clothPhysicsIntensity | number:'1.2-2' }}x</span>
+            </div>
+            <input
+              type="range"
+              min="0.1"
+              max="2.0"
+              step="0.05"
+              class="slider"
+              [ngModel]="config.clothPhysicsIntensity"
+              (ngModelChange)="setWindIntensity($event)"
+            />
+          </div>
+
+          <!-- Wind Speed -->
+          <div class="control-row">
+            <div class="control-label-row">
+              <span>Breeze Speed</span>
+              <span class="value-badge">{{ (config.windSpeed || 1.8) | number:'1.1-1' }}x</span>
+            </div>
+            <input
+              type="range"
+              min="0.5"
+              max="3.5"
+              step="0.1"
+              class="slider"
+              [ngModel]="config.windSpeed || 1.8"
+              (ngModelChange)="setWindSpeed($event)"
+            />
+          </div>
+
+          <!-- Wind Direction Slider -->
+          <div class="control-row">
+            <div class="control-label-row">
+              <span>Wind Direction</span>
+              <span class="value-badge">{{ (config.windDirectionDeg !== undefined ? config.windDirectionDeg : 45) }}°</span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="360"
+              step="5"
+              class="slider"
+              [ngModel]="config.windDirectionDeg !== undefined ? config.windDirectionDeg : 45"
+              (ngModelChange)="setWindDirection($event)"
+            />
+          </div>
+
+          <!-- Wind Direction Quick Angles -->
+          <div class="wind-presets-row">
+            <button
+              class="wind-preset-btn"
+              [class.active]="(config.windDirectionDeg || 45) === 0"
+              (click)="setWindDirection(0)"
+            >Front (0°)</button>
+            <button
+              class="wind-preset-btn"
+              [class.active]="(config.windDirectionDeg || 45) === 45"
+              (click)="setWindDirection(45)"
+            >Angle (45°)</button>
+            <button
+              class="wind-preset-btn"
+              [class.active]="(config.windDirectionDeg || 45) === 90"
+              (click)="setWindDirection(90)"
+            >Right (90°)</button>
+            <button
+              class="wind-preset-btn"
+              [class.active]="(config.windDirectionDeg || 45) === 180"
+              (click)="setWindDirection(180)"
+            >Back (180°)</button>
+          </div>
         </div>
       </section>
 

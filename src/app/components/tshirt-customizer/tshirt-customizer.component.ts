@@ -143,7 +143,9 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
     decals: [],
     wireframe: false,
     clothPhysicsEnabled: true,
-    clothPhysicsIntensity: 1.0
+    clothPhysicsIntensity: 0.65,
+    windSpeed: 1.8,
+    windDirectionDeg: 45
   };
 
   // Color Swatches Palette
@@ -293,6 +295,8 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
   private targetAngleY = 0;
   private currentAngleX = 0;
   private targetAngleX = 0;
+  private pointerVelocityY = 0;
+  private pointerVelocityX = 0;
   private angularVelocity = 0;
   private lastAngleY = 0;
 
@@ -574,11 +578,15 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
       const scale = 1.82 / maxDim;
       geometry.scale(scale, scale, scale);
     }
+    geometry.computeBoundingBox();
+    geometry.computeBoundingSphere();
+    geometry.computeVertexNormals();
 
     mesh.geometry = geometry;
 
     // Register mesh with deformation service to store base positions
     this.deformationService.registerMesh(mesh);
+    this.materialService.setBounds(this.deformationService.getBaseBounds());
 
     // Create PBR materials with cloth vertex shader
     this.materialService.createMaterialsForMesh(mesh, this.config.colorHex);
@@ -1548,6 +1556,22 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
 
   toggleClothPhysics(): void {
     this.config.clothPhysicsEnabled = !this.config.clothPhysicsEnabled;
+    this.materialService.setWindEnabled(this.config.clothPhysicsEnabled);
+  }
+
+  setWindIntensity(val: number): void {
+    this.config.clothPhysicsIntensity = val;
+    this.materialService.setWindIntensity(val);
+  }
+
+  setWindSpeed(val: number): void {
+    this.config.windSpeed = val;
+    this.materialService.setWindSpeed(val);
+  }
+
+  setWindDirection(deg: number): void {
+    this.config.windDirectionDeg = deg;
+    this.materialService.setWindDirection(deg);
   }
 
   // --- 8. Virtual Fitting / Try-On Simulation ---
@@ -1723,36 +1747,52 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
     const delta = Math.min(this.clock.getDelta(), 0.1);
     const elapsedTime = this.clock.getElapsedTime();
 
-    if (this.autoRotate && !this.isInteracting) {
-      this.targetAngleY += delta * 0.6;
+    // 1. Smooth 360 Turntable Auto-Rotation (when enabled and user not dragging)
+    if (this.autoRotate && !this.isInteracting && !this.isPointerDown) {
+      this.targetAngleY += delta * 0.65;
     }
 
-    const rotSpeed = 1.0 - Math.exp(-12 * delta);
-    this.currentAngleY += (this.targetAngleY - this.currentAngleY) * rotSpeed;
-    this.currentAngleX += (this.targetAngleX - this.currentAngleX) * rotSpeed;
+    // 2. Realistic Inertia Momentum after releasing drag
+    if (!this.isPointerDown) {
+      if (Math.abs(this.pointerVelocityY) > 0.0005) {
+        this.targetAngleY += this.pointerVelocityY * delta;
+        this.pointerVelocityY *= Math.exp(-4.2 * delta); // natural air/friction damping
+      } else {
+        this.pointerVelocityY = 0;
+        if (!this.autoRotate) {
+          this.isInteracting = false;
+        }
+      }
 
-    const diffAngleY = this.currentAngleY - this.lastAngleY;
-    this.angularVelocity = diffAngleY / (delta || 0.016);
-    this.lastAngleY = this.currentAngleY;
+      if (Math.abs(this.pointerVelocityX) > 0.0005) {
+        this.targetAngleX = THREE.MathUtils.clamp(
+          this.targetAngleX + this.pointerVelocityX * delta,
+          -0.30,
+          0.30
+        );
+        this.pointerVelocityX *= Math.exp(-4.2 * delta);
+      } else {
+        this.pointerVelocityX = 0;
+      }
+    }
 
-    // Secondary Garment Momentum & Sway
-    const targetSwayZ = -THREE.MathUtils.clamp(this.angularVelocity * 0.035, -0.15, 0.15);
-    const targetSwayX = THREE.MathUtils.clamp(Math.abs(this.angularVelocity) * 0.015, 0, 0.08);
+    // 3. Smooth Damping to Target Angles
+    const rotDamping = 1.0 - Math.exp(-14 * delta);
+    this.currentAngleY += (this.targetAngleY - this.currentAngleY) * rotDamping;
+    this.currentAngleX += (this.targetAngleX - this.currentAngleX) * rotDamping;
 
-    this.swayZ += (targetSwayZ - this.swayZ) * (delta * 8.0);
-    this.swayX += (targetSwayX - this.swayX) * (delta * 8.0);
-
+    // 4. Stable Upright 360 Rotation around vertical center (Y-axis) with gentle clamped pitch
     this.modelPivot.rotation.y = this.currentAngleY;
-    this.modelPivot.rotation.x = this.currentAngleX + this.swayX;
-    this.modelPivot.rotation.z = this.swayZ;
+    this.modelPivot.rotation.x = this.currentAngleX;
+    this.modelPivot.rotation.z = 0; // Pure upright rotation: zero tilting or wobbling on Z
 
-    // Update Material Fabric Shader Uniforms
+    // 5. Update Fabric & Wind Shader Uniforms
     this.materialService.customUniforms.uTime.value = elapsedTime;
-    this.materialService.customUniforms.uAngularVelocity.value = this.angularVelocity;
-    this.materialService.customUniforms.uFabricIntensity.value = this.config.clothPhysicsEnabled
-      ? this.config.clothPhysicsIntensity
-      : 0.0;
-    this.materialService.customUniforms.uSway.value.set(this.swayZ, this.swayX);
+    this.materialService.customUniforms.uWindEnabled.value = this.config.clothPhysicsEnabled ? 1.0 : 0.0;
+    this.materialService.customUniforms.uWindIntensity.value = this.config.clothPhysicsIntensity;
+    this.materialService.customUniforms.uWindSpeed.value = this.config.windSpeed ?? 1.8;
+    const windRad = THREE.MathUtils.degToRad(this.config.windDirectionDeg ?? 45);
+    this.materialService.customUniforms.uWindDirection.value.set(Math.cos(windRad), Math.sin(windRad)).normalize();
 
     // Zoom interpolation
     const zoomSpeed = 1.0 - Math.exp(-10 * delta);
@@ -1795,6 +1835,8 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
     if (e.button !== 0) return;
     this.isPointerDown = true;
     this.isInteracting = true;
+    this.pointerVelocityY = 0;
+    this.pointerVelocityX = 0;
     this.lastInteractionTime = performance.now();
     this.previousPointerPos = { x: e.clientX, y: e.clientY };
   };
@@ -1810,19 +1852,28 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
     this.lastInteractionTime = performance.now();
 
     const sensitivity = 0.007;
-    this.targetAngleY += deltaX * sensitivity;
+    const rotDeltaY = deltaX * sensitivity;
+    const rotDeltaX = deltaY * sensitivity * 0.45;
+
+    this.targetAngleY += rotDeltaY;
     this.targetAngleX = THREE.MathUtils.clamp(
-      this.targetAngleX + deltaY * sensitivity * 0.5,
-      -0.28,
-      0.28
+      this.targetAngleX + rotDeltaX,
+      -0.30,
+      0.30
     );
+
+    // Track instant velocity for smooth release momentum/inertia
+    this.pointerVelocityY = this.pointerVelocityY * 0.35 + (rotDeltaY * 48) * 0.65;
+    this.pointerVelocityX = this.pointerVelocityX * 0.35 + (rotDeltaX * 48) * 0.65;
   };
 
   private onPointerUp = (): void => {
     if (this.isPointerDown) {
       this.isPointerDown = false;
-      this.isInteracting = false;
       this.lastInteractionTime = performance.now();
+      if (Math.abs(this.pointerVelocityY) < 0.01 && !this.autoRotate) {
+        this.isInteracting = false;
+      }
     }
   };
 
@@ -1830,6 +1881,8 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
     if (e.touches.length === 1) {
       this.isPointerDown = true;
       this.isInteracting = true;
+      this.pointerVelocityY = 0;
+      this.pointerVelocityX = 0;
       this.previousPointerPos = {
         x: e.touches[0].clientX,
         y: e.touches[0].clientY
@@ -1854,12 +1907,18 @@ export class TshirtCustomizerComponent implements OnInit, AfterViewInit, OnDestr
       };
 
       const sensitivity = 0.008;
-      this.targetAngleY += deltaX * sensitivity;
+      const rotDeltaY = deltaX * sensitivity;
+      const rotDeltaX = deltaY * sensitivity * 0.45;
+
+      this.targetAngleY += rotDeltaY;
       this.targetAngleX = THREE.MathUtils.clamp(
-        this.targetAngleX + deltaY * sensitivity * 0.5,
-        -0.28,
-        0.28
+        this.targetAngleX + rotDeltaX,
+        -0.30,
+        0.30
       );
+
+      this.pointerVelocityY = this.pointerVelocityY * 0.35 + (rotDeltaY * 48) * 0.65;
+      this.pointerVelocityX = this.pointerVelocityX * 0.35 + (rotDeltaX * 48) * 0.65;
     } else if (e.touches.length === 2) {
       e.preventDefault();
       const currentDist = Math.hypot(

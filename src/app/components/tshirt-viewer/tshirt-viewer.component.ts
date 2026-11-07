@@ -585,18 +585,14 @@ export class TshirtViewerComponent implements OnInit, AfterViewInit, OnDestroy {
 
         float clothFlexibility = clamp((sleeveWeight * 1.15 + hemWeight * 0.85) * (1.0 - shoulderHold * 0.6), 0.0, 1.0);
 
-        // Inertia lag opposing angular rotation
-        float rotationLag = -uAngularVelocity * 0.06 * clothFlexibility;
-
-        // Subtle fabric breathing ripples (very small amplitude for realism)
-        float ripple1 = sin(uTime * 3.2 + position.y * 7.0 + position.x * 4.0) * 0.007 * clothFlexibility;
-        float ripple2 = cos(uTime * 4.5 + position.x * 8.0) * 0.004 * sleeveWeight;
-        float airLift = abs(uAngularVelocity) * 0.018 * hemWeight;
+        // Secondary organic cloth breathing ripple
+        float ripple1 = sin(uTime * 2.8 + position.y * 6.0 + position.x * 3.5) * 0.006 * clothFlexibility;
+        float ripple2 = cos(uTime * 4.2 + position.x * 7.0) * 0.003 * sleeveWeight;
 
         vec3 fabricOffset = vec3(
-          ripple2 + (uSway.x * 0.03 * clothFlexibility),
-          airLift,
-          rotationLag + ripple1 + (uSway.y * 0.03 * clothFlexibility)
+          ripple2 + (uSway.x * 0.015 * clothFlexibility),
+          0.0,
+          ripple1 + (uSway.y * 0.015 * clothFlexibility)
         ) * uFabricIntensity;
 
         transformed += fabricOffset;

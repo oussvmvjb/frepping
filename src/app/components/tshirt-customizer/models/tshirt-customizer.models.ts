@@ -109,6 +109,8 @@ export interface GarmentConfig {
   wireframe: boolean;
   clothPhysicsEnabled: boolean;
   clothPhysicsIntensity: number;
+  windSpeed?: number;
+  windDirectionDeg?: number;
 }
 
 /**
