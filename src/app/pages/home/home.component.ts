@@ -328,7 +328,7 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   // ── Navigation ───────────────────────────────────────────────────────────
 
-  goToTryOn(): void { this.router.navigate(['/try-on']); }
+  goToTryOn(): void { this.router.navigate(['/virtual-try-on']); }
   goToShop(): void { this.router.navigate(['/shop']); }
   goToProduct(productId: string): void { this.router.navigate(['/product', productId]); }
   goToTutorial(): void { this.router.navigate(['/tutorial']); }
@@ -350,7 +350,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   tryOnProduct(product: ApiProduct): void {
-    this.router.navigate(['/try-on'], { queryParams: { productId: product.id } });
+    this.router.navigate(['/virtual-try-on'], { queryParams: { productId: product.id } });
   }
 
   // ── Favorites ────────────────────────────────────────────────────────────

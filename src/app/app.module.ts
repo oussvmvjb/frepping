@@ -18,6 +18,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { IntroComponent } from './components/intro/intro.component';
 import { ProductDetailsComponent } from './pages/product-details/product-details.component';
 import { TryOnComponent } from './pages/try-on/try-on.component';
+import { VirtualTryOnComponent } from './pages/virtual-try-on/virtual-try-on.component';
 import { CartComponent } from './pages/cart/cart.component';
 import { ProfileComponent } from './pages/profile/profile.component';
 import { ModelViewerComponent } from './components/model-viewer/model-viewer.component';
@@ -42,6 +43,7 @@ import { TshirtCustomizerComponent } from './components/tshirt-customizer/tshirt
     IntroComponent,
     ProductDetailsComponent,
     TryOnComponent,
+    VirtualTryOnComponent,
     CartComponent,
     CheckoutComponent,
     ProfileComponent,

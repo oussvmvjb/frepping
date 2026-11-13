@@ -1,0 +1,132 @@
+<main class="vton-page">
+  <header class="vton-header">
+    <div class="eyebrow"><span class="eyebrow-dot"></span> DECART AI · LUCY VTON 3.6</div>
+    <h1>REAL-TIME <span>VIRTUAL TRY-ON</span></h1>
+    <p>See your next look live. Choose a piece, start your camera, and switch garments without ending your session.</p>
+  </header>
+
+  <div class="vton-layout">
+    <section class="preview-card" aria-label="Virtual try-on camera preview">
+      <div class="preview-toolbar">
+        <div class="status-label">
+          <span class="status-dot" [class.status-dot--live]="status === 'connected' || status === 'generating'"
+            [class.status-dot--busy]="status === 'connecting' || status === 'reconnecting'"></span>
+          {{ statusLabel }}
+        </div>
+        <span class="model-badge">LUCY VTON 3.6</span>
+      </div>
+
+      <div class="video-stage">
+        <video #outputVideo autoplay playsinline muted [class.video-visible]="hasCameraPreview || hasRemoteVideo"
+          aria-label="Transformed virtual try-on video"></video>
+        <div class="camera-preview-badge" *ngIf="hasCameraPreview && !hasRemoteVideo">
+          <i class="fas fa-video"></i> CAMERA PREVIEW · NOT TRANSFORMED
+        </div>
+        <div class="video-placeholder" *ngIf="!hasRemoteVideo && !hasCameraPreview">
+          <div class="camera-mark"><i class="fas fa-camera"></i></div>
+          <strong *ngIf="!isConnecting">Your live look starts here</strong>
+          <strong *ngIf="isConnecting">Connecting your camera</strong>
+          <span *ngIf="!isConnecting">Your transformed video appears here after you start.</span>
+          <span *ngIf="isConnecting" class="loading-line">Starting a secure Decart session...</span>
+        </div>
+        <div class="video-loading" *ngIf="isConnecting && !hasRemoteVideo && !hasCameraPreview">
+          <span></span><span></span><span></span>
+        </div>
+        <div class="look-chip" *ngIf="hasRemoteVideo && selectedProduct && garmentPreview">
+          <img [src]="garmentPreview" [alt]="selectedProduct.name" />
+          <span>{{ selectedProduct.name }}</span>
+        </div>
+      </div>
+
+      <div class="preview-controls">
+        <button type="button" class="camera-toggle" [disabled]="!hasLiveSession" (click)="toggleCamera()">
+          <i [class]="cameraEnabled ? 'fas fa-video' : 'fas fa-video-slash'"></i>
+          {{ cameraEnabled ? 'Camera on' : 'Camera off' }}
+        </button>
+        <span class="control-spacer"></span>
+        <button type="button" class="stop-button" *ngIf="isSessionActive" (click)="stopSession()">
+          <i class="fas fa-stop"></i> Stop session
+        </button>
+        <button type="button" class="start-button" *ngIf="!isSessionActive" (click)="startSession()">
+          <i class="fas fa-play"></i> Start virtual try-on
+        </button>
+      </div>
+      <div class="connection-note" *ngIf="status === 'idle'">
+        Camera permission is requested only when you start. Sign-in is required to create a Decart session.
+      </div>
+      <div class="error-banner" role="alert" *ngIf="errorMessage">
+        <i class="fas fa-circle-exclamation"></i><span>{{ errorMessage }}</span>
+        <button type="button" aria-label="Dismiss error" (click)="errorMessage = null">&times;</button>
+      </div>
+    </section>
+
+    <aside class="control-panel">
+      <section class="panel-section">
+        <div class="section-heading">
+          <div><span class="section-kicker">01 / YOUR LOOK</span><h2>Choose a garment</h2></div>
+          <button type="button" class="upload-button" (click)="openGarmentPicker()">
+            <i class="fas fa-arrow-up-from-bracket"></i> Upload
+          </button>
+          <input #garmentInput type="file" accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp"
+            class="visually-hidden" (change)="onGarmentFileSelected($event)" />
+        </div>
+
+        <div class="catalog-message" *ngIf="isCatalogLoading">Loading garments from the FREPPING catalog...</div>
+        <div class="catalog-message catalog-message--error" *ngIf="!isCatalogLoading && catalogError">
+          {{ catalogError }}
+        </div>
+        <div class="garment-grid" *ngIf="products.length">
+          <button type="button" class="garment-card" *ngFor="let product of products"
+            [class.garment-card--selected]="selectedProduct?.id === product.id"
+            [disabled]="isSwitchingGarment" (click)="selectProduct(product)">
+            <img [src]="productService.getPrimaryImage(product)" [alt]="product.name" />
+            <span class="garment-check" *ngIf="selectedProduct?.id === product.id"><i class="fas fa-check"></i></span>
+            <span class="garment-name">{{ product.name }}</span>
+          </button>
+        </div>
+        <div class="empty-catalog" *ngIf="!isCatalogLoading && !catalogError && products.length === 0">
+          No catalog garments with images are available yet. Upload a garment image to continue.
+        </div>
+      </section>
+
+      <section class="panel-section prompt-section">
+        <div class="section-heading">
+          <div><span class="section-kicker">02 / STYLE DETAILS</span><h2>Describe your look</h2></div>
+        </div>
+        <textarea [(ngModel)]="prompt" (ngModelChange)="onPromptChange()" rows="3"
+          placeholder="e.g. Wearing a black oversized hoodie with a white logo on the chest."
+          aria-label="Describe the garment"></textarea>
+        <button type="button" class="apply-button" [disabled]="!isSessionActive || isSwitchingGarment"
+          (click)="applyPrompt()">
+          <i class="fas" [class.fa-check]="!isSwitchingGarment" [class.fa-spinner]="isSwitchingGarment"
+            [class.fa-spin]="isSwitchingGarment"></i>
+          {{ isSwitchingGarment ? 'Updating your look...' : 'Apply look' }}
+        </button>
+      </section>
+
+      <section class="panel-section speed-section">
+        <div class="section-heading">
+          <div><span class="section-kicker">03 / CONNECTION</span><h2>Choose a speed</h2></div>
+        </div>
+        <div class="speed-options">
+          <label class="speed-option" [class.speed-option--selected]="speed === 'standard'">
+            <input type="radio" name="speed" value="standard" [(ngModel)]="speed" [disabled]="isSessionActive" />
+            <span class="radio-mark"></span>
+            <span class="speed-copy"><strong>Standard</strong><small>Balanced experience</small></span>
+          </label>
+          <label class="speed-option" [class.speed-option--selected]="speed === 'fast'">
+            <input type="radio" name="speed" value="fast" [(ngModel)]="speed" [disabled]="isSessionActive" />
+            <span class="radio-mark"></span>
+            <span class="speed-copy"><strong>Fast</strong><small>4 credits / second · US only</small></span>
+          </label>
+        </div>
+        <p class="speed-disclaimer">Fast mode uses 2× the standard credits and is available in the US region.</p>
+      </section>
+    </aside>
+  </div>
+
+  <footer class="privacy-note">
+    <i class="fas fa-shield-halved"></i>
+    <span>Your webcam is connected only after you start. Stop the session at any time to end processing and release camera access.</span>
+  </footer>
+</main>

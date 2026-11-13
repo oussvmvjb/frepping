@@ -4,6 +4,7 @@ import { HomeComponent } from './pages/home/home.component';
 import { ShopComponent } from './pages/shop/shop.component';
 import { ProductDetailsComponent } from './pages/product-details/product-details.component';
 import { TryOnComponent } from './pages/try-on/try-on.component';
+import { VirtualTryOnComponent } from './pages/virtual-try-on/virtual-try-on.component';
 import { CartComponent } from './pages/cart/cart.component';
 import { CheckoutComponent } from './pages/checkout/checkout.component';
 import { ProfileComponent } from './pages/profile/profile.component';
@@ -26,6 +27,7 @@ const routes: Routes = [
   { path: 'shop', component: ShopComponent },
   { path: 'product/:id', component: ProductDetailsComponent },
   { path: 'try-on', component: TryOnComponent },
+  { path: 'virtual-try-on', component: VirtualTryOnComponent },
   { path: 'clothes-room', component: ClothesRoomComponent },
   { path: 'cart', component: CartComponent },
   { path: 'checkout', component: CheckoutComponent, canActivate: [AuthGuard] },

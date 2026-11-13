@@ -276,8 +276,8 @@ export class ProductDetailsComponent implements OnInit {
 
   tryOn(): void {
     if (!this.product) return;
-    this.router.navigate(["/try-on"], {
-      queryParams: { productId: this.product.id, modelUrl: this.model3DUrl },
+    this.router.navigate(["/virtual-try-on"], {
+      queryParams: { productId: this.product.id },
     });
   }
 

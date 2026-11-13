@@ -205,7 +205,7 @@ export class ShopComponent implements OnInit, OnDestroy {
   }
 
   tryOnProduct(product: Product): void {
-    this.router.navigate(["/try-on"], { queryParams: { productId: product.id } });
+    this.router.navigate(["/virtual-try-on"], { queryParams: { productId: product.id } });
   }
 
   // -- Likes -----------------------------------------------------------------
