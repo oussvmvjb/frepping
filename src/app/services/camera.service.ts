@@ -7,35 +7,67 @@ export class CameraService {
 
   async start(model: Pick<ModelDefinition, 'fps' | 'width' | 'height'>): Promise<MediaStream> {
     if (!navigator.mediaDevices?.getUserMedia) {
-      throw new Error('Camera access is not available in this browser. Use a secure HTTPS connection.');
+      const isSecure = window.isSecureContext;
+      const hint = !isSecure
+        ? ' Camera access on mobile requires HTTPS or localhost. If you are accessing via local IP (http://...), please enable HTTPS or use a secure tunnel (e.g. ngrok).'
+        : '';
+      throw new Error(`Camera access is not available in this browser.${hint}`);
     }
 
     if (this.stream?.active) return this.stream;
 
-    try {
-      this.stream = await navigator.mediaDevices.getUserMedia({
+    const constraintAttempts: MediaStreamConstraints[] = [
+      {
         audio: false,
         video: {
-          frameRate: model.fps,
-          width: model.width,
-          height: model.height,
+          facingMode: { ideal: 'user' },
+          width: { ideal: model.width },
+          height: { ideal: model.height },
+          frameRate: { ideal: model.fps },
         },
-      });
-      return this.stream;
-    } catch (error) {
-      if (error instanceof DOMException) {
-        if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
-          throw new Error('Camera permission was denied. Allow camera access in your browser and try again.');
+      },
+      {
+        audio: false,
+        video: {
+          facingMode: 'user',
+        },
+      },
+      {
+        audio: false,
+        video: true,
+      },
+    ];
+
+    let lastError: unknown;
+    for (const constraints of constraintAttempts) {
+      try {
+        this.stream = await navigator.mediaDevices.getUserMedia(constraints);
+        return this.stream;
+      } catch (error) {
+        lastError = error;
+        if (error instanceof DOMException && error.name === 'OverconstrainedError') {
+          // Retry with more relaxed constraints
+          continue;
         }
-        if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
-          throw new Error('No camera was found on this device.');
-        }
-        if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
-          throw new Error('The camera is already in use by another application.');
-        }
+        break;
       }
-      throw error;
     }
+
+    if (lastError instanceof DOMException) {
+      if (lastError.name === 'NotAllowedError' || lastError.name === 'PermissionDeniedError') {
+        throw new Error('Camera permission was denied. Allow camera access in your browser and try again.');
+      }
+      if (lastError.name === 'NotFoundError' || lastError.name === 'DevicesNotFoundError') {
+        throw new Error('No camera was found on this device.');
+      }
+      if (lastError.name === 'NotReadableError' || lastError.name === 'TrackStartError') {
+        throw new Error('The camera is already in use by another application.');
+      }
+      if (lastError.name === 'OverconstrainedError') {
+        throw new Error('Your camera does not support the requested video resolution.');
+      }
+    }
+    throw lastError;
   }
 
   setEnabled(enabled: boolean): void {
