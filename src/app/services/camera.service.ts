@@ -16,6 +16,8 @@ export class CameraService {
 
     if (this.stream?.active) return this.stream;
 
+    const fpsNumber = typeof model.fps === 'number' ? model.fps : (model.fps?.max ?? 20);
+
     const constraintAttempts: MediaStreamConstraints[] = [
       {
         audio: false,
@@ -23,7 +25,7 @@ export class CameraService {
           facingMode: { ideal: 'user' },
           width: { ideal: model.width },
           height: { ideal: model.height },
-          frameRate: { ideal: model.fps },
+          frameRate: { ideal: fpsNumber },
         },
       },
       {
