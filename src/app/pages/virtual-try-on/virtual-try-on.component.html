@@ -13,7 +13,64 @@
             [class.status-dot--busy]="status === 'connecting' || status === 'reconnecting'"></span>
           {{ statusLabel }}
         </div>
-        <span class="model-badge">LUCY VTON 3.6</span>
+        <div class="toolbar-badges">
+          <button type="button" class="token-toggle-btn" (click)="toggleTokenDetails()"
+            [title]="tokenInfo ? 'Decart Token Active' : 'View Session Token'">
+            <i class="fas fa-key"></i>
+            <span>{{ tokenInfo ? 'TOKEN ACTIVE' : (userAccessToken ? 'VIEW TOKEN' : 'SIGN IN FOR TOKEN') }}</span>
+          </button>
+          <span class="model-badge">LUCY VTON 3.6</span>
+        </div>
+      </div>
+
+      <!-- Token Viewer Card -->
+      <div class="token-details-panel" *ngIf="showTokenDetails">
+        <div class="token-panel-header">
+          <div class="token-panel-title">
+            <i class="fas fa-shield-halved"></i>
+            <span>Realtime Tokens & Credentials</span>
+          </div>
+          <button type="button" class="token-close-btn" (click)="showTokenDetails = false">&times;</button>
+        </div>
+
+        <div class="token-row">
+          <div class="token-label">Decart Client Token:</div>
+          <div class="token-value-wrap" *ngIf="tokenInfo">
+            <code class="token-code">{{ tokenInfo.token.slice(0, 18) }}...{{ tokenInfo.token.slice(-10) }}</code>
+            <button type="button" class="token-copy-btn" (click)="copyToken(tokenInfo.token)">
+              <i [class]="tokenCopied ? 'fas fa-check' : 'fas fa-copy'"></i>
+              {{ tokenCopied ? 'Copied' : 'Copy' }}
+            </button>
+          </div>
+          <div class="token-value-empty" *ngIf="!tokenInfo">
+            <span>No active Decart client token yet.</span>
+            <button type="button" class="token-fetch-btn" [disabled]="isFetchingToken || !userAccessToken" (click)="checkOrFetchToken()">
+              <i class="fas fa-arrows-rotate" [class.fa-spin]="isFetchingToken"></i>
+              {{ isFetchingToken ? 'Generating...' : 'Get Token Now' }}
+            </button>
+          </div>
+        </div>
+
+        <div class="token-meta" *ngIf="tokenInfo?.expiresAt">
+          <small><i class="fas fa-clock"></i> Expires: {{ tokenInfo?.expiresAt | date:'medium' }}</small>
+        </div>
+
+        <div class="token-row token-row--sub">
+          <div class="token-label">Account JWT:</div>
+          <div class="token-value-wrap" *ngIf="userAccessToken">
+            <code class="token-code">{{ userAccessToken.slice(0, 14) }}...{{ userAccessToken.slice(-8) }}</code>
+            <button type="button" class="token-copy-btn" (click)="copyToken(userAccessToken)">
+              <i class="fas fa-copy"></i> Copy
+            </button>
+          </div>
+          <div class="token-value-empty" *ngIf="!userAccessToken">
+            <span>Not signed in (Sign in to request Decart tokens)</span>
+          </div>
+        </div>
+
+        <div class="token-error" *ngIf="tokenFetchError">
+          <i class="fas fa-triangle-exclamation"></i> {{ tokenFetchError }}
+        </div>
       </div>
 
       <div class="video-stage">

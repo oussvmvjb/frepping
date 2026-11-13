@@ -24,8 +24,15 @@ export interface RealtimeCallbacks {
   onError: (message: string) => void;
 }
 
+export interface RealtimeTokenInfo {
+  token: string;
+  expiresAt: string | null;
+  receivedAt: Date;
+}
+
 interface RealtimeTokenResponse {
   apiKey: string;
+  expiresAt?: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -34,6 +41,7 @@ export class DecartRealtimeService {
   private realtimeClient: RealTimeClient | null = null;
   private connectionGeneration = 0;
   private connecting = false;
+  latestTokenInfo: RealtimeTokenInfo | null = null;
   private readonly tokenUrl =
     `${environment.apiUrl.replace(/\/api\/v1\/?$/, '')}/api/realtime-token`;
 
@@ -146,11 +154,22 @@ export class DecartRealtimeService {
       throw error;
     }
     if (!tokenData.apiKey) throw new Error('The token service did not return a client token.');
+    this.latestTokenInfo = {
+      token: tokenData.apiKey,
+      expiresAt: tokenData.expiresAt ?? null,
+      receivedAt: new Date(),
+    };
     return tokenData.apiKey;
   }
 
+  async fetchTokenInfo(): Promise<RealtimeTokenInfo> {
+    await this.fetchClientToken();
+    return this.latestTokenInfo!;
+  }
+
   private requestClientToken(accessToken: string): Promise<Response> {
-    return fetch(this.tokenUrl, {
+    const url = `${environment.apiUrl.replace(/\/api\/v1\/?$/, '')}/api/realtime-token`;
+    return fetch(url, {
       method: 'POST',
       headers: { Authorization: `Bearer ${accessToken}` },
     });

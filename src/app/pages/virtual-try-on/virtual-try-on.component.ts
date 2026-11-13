@@ -12,7 +12,8 @@ import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { Product } from '../../models/api.models';
 import { CameraService } from '../../services/camera.service';
-import { DecartRealtimeService, RealtimeGarment, RealtimeSpeedMode } from '../../services/decart-realtime.service';
+import { DecartRealtimeService, RealtimeGarment, RealtimeSpeedMode, RealtimeTokenInfo } from '../../services/decart-realtime.service';
+import { AuthService } from '../../services/auth.service';
 import { ProductService } from '../../services/product.service';
 
 type SessionStatus = 'idle' | 'connecting' | 'connected' | 'generating' | 'reconnecting' | 'disconnected' | 'error';
@@ -48,14 +49,57 @@ export class VirtualTryOnComponent implements OnInit, OnDestroy {
   private garmentRevision = 0;
   private readonly destroy$ = new Subject<void>();
 
+  showTokenDetails = false;
+  tokenCopied = false;
+  isFetchingToken = false;
+  tokenFetchError: string | null = null;
+
   constructor(
     private readonly route: ActivatedRoute,
     readonly productService: ProductService,
     private readonly cameraService: CameraService,
     private readonly decartService: DecartRealtimeService,
+    readonly authService: AuthService,
     private readonly zone: NgZone,
     private readonly changeDetector: ChangeDetectorRef
   ) {}
+
+  get tokenInfo(): RealtimeTokenInfo | null {
+    return this.decartService.latestTokenInfo;
+  }
+
+  get userAccessToken(): string | null {
+    return this.authService.getAccessToken();
+  }
+
+  toggleTokenDetails(): void {
+    this.showTokenDetails = !this.showTokenDetails;
+  }
+
+  copyToken(token: string): void {
+    if (!token) return;
+    navigator.clipboard?.writeText(token).then(() => {
+      this.tokenCopied = true;
+      this.changeDetector.markForCheck();
+      setTimeout(() => {
+        this.tokenCopied = false;
+        this.changeDetector.markForCheck();
+      }, 2000);
+    });
+  }
+
+  async checkOrFetchToken(): Promise<void> {
+    this.isFetchingToken = true;
+    this.tokenFetchError = null;
+    try {
+      await this.decartService.fetchTokenInfo();
+    } catch (err) {
+      this.tokenFetchError = err instanceof Error ? err.message : 'Could not fetch token';
+    } finally {
+      this.isFetchingToken = false;
+      this.changeDetector.markForCheck();
+    }
+  }
 
   ngOnInit(): void {
     this.loadGarments();
@@ -295,9 +339,14 @@ export class VirtualTryOnComponent implements OnInit, OnDestroy {
     const video = this.outputVideo?.nativeElement;
     if (!video) return;
     video.srcObject = stream;
+    video.muted = true;
+    video.playsInline = true;
+    video.setAttribute('playsinline', '');
+    video.setAttribute('webkit-playsinline', '');
     this.hasCameraPreview = false;
     this.hasRemoteVideo = true;
     video.play().catch(error => {
+      if (error instanceof DOMException && error.name === 'AbortError') return;
       this.errorMessage = error instanceof Error
         ? `The transformed video could not start: ${error.message}`
         : 'The transformed video could not start.';
@@ -309,8 +358,13 @@ export class VirtualTryOnComponent implements OnInit, OnDestroy {
     const video = this.outputVideo?.nativeElement;
     if (!video) return;
     video.srcObject = stream;
+    video.muted = true;
+    video.playsInline = true;
+    video.setAttribute('playsinline', '');
+    video.setAttribute('webkit-playsinline', '');
     this.hasCameraPreview = true;
     video.play().catch(error => {
+      if (error instanceof DOMException && error.name === 'AbortError') return;
       this.errorMessage = error instanceof Error
         ? `The camera is active, but its preview could not start: ${error.message}`
         : 'The camera is active, but its preview could not start.';
