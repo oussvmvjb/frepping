@@ -301,6 +301,10 @@
   }
 
   video.video-visible { display: block; }
+  video.video-pending {
+    display: block;
+    opacity: 0;
+  }
 }
 
 .camera-preview-badge {

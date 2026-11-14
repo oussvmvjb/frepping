@@ -74,7 +74,13 @@
       </div>
 
       <div class="video-stage">
-        <video #outputVideo autoplay playsinline muted [class.video-visible]="hasCameraPreview || hasRemoteVideo"
+        <video #cameraVideo autoplay playsinline muted [class.video-visible]="hasCameraPreview && !hasRemoteVideo"
+          aria-label="Camera preview"></video>
+        <video #outputVideo autoplay playsinline muted
+          [class.video-visible]="hasRemoteVideo"
+          [class.video-pending]="hasCameraPreview && !hasRemoteVideo"
+          (loadeddata)="onRemoteVideoReady()"
+          (playing)="onRemoteVideoReady()"
           aria-label="Transformed virtual try-on video"></video>
         <div class="camera-preview-badge" *ngIf="hasCameraPreview && !hasRemoteVideo">
           <i class="fas fa-video"></i> CAMERA PREVIEW · NOT TRANSFORMED

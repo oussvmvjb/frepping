@@ -24,6 +24,7 @@ type SessionStatus = 'idle' | 'connecting' | 'connected' | 'generating' | 'recon
   styleUrls: ['./virtual-try-on.component.scss'],
 })
 export class VirtualTryOnComponent implements OnInit, OnDestroy {
+  @ViewChild('cameraVideo') cameraVideo?: ElementRef<HTMLVideoElement>;
   @ViewChild('outputVideo') outputVideo?: ElementRef<HTMLVideoElement>;
   @ViewChild('garmentInput') garmentInput?: ElementRef<HTMLInputElement>;
 
@@ -328,6 +329,14 @@ export class VirtualTryOnComponent implements OnInit, OnDestroy {
     }
   }
 
+  onRemoteVideoReady(): void {
+    const video = this.outputVideo?.nativeElement;
+    if (!video || video.videoWidth === 0 || video.videoHeight === 0) return;
+    this.hasCameraPreview = false;
+    this.hasRemoteVideo = true;
+    this.changeDetector.markForCheck();
+  }
+
   private describeRealtimeError(message: string): string {
     if (/could not establish pc connection/i.test(message)) {
       return 'Decart signaling connected, but the WebRTC media connection could not be established. A VPN, firewall, or restricted network may be blocking WebRTC traffic. Try another network (such as a mobile hotspot) or ask your network administrator to allow WebRTC traffic, then start a new session.';
@@ -343,8 +352,7 @@ export class VirtualTryOnComponent implements OnInit, OnDestroy {
     video.playsInline = true;
     video.setAttribute('playsinline', '');
     video.setAttribute('webkit-playsinline', '');
-    this.hasCameraPreview = false;
-    this.hasRemoteVideo = true;
+    this.hasRemoteVideo = false;
     video.play().catch(error => {
       if (error instanceof DOMException && error.name === 'AbortError') return;
       this.errorMessage = error instanceof Error
@@ -355,7 +363,7 @@ export class VirtualTryOnComponent implements OnInit, OnDestroy {
   }
 
   private showCameraPreview(stream: MediaStream): void {
-    const video = this.outputVideo?.nativeElement;
+    const video = this.cameraVideo?.nativeElement;
     if (!video) return;
     video.srcObject = stream;
     video.muted = true;
@@ -390,9 +398,12 @@ export class VirtualTryOnComponent implements OnInit, OnDestroy {
   private releaseSessionResources(): void {
     this.decartService.disconnect();
     this.cameraService.stop();
-    const video = this.outputVideo?.nativeElement;
-    if (video) video.srcObject = null;
+    const cameraVideo = this.cameraVideo?.nativeElement;
+    const outputVideo = this.outputVideo?.nativeElement;
+    if (cameraVideo) cameraVideo.srcObject = null;
+    if (outputVideo) outputVideo.srcObject = null;
     this.hasCameraPreview = false;
+    this.hasRemoteVideo = false;
     this.cameraEnabled = true;
   }
 }
