@@ -54,6 +54,9 @@ export class VirtualTryOnComponent implements OnInit, OnDestroy {
   tokenCopied = false;
   isFetchingToken = false;
   tokenFetchError: string | null = null;
+  credits: number | null = null;
+  isFetchingCredits = false;
+  creditFetchError: string | null = null;
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -75,6 +78,21 @@ export class VirtualTryOnComponent implements OnInit, OnDestroy {
 
   toggleTokenDetails(): void {
     this.showTokenDetails = !this.showTokenDetails;
+    if (this.showTokenDetails) void this.refreshCreditBalance();
+  }
+
+  async refreshCreditBalance(): Promise<void> {
+    if (this.isFetchingCredits || !this.userAccessToken) return;
+    this.isFetchingCredits = true;
+    this.creditFetchError = null;
+    try {
+      this.credits = await this.decartService.fetchCredits();
+    } catch (error) {
+      this.creditFetchError = error instanceof Error ? error.message : 'Could not load Decart credits.';
+    } finally {
+      this.isFetchingCredits = false;
+      this.changeDetector.markForCheck();
+    }
   }
 
   copyToken(token: string): void {

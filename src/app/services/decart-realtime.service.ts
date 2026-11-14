@@ -167,10 +167,53 @@ export class DecartRealtimeService {
     return this.latestTokenInfo!;
   }
 
+  async fetchCredits(): Promise<number> {
+    let accessToken = this.authService.getAccessToken();
+    if (!accessToken) throw new Error('Sign in to check Decart credits.');
+
+    let response = await this.requestCredits(accessToken);
+    if (response.status === 401) {
+      await firstValueFrom(this.authService.refreshToken());
+      accessToken = this.authService.getAccessToken();
+      if (!accessToken) throw new Error('Your sign-in has expired. Sign in again to continue.');
+      response = await this.requestCredits(accessToken);
+    }
+
+    if (!response.ok) {
+      let detail = `Credits service returned HTTP ${response.status}.`;
+      try {
+        const body = await response.json() as { detail?: unknown };
+        if (typeof body.detail === 'string' && body.detail) detail = body.detail;
+      } catch (error) {
+        if (!(error instanceof SyntaxError)) throw error;
+      }
+      throw new Error(detail);
+    }
+
+    let creditsData: { credits?: unknown };
+    try {
+      creditsData = await response.json() as { credits?: unknown };
+    } catch (error) {
+      if (error instanceof SyntaxError) throw new Error('The credits service returned an invalid response.');
+      throw error;
+    }
+    if (typeof creditsData.credits !== 'number' || !Number.isInteger(creditsData.credits) || creditsData.credits < 0) {
+      throw new Error('The credits service returned an invalid balance.');
+    }
+    return creditsData.credits;
+  }
+
   private requestClientToken(accessToken: string): Promise<Response> {
     const url = `${environment.apiUrl.replace(/\/api\/v1\/?$/, '')}/api/realtime-token`;
     return fetch(url, {
       method: 'POST',
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+  }
+
+  private requestCredits(accessToken: string): Promise<Response> {
+    const url = `${environment.apiUrl.replace(/\/api\/v1\/?$/, '')}/api/realtime-credits`;
+    return fetch(url, {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
   }

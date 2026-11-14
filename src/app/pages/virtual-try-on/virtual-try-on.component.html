@@ -51,6 +51,26 @@
           </div>
         </div>
 
+        <div class="token-row">
+          <div class="token-label">Available Decart API-key credits:</div>
+          <div class="token-value-empty">
+            <strong *ngIf="credits !== null">
+              {{ credits | number }} {{ credits === 1 ? 'credit' : 'credits' }}
+            </strong>
+            <span *ngIf="credits === null && !isFetchingCredits && !creditFetchError">
+              {{ userAccessToken ? 'Not loaded yet.' : 'Sign in to view your balance.' }}
+            </span>
+            <button type="button" class="token-fetch-btn" [disabled]="isFetchingCredits || !userAccessToken"
+              (click)="refreshCreditBalance()">
+              <i class="fas fa-arrows-rotate" [class.fa-spin]="isFetchingCredits"></i>
+              {{ isFetchingCredits ? 'Loading...' : 'Refresh credits' }}
+            </button>
+          </div>
+        </div>
+        <div class="token-error" *ngIf="creditFetchError">
+          <i class="fas fa-triangle-exclamation"></i> {{ creditFetchError }}
+        </div>
+
         <div class="token-meta" *ngIf="tokenInfo?.expiresAt">
           <small><i class="fas fa-clock"></i> Expires: {{ tokenInfo?.expiresAt | date:'medium' }}</small>
         </div>
