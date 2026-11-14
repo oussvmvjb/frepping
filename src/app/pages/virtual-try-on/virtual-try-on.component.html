@@ -9,8 +9,8 @@
     <section class="preview-card" aria-label="Virtual try-on camera preview">
       <div class="preview-toolbar">
         <div class="status-label">
-          <span class="status-dot" [class.status-dot--live]="status === 'connected' || status === 'generating'"
-            [class.status-dot--busy]="status === 'connecting' || status === 'reconnecting'"></span>
+          <span class="status-dot" [class.status-dot--live]="hasRemoteVideo"
+            [class.status-dot--busy]="isConnecting || status === 'reconnecting' || status === 'waitingForTransformation' || status === 'receivingTransformedVideo'"></span>
           {{ statusLabel }}
         </div>
         <div class="toolbar-badges">
@@ -99,8 +99,9 @@
         <video #outputVideo autoplay playsinline muted
           [class.video-visible]="hasRemoteVideo"
           [class.video-pending]="hasCameraPreview && !hasRemoteVideo"
-          (loadeddata)="onRemoteVideoReady()"
-          (playing)="onRemoteVideoReady()"
+          (loadedmetadata)="onRemoteVideoMetadata()"
+          (playing)="onRemoteVideoPlaying()"
+          (timeupdate)="onRemoteVideoTimeUpdate()"
           aria-label="Transformed virtual try-on video"></video>
         <div class="camera-preview-badge" *ngIf="hasCameraPreview && !hasRemoteVideo">
           <i class="fas fa-video"></i> CAMERA PREVIEW · NOT TRANSFORMED
@@ -108,7 +109,7 @@
         <div class="video-placeholder" *ngIf="!hasRemoteVideo && !hasCameraPreview">
           <div class="camera-mark"><i class="fas fa-camera"></i></div>
           <strong *ngIf="!isConnecting">Your live look starts here</strong>
-          <strong *ngIf="isConnecting">Connecting your camera</strong>
+          <strong *ngIf="isConnecting">{{ statusLabel }}</strong>
           <span *ngIf="!isConnecting">Your transformed video appears here after you start.</span>
           <span *ngIf="isConnecting" class="loading-line">Starting a secure Decart session...</span>
         </div>
@@ -119,7 +120,46 @@
           <img [src]="garmentPreview" [alt]="selectedProduct.name" />
           <span>{{ selectedProduct.name }}</span>
         </div>
+        <button type="button" class="resume-video-button" *ngIf="remoteVideoNeedsGesture"
+          (click)="resumeRemoteVideo()">
+          <i class="fas fa-play"></i> Play transformed video
+        </button>
       </div>
+
+      <section class="diagnostic-panel" *ngIf="isDebugPanelEnabled">
+        <div class="diagnostic-heading">
+          <div>
+            <strong>FREPPING diagnostics</strong>
+            <small>Session {{ diagnostics.sessionId }}</small>
+          </div>
+          <span class="diagnostic-badge">DEBUG MODE</span>
+        </div>
+        <dl class="diagnostic-grid">
+          <div><dt>Camera</dt><dd>{{ diagnostics.cameraStatus }}</dd></div>
+          <div><dt>Local stream</dt><dd>{{ diagnostics.localStreamStatus }}</dd></div>
+          <div><dt>Token</dt><dd>{{ diagnostics.tokenStatus }}</dd></div>
+          <div><dt>Connection</dt><dd>{{ diagnostics.connectionState }}</dd></div>
+          <div><dt>Remote stream</dt><dd>{{ diagnostics.remoteStreamStatus }}</dd></div>
+          <div><dt>Remote video</dt><dd>{{ remoteVideoDimensions }} · {{ diagnostics.videoStatus }}</dd></div>
+          <div><dt>Session duration</dt><dd>{{ sessionDurationSeconds }}s</dd></div>
+          <div><dt>Disconnect initiator</dt><dd>{{ diagnostics.disconnectInitiator || 'none' }}</dd></div>
+          <div class="diagnostic-error" *ngIf="diagnostics.lastError">
+            <dt>Last error</dt><dd>{{ diagnostics.lastError }}</dd>
+          </div>
+        </dl>
+        <div class="diagnostic-actions">
+          <button type="button" (click)="copyDiagnosticReport()">Copy report</button>
+          <button type="button" (click)="clearDiagnosticLogs()">Clear logs</button>
+          <button type="button" [disabled]="isRunningDebugTest || isSessionActive" (click)="runCameraDiagnostic()">Test camera</button>
+          <button type="button" [disabled]="isRunningDebugTest" (click)="runBackendDiagnostic()">Test backend</button>
+          <button type="button" [disabled]="isRunningDebugTest || isSessionActive" (click)="runTokenDiagnostic()">Test Decart token</button>
+        </div>
+        <video #debugCameraVideo class="debug-camera-video" autoplay playsinline muted></video>
+        <details>
+          <summary>Recent diagnostic events ({{ diagnostics.entries.length }})</summary>
+          <pre>{{ diagnostics.report() }}</pre>
+        </details>
+      </section>
 
       <div class="preview-controls">
         <button type="button" class="camera-toggle" [disabled]="!hasLiveSession" (click)="toggleCamera()">

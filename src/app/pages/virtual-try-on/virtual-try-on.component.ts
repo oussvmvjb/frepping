@@ -13,10 +13,26 @@ import { takeUntil } from 'rxjs/operators';
 import { Product } from '../../models/api.models';
 import { CameraService } from '../../services/camera.service';
 import { DecartRealtimeService, RealtimeGarment, RealtimeSpeedMode, RealtimeTokenInfo } from '../../services/decart-realtime.service';
+import { RealtimeDiagnosticsService } from '../../services/realtime-diagnostics.service';
 import { AuthService } from '../../services/auth.service';
 import { ProductService } from '../../services/product.service';
+import { environment } from '../../../environments/environment';
 
-type SessionStatus = 'idle' | 'connecting' | 'connected' | 'generating' | 'reconnecting' | 'disconnected' | 'error';
+type SessionStatus =
+  | 'idle'
+  | 'initializingCamera'
+  | 'cameraReady'
+  | 'requestingAuthentication'
+  | 'connecting'
+  | 'establishingMedia'
+  | 'waitingForTransformation'
+  | 'receivingTransformedVideo'
+  | 'renderingTransformedVideo'
+  | 'connected'
+  | 'generating'
+  | 'reconnecting'
+  | 'disconnected'
+  | 'error';
 
 @Component({
   selector: 'app-virtual-try-on',
@@ -27,6 +43,7 @@ export class VirtualTryOnComponent implements OnInit, OnDestroy {
   @ViewChild('cameraVideo') cameraVideo?: ElementRef<HTMLVideoElement>;
   @ViewChild('outputVideo') outputVideo?: ElementRef<HTMLVideoElement>;
   @ViewChild('garmentInput') garmentInput?: ElementRef<HTMLInputElement>;
+  @ViewChild('debugCameraVideo') debugCameraVideo?: ElementRef<HTMLVideoElement>;
 
   products: Product[] = [];
   selectedProduct: Product | null = null;
@@ -46,6 +63,13 @@ export class VirtualTryOnComponent implements OnInit, OnDestroy {
   garmentPreview: string | null = null;
   private previewObjectUrl: string | null = null;
   private startGeneration = 0;
+  private resourcesReleased = true;
+  private activeRemoteStream: MediaStream | null = null;
+  private firstFrameTimeout: ReturnType<typeof setTimeout> | null = null;
+  private frameCallbackId: number | null = null;
+  private frameProgressTimer: ReturnType<typeof setInterval> | null = null;
+  private lastRemoteVideoTime = -1;
+  private remoteFrameCount = 0;
   private garmentUpdatePending = false;
   private garmentRevision = 0;
   private readonly destroy$ = new Subject<void>();
@@ -57,6 +81,9 @@ export class VirtualTryOnComponent implements OnInit, OnDestroy {
   credits: number | null = null;
   isFetchingCredits = false;
   creditFetchError: string | null = null;
+  remoteVideoNeedsGesture = false;
+  isRunningDebugTest = false;
+  remoteVideoDimensions = 'not received';
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -65,8 +92,19 @@ export class VirtualTryOnComponent implements OnInit, OnDestroy {
     private readonly decartService: DecartRealtimeService,
     readonly authService: AuthService,
     private readonly zone: NgZone,
-    private readonly changeDetector: ChangeDetectorRef
+    private readonly changeDetector: ChangeDetectorRef,
+    readonly diagnostics: RealtimeDiagnosticsService
   ) {}
+
+  get isDebugPanelEnabled(): boolean {
+    return this.diagnostics.enabled;
+  }
+
+  get sessionDurationSeconds(): number {
+    return this.diagnostics.sessionStartedAt
+      ? Math.floor((Date.now() - this.diagnostics.sessionStartedAt) / 1000)
+      : 0;
+  }
 
   get tokenInfo(): RealtimeTokenInfo | null {
     return this.decartService.latestTokenInfo;
@@ -125,72 +163,212 @@ export class VirtualTryOnComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.diagnostics.traceDisconnect('component.destroy', 'Angular component destruction');
     this.destroy$.next();
     this.destroy$.complete();
-    this.stopSession();
+    this.stopSession('component destruction');
     this.releasePreviewUrl();
   }
 
   async startSession(): Promise<void> {
     if (this.isConnecting || this.isSessionActive) return;
+    if (!this.prompt.trim() && !this.garmentImage) {
+      this.errorMessage = 'Choose a garment or describe one before starting. This prevents a billable passthrough session.';
+      return;
+    }
 
     const generation = ++this.startGeneration;
+    this.diagnostics.startSession();
+    this.resourcesReleased = false;
     this.errorMessage = null;
-    this.status = 'connecting';
+    this.status = 'initializingCamera';
+    this.diagnostics.connectionState = 'initializing camera';
     this.isConnecting = true;
+    this.remoteVideoNeedsGesture = false;
+    this.remoteVideoDimensions = 'not received';
+    this.remoteFrameCount = 0;
 
     try {
       const stream = await this.cameraService.start(this.decartService.getModel());
       if (generation !== this.startGeneration) {
-        this.cameraService.stop();
+        this.diagnostics.traceDisconnect('camera.stale-result.stopped', 'stale start attempt');
+        this.cameraService.stop(stream);
         return;
       }
       this.showCameraPreview(stream);
+      this.status = 'cameraReady';
+      this.diagnostics.connectionState = 'camera ready';
       this.garmentUpdatePending = false;
+      this.status = 'requestingAuthentication';
+      this.diagnostics.connectionState = 'requesting authentication';
 
       await this.decartService.connect(
         stream,
         this.currentGarment(),
         this.speed,
         {
-          onRemoteStream: remoteStream => this.zone.run(() => this.showRemoteStream(remoteStream)),
-          onConnectionChange: state => this.zone.run(() => this.onConnectionChange(state)),
+          onRemoteStream: remoteStream => this.zone.run(() => {
+            if (generation === this.startGeneration) this.showRemoteStream(remoteStream, generation);
+          }),
+          onConnectionChange: state => this.zone.run(() => {
+            if (generation === this.startGeneration) this.onConnectionChange(state, generation);
+          }),
           onError: message => this.zone.run(() => {
+            if (generation !== this.startGeneration || this.resourcesReleased) return;
+            this.diagnostics.traceDisconnect('session.error-handler', 'Decart SDK error callback');
             this.errorMessage = this.describeRealtimeError(message);
             this.status = 'error';
+            this.releaseSessionResources('Decart SDK error callback', generation);
           }),
         }
       );
 
-      if (generation !== this.startGeneration) return;
+      if (generation !== this.startGeneration || this.resourcesReleased) return;
       this.hasLiveSession = true;
+      this.markClientReadyStatus();
+      this.diagnostics.log('session.client-ready', {
+        connected: this.decartService.isConnected,
+        waitingForTransformedFrames: !this.hasRemoteVideo,
+      });
+      this.scheduleFirstFrameTimeout(generation);
       await this.applyGarmentIfConnected();
     } catch (error) {
       if (generation === this.startGeneration) {
         const message = error instanceof Error ? error.message : 'Unable to start the virtual try-on session.';
+        this.diagnostics.traceDisconnect('session.start-failed', 'session start error handler');
         this.errorMessage = this.describeRealtimeError(message);
         this.status = 'error';
-        this.releaseSessionResources();
+        this.releaseSessionResources('session start error handler', generation);
       }
     } finally {
-      if (generation === this.startGeneration) this.isConnecting = false;
+      if (generation === this.startGeneration) {
+        this.isConnecting = false;
+      } else if (!this.decartService.isConnecting && !this.decartService.isConnected) {
+        this.isConnecting = false;
+      }
+      this.changeDetector.markForCheck();
     }
   }
 
-  stopSession(): void {
+  stopSession(initiator = 'manual stop button'): void {
+    this.diagnostics.traceDisconnect('session.stop-requested', initiator);
     this.startGeneration += 1;
-    this.releaseSessionResources();
+    this.releaseSessionResources(initiator);
     this.isConnecting = false;
     this.isSwitchingGarment = false;
     this.hasLiveSession = false;
     this.hasCameraPreview = false;
     this.hasRemoteVideo = false;
-    this.status = 'idle';
+    this.remoteVideoNeedsGesture = false;
+    this.status = this.decartService.isConnecting ? 'disconnected' : 'idle';
   }
 
   toggleCamera(): void {
     this.cameraEnabled = !this.cameraEnabled;
     this.cameraService.setEnabled(this.cameraEnabled);
+    this.diagnostics.log('camera.enabled.changed', { enabled: this.cameraEnabled });
+  }
+
+  async resumeRemoteVideo(): Promise<void> {
+    const video = this.outputVideo?.nativeElement;
+    if (!video) return;
+    try {
+      await video.play();
+      this.remoteVideoNeedsGesture = false;
+      this.diagnostics.videoStatus = 'playback resumed by user';
+      this.diagnostics.log('remote-video.user-playback-resumed', this.videoInfo(video));
+      this.startRemoteFrameMonitoring(video, this.startGeneration);
+    } catch (error) {
+      this.diagnostics.log('remote-video.user-playback-failed', this.videoInfo(video), error);
+      this.errorMessage = 'Tap to play the transformed video, then allow playback in Safari.';
+    }
+  }
+
+  async runCameraDiagnostic(): Promise<void> {
+    if (this.isSessionActive || this.isRunningDebugTest) return;
+    this.isRunningDebugTest = true;
+    let stream: MediaStream | null = null;
+    this.diagnostics.log('diagnostic.camera-test.started');
+    try {
+      stream = await this.cameraService.start(this.decartService.getModel());
+      const video = this.debugCameraVideo?.nativeElement;
+      if (video) {
+        video.srcObject = stream;
+        video.muted = true;
+        video.playsInline = true;
+        video.setAttribute('playsinline', '');
+        video.setAttribute('webkit-playsinline', '');
+        await video.play();
+        this.diagnostics.log('diagnostic.camera-test.preview-playing', this.videoInfo(video));
+        video.pause();
+        video.srcObject = null;
+      }
+      this.diagnostics.log('diagnostic.camera-test.completed');
+    } catch (error) {
+      this.diagnostics.log('diagnostic.camera-test.failed', undefined, error);
+      this.errorMessage = error instanceof Error ? error.message : 'Camera test failed.';
+    } finally {
+      if (stream) this.cameraService.stop(stream);
+      const video = this.debugCameraVideo?.nativeElement;
+      if (video) {
+        video.pause();
+        video.srcObject = null;
+      }
+      this.isRunningDebugTest = false;
+      this.changeDetector.markForCheck();
+    }
+  }
+
+  async runBackendDiagnostic(): Promise<void> {
+    this.isRunningDebugTest = true;
+    this.diagnostics.log('diagnostic.backend-test.started');
+    const startedAt = Date.now();
+    try {
+      const response = await fetch(`${environment.apiUrl}/health`);
+      this.diagnostics.log('diagnostic.backend-test.response', {
+        status: response.status,
+        durationMs: Date.now() - startedAt,
+      });
+      if (!response.ok) throw new Error(`Backend health returned HTTP ${response.status}.`);
+    } catch (error) {
+      this.diagnostics.log('diagnostic.backend-test.failed', undefined, error);
+      this.errorMessage = error instanceof Error ? error.message : 'Backend test failed.';
+    } finally {
+      this.isRunningDebugTest = false;
+      this.changeDetector.markForCheck();
+    }
+  }
+
+  async runTokenDiagnostic(): Promise<void> {
+    this.isRunningDebugTest = true;
+    this.diagnostics.log('diagnostic.token-test.started');
+    try {
+      await this.decartService.fetchTokenInfo();
+      this.diagnostics.log('diagnostic.token-test.completed', {
+        tokenReceived: Boolean(this.tokenInfo),
+        expiresAt: this.tokenInfo?.expiresAt ?? null,
+      });
+    } catch (error) {
+      this.diagnostics.log('diagnostic.token-test.failed', undefined, error);
+      this.errorMessage = error instanceof Error ? error.message : 'Decart token test failed.';
+    } finally {
+      this.isRunningDebugTest = false;
+      this.changeDetector.markForCheck();
+    }
+  }
+
+  async copyDiagnosticReport(): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(this.diagnostics.report());
+      this.diagnostics.log('diagnostic.report.copied');
+    } catch (error) {
+      this.diagnostics.log('diagnostic.report.copy-failed', undefined, error);
+      this.errorMessage = 'Could not copy the diagnostic report. Check clipboard permission.';
+    }
+  }
+
+  clearDiagnosticLogs(): void {
+    this.diagnostics.clear();
   }
 
   selectProduct(product: Product): void {
@@ -238,17 +416,24 @@ export class VirtualTryOnComponent implements OnInit, OnDestroy {
   }
 
   get isSessionActive(): boolean {
-    return this.isConnecting || this.hasLiveSession || this.status === 'connected' ||
+    return this.isConnecting || this.decartService.isConnecting || this.hasLiveSession || this.status === 'connected' ||
       this.status === 'generating' || this.status === 'reconnecting';
   }
 
   get statusLabel(): string {
     const labels: Record<SessionStatus, string> = {
       idle: 'Ready to connect',
+      initializingCamera: 'Initializing camera',
+      cameraReady: 'Camera ready',
+      requestingAuthentication: 'Requesting authentication',
       connecting: 'Connecting to Decart',
-      connected: 'Connected',
+      establishingMedia: 'Establishing media connection',
+      waitingForTransformation: 'Waiting for AI transformation',
+      receivingTransformedVideo: 'Receiving transformed video',
+      renderingTransformedVideo: 'Rendering transformed video',
+      connected: 'Connected and transforming',
       generating: 'Applying garment',
-      reconnecting: 'Reconnecting',
+      reconnecting: 'Connection interrupted',
       disconnected: 'Disconnected',
       error: 'Connection issue',
     };
@@ -329,15 +514,25 @@ export class VirtualTryOnComponent implements OnInit, OnDestroy {
     }
   }
 
-  private onConnectionChange(state: string): void {
-    const validStates: SessionStatus[] = ['connecting', 'connected', 'generating', 'reconnecting', 'disconnected'];
-    if (!validStates.includes(state as SessionStatus)) return;
-    this.status = state as SessionStatus;
+  private onConnectionChange(state: string, generation: number): void {
+    if (generation !== this.startGeneration) return;
+    if (state === 'connecting') this.status = 'establishingMedia';
+    else if (state === 'connected') {
+      this.hasLiveSession = true;
+      this.status = 'waitingForTransformation';
+      this.scheduleFirstFrameTimeout(generation);
+    } else if (state === 'generating') this.status = 'generating';
+    else if (state === 'reconnecting') this.status = 'reconnecting';
+    else if (state !== 'disconnected') return;
+    this.diagnostics.connectionState = this.statusLabel;
+
     if (state === 'disconnected') {
+      this.diagnostics.traceDisconnect('session.sdk-disconnected', 'Decart SDK connection state callback');
       this.errorMessage = this.hasRemoteVideo
-        ? 'The Decart session disconnected. Start a new session to continue.'
-        : 'The realtime media connection disconnected before Decart returned a transformed video. Check your network connection and try again.';
-      this.releaseSessionResources();
+        ? 'The Decart session disconnected after video started. Stop the session and manually retry if you want to continue.'
+        : 'The Decart session disconnected before a transformed video frame was displayed. Credits may have been used; check the balance before manually retrying.';
+      this.status = 'error';
+      this.releaseSessionResources('Decart SDK connection state callback', generation);
       this.hasLiveSession = false;
       this.isConnecting = false;
       return;
@@ -347,12 +542,40 @@ export class VirtualTryOnComponent implements OnInit, OnDestroy {
     }
   }
 
-  onRemoteVideoReady(): void {
+  onRemoteVideoMetadata(): void {
     const video = this.outputVideo?.nativeElement;
-    if (!video || video.videoWidth === 0 || video.videoHeight === 0) return;
-    this.hasCameraPreview = false;
-    this.hasRemoteVideo = true;
-    this.changeDetector.markForCheck();
+    if (!video) return;
+    this.remoteVideoDimensions = `${video.videoWidth} × ${video.videoHeight}`;
+    this.diagnostics.log('remote-video.metadata-loaded', this.videoInfo(video));
+    if (video.videoWidth === 0 || video.videoHeight === 0) return;
+    this.diagnostics.videoStatus = 'metadata loaded; waiting for rendered frame';
+    this.status = 'receivingTransformedVideo';
+    this.startRemoteFrameMonitoring(video, this.startGeneration);
+    void video.play().then(() => {
+      this.remoteVideoNeedsGesture = false;
+      this.diagnostics.log('remote-video.playback-started', this.videoInfo(video));
+    }).catch(error => {
+      this.remoteVideoNeedsGesture = true;
+      this.diagnostics.videoStatus = 'user interaction required';
+      this.diagnostics.log('remote-video.autoplay-blocked', this.videoInfo(video), error);
+      this.changeDetector.markForCheck();
+    });
+  }
+
+  onRemoteVideoPlaying(): void {
+    const video = this.outputVideo?.nativeElement;
+    if (!video) return;
+    this.diagnostics.log('remote-video.playing-event', this.videoInfo(video));
+    this.startRemoteFrameMonitoring(video, this.startGeneration);
+  }
+
+  onRemoteVideoTimeUpdate(): void {
+    const video = this.outputVideo?.nativeElement;
+    if (!video || this.supportsVideoFrameCallback(video)) return;
+    if (video.currentTime > this.lastRemoteVideoTime) {
+      this.lastRemoteVideoTime = video.currentTime;
+      this.onRemoteFrameRendered(video, this.startGeneration, 'timeupdate');
+    }
   }
 
   private describeRealtimeError(message: string): string {
@@ -362,20 +585,63 @@ export class VirtualTryOnComponent implements OnInit, OnDestroy {
     return message;
   }
 
-  private showRemoteStream(stream: MediaStream): void {
+  private showRemoteStream(stream: MediaStream, generation: number): void {
     const video = this.outputVideo?.nativeElement;
     if (!video) return;
+    this.clearRemoteVideoMonitoring();
+    this.activeRemoteStream = stream;
+    const videoTracks = stream.getVideoTracks();
+    if (videoTracks.length === 0) {
+      const error = new Error('Decart returned a stream without a video track.');
+      this.diagnostics.remoteStreamStatus = 'missing video track';
+      this.diagnostics.log('webrtc.remote-stream.missing-video-track', {
+        streamId: stream.id,
+        audioTrackCount: stream.getAudioTracks().length,
+      }, error);
+      this.failSession(error.message, 'remote stream missing video track', generation);
+      return;
+    }
+    this.status = 'receivingTransformedVideo';
+    this.diagnostics.videoStatus = 'waiting for remote video metadata';
     video.srcObject = stream;
     video.muted = true;
     video.playsInline = true;
+    video.autoplay = true;
     video.setAttribute('playsinline', '');
     video.setAttribute('webkit-playsinline', '');
+    video.setAttribute('muted', '');
+    this.diagnostics.log('remote-video.src-object-attached', {
+      ...this.videoInfo(video),
+      streamId: stream.id,
+      videoTrackCount: videoTracks.length,
+      audioTrackCount: stream.getAudioTracks().length,
+    });
+    videoTracks.forEach(track => {
+      track.addEventListener('mute', () => this.diagnostics.log('webrtc.remote-video-track.muted', {
+        readyState: track.readyState,
+        enabled: track.enabled,
+      }));
+      track.addEventListener('unmute', () => this.diagnostics.log('webrtc.remote-video-track.unmuted', {
+        readyState: track.readyState,
+        enabled: track.enabled,
+      }));
+      track.addEventListener('ended', () => this.diagnostics.log('webrtc.remote-video-track.ended', {
+        readyState: track.readyState,
+      }));
+    });
     this.hasRemoteVideo = false;
-    video.play().catch(error => {
-      if (error instanceof DOMException && error.name === 'AbortError') return;
-      this.errorMessage = error instanceof Error
-        ? `The transformed video could not start: ${error.message}`
-        : 'The transformed video could not start.';
+    this.remoteVideoNeedsGesture = false;
+    void video.play().then(() => {
+      if (generation !== this.startGeneration) return;
+      this.diagnostics.videoStatus = 'play() succeeded; waiting for actual frames';
+      this.diagnostics.log('remote-video.play-promise-resolved', this.videoInfo(video));
+      this.startRemoteFrameMonitoring(video, generation);
+    }).catch(error => {
+      if (generation !== this.startGeneration) return;
+      this.remoteVideoNeedsGesture = true;
+      this.diagnostics.videoStatus = 'playback requires user interaction';
+      this.diagnostics.log('remote-video.play-promise-rejected', this.videoInfo(video), error);
+      this.errorMessage = 'The transformed video is ready but Safari blocked autoplay. Tap “Play transformed video” to continue.';
       this.changeDetector.markForCheck();
     });
   }
@@ -386,16 +652,155 @@ export class VirtualTryOnComponent implements OnInit, OnDestroy {
     video.srcObject = stream;
     video.muted = true;
     video.playsInline = true;
+    video.autoplay = true;
     video.setAttribute('playsinline', '');
     video.setAttribute('webkit-playsinline', '');
+    video.setAttribute('muted', '');
     this.hasCameraPreview = true;
-    video.play().catch(error => {
-      if (error instanceof DOMException && error.name === 'AbortError') return;
+    this.diagnostics.log('camera.preview.attached', {
+      streamId: stream.id,
+      trackCount: stream.getTracks().length,
+      videoTrackCount: stream.getVideoTracks().length,
+      readyState: stream.getVideoTracks()[0]?.readyState ?? 'missing',
+    });
+    void video.play().then(() => {
+      this.diagnostics.videoStatus = 'camera preview playing';
+      this.diagnostics.log('camera.preview.playback-succeeded', this.videoInfo(video));
+    }).catch(error => {
+      this.diagnostics.videoStatus = 'camera preview playback failed';
+      this.diagnostics.log('camera.preview.playback-failed', this.videoInfo(video), error);
       this.errorMessage = error instanceof Error
         ? `The camera is active, but its preview could not start: ${error.message}`
         : 'The camera is active, but its preview could not start.';
       this.changeDetector.markForCheck();
     });
+  }
+
+  private scheduleFirstFrameTimeout(generation: number): void {
+    if (this.hasRemoteVideo || generation !== this.startGeneration) return;
+    if (this.firstFrameTimeout) clearTimeout(this.firstFrameTimeout);
+    this.firstFrameTimeout = setTimeout(() => {
+      if (generation !== this.startGeneration || this.hasRemoteVideo || !this.hasLiveSession) return;
+      this.failSession(
+        'Decart connected but no transformed video frames arrived within 30 seconds. The session was stopped to avoid ongoing charges.',
+        'transformed video first-frame timeout',
+        generation
+      );
+    }, 30000);
+  }
+
+  private markClientReadyStatus(): void {
+    if (
+      this.status === 'connecting' ||
+      this.status === 'requestingAuthentication' ||
+      this.status === 'establishingMedia'
+    ) {
+      this.status = 'waitingForTransformation';
+    }
+  }
+
+  private startRemoteFrameMonitoring(video: HTMLVideoElement, generation: number): void {
+    if (generation !== this.startGeneration || video.srcObject !== this.activeRemoteStream) return;
+    if (typeof video.requestVideoFrameCallback === 'function') {
+      if (this.frameCallbackId !== null) return;
+      const onFrame: VideoFrameRequestCallback = (_now, metadata) => {
+        this.frameCallbackId = null;
+        if (generation !== this.startGeneration || video.srcObject !== this.activeRemoteStream) return;
+        this.lastRemoteVideoTime = metadata.mediaTime;
+        this.onRemoteFrameRendered(video, generation, 'requestVideoFrameCallback');
+        this.frameCallbackId = video.requestVideoFrameCallback!(onFrame);
+      };
+      this.frameCallbackId = video.requestVideoFrameCallback(onFrame);
+      this.diagnostics.log('remote-video.frame-monitor.started', { method: 'requestVideoFrameCallback' });
+      return;
+    }
+
+    if (this.frameProgressTimer !== null) return;
+    this.lastRemoteVideoTime = video.currentTime;
+    this.frameProgressTimer = setInterval(() => {
+      if (generation !== this.startGeneration || video.srcObject !== this.activeRemoteStream) return;
+      if (video.currentTime > this.lastRemoteVideoTime) {
+        this.lastRemoteVideoTime = video.currentTime;
+        this.onRemoteFrameRendered(video, generation, 'currentTime progression');
+      }
+    }, 500);
+    this.diagnostics.log('remote-video.frame-monitor.started', { method: 'currentTime progression fallback' });
+  }
+
+  private onRemoteFrameRendered(
+    video: HTMLVideoElement,
+    generation: number,
+    method: string
+  ): void {
+    if (generation !== this.startGeneration || video.srcObject !== this.activeRemoteStream ||
+        video.videoWidth === 0 || video.videoHeight === 0) return;
+    this.remoteFrameCount += 1;
+    if (this.remoteFrameCount === 1) {
+      this.hasCameraPreview = false;
+      this.hasRemoteVideo = true;
+      this.status = 'renderingTransformedVideo';
+      this.remoteVideoDimensions = `${video.videoWidth} × ${video.videoHeight}`;
+      this.diagnostics.videoStatus = 'transformed frames rendering';
+      if (this.firstFrameTimeout) clearTimeout(this.firstFrameTimeout);
+      this.firstFrameTimeout = null;
+      this.diagnostics.log('remote-video.first-frame-rendered', {
+        method,
+        frameCount: this.remoteFrameCount,
+        ...this.videoInfo(video),
+      });
+    } else if (this.remoteFrameCount === 2) {
+      this.status = 'connected';
+      this.diagnostics.videoStatus = 'transformed frames confirmed';
+      this.diagnostics.log('remote-video.frames-confirmed', {
+        method,
+        frameCount: this.remoteFrameCount,
+        ...this.videoInfo(video),
+      });
+    }
+    this.changeDetector.markForCheck();
+  }
+
+  private supportsVideoFrameCallback(video: HTMLVideoElement): boolean {
+    return typeof video.requestVideoFrameCallback === 'function';
+  }
+
+  private videoInfo(video: HTMLVideoElement): Record<string, unknown> {
+    const stream = video.srcObject instanceof MediaStream ? video.srcObject : null;
+    return {
+      readyState: video.readyState,
+      paused: video.paused,
+      currentTime: video.currentTime,
+      width: video.videoWidth,
+      height: video.videoHeight,
+      srcObjectType: video.srcObject?.constructor?.name ?? null,
+      streamActive: stream?.active ?? null,
+      videoTracks: stream?.getVideoTracks().map(track => ({
+        readyState: track.readyState,
+        enabled: track.enabled,
+        muted: track.muted,
+      })) ?? [],
+    };
+  }
+
+  private failSession(message: string, initiator: string, generation: number): void {
+    if (generation !== this.startGeneration) return;
+    this.diagnostics.traceDisconnect('session.failed', initiator);
+    this.errorMessage = message;
+    this.status = 'error';
+    this.hasLiveSession = false;
+    this.isConnecting = false;
+    this.releaseSessionResources(initiator, generation);
+    this.changeDetector.markForCheck();
+  }
+
+  private clearRemoteVideoMonitoring(): void {
+    if (this.firstFrameTimeout) clearTimeout(this.firstFrameTimeout);
+    this.firstFrameTimeout = null;
+    if (this.frameProgressTimer !== null) clearInterval(this.frameProgressTimer);
+    this.frameProgressTimer = null;
+    const video = this.outputVideo?.nativeElement;
+    if (video && this.frameCallbackId !== null) video.cancelVideoFrameCallback?.(this.frameCallbackId);
+    this.frameCallbackId = null;
   }
 
   private setPreview(image: File | string | null): void {
@@ -413,8 +818,14 @@ export class VirtualTryOnComponent implements OnInit, OnDestroy {
     this.previewObjectUrl = null;
   }
 
-  private releaseSessionResources(): void {
-    this.decartService.disconnect();
+  private releaseSessionResources(initiator: string, expectedGeneration?: number): void {
+    if (expectedGeneration !== undefined && expectedGeneration !== this.startGeneration) return;
+    if (this.resourcesReleased) return;
+    this.resourcesReleased = true;
+    this.diagnostics.traceDisconnect('session.resources.release', initiator);
+    this.clearRemoteVideoMonitoring();
+    this.activeRemoteStream = null;
+    this.decartService.disconnect(initiator);
     this.cameraService.stop();
     const cameraVideo = this.cameraVideo?.nativeElement;
     const outputVideo = this.outputVideo?.nativeElement;
@@ -422,6 +833,10 @@ export class VirtualTryOnComponent implements OnInit, OnDestroy {
     if (outputVideo) outputVideo.srcObject = null;
     this.hasCameraPreview = false;
     this.hasRemoteVideo = false;
+    this.remoteVideoNeedsGesture = false;
     this.cameraEnabled = true;
+    this.diagnostics.connectionState = 'disconnected';
+    this.diagnostics.remoteStreamStatus = this.activeRemoteStream ? 'received; stopped' : this.diagnostics.remoteStreamStatus;
+    this.diagnostics.videoStatus = 'stopped';
   }
 }

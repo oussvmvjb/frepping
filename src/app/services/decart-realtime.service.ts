@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import {
   createDecartClient,
   models,
+  Logger,
   ModelDefinition,
   RealTimeClient,
   RealTimeClientConnectOptions,
@@ -10,6 +11,7 @@ import {
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { AuthService } from './auth.service';
+import { RealtimeDiagnosticsService } from './realtime-diagnostics.service';
 
 export type RealtimeSpeedMode = 'standard' | 'fast';
 
@@ -41,11 +43,16 @@ export class DecartRealtimeService {
   private realtimeClient: RealTimeClient | null = null;
   private connectionGeneration = 0;
   private connecting = false;
+  private pendingConnectionGeneration: number | null = null;
+  private lastStatsAt = 0;
   latestTokenInfo: RealtimeTokenInfo | null = null;
   private readonly tokenUrl =
     `${environment.apiUrl.replace(/\/api\/v1\/?$/, '')}/api/realtime-token`;
 
-  constructor(private authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly diagnostics: RealtimeDiagnosticsService
+  ) {}
 
   getModel(): ModelDefinition {
     return this.model;
@@ -53,6 +60,10 @@ export class DecartRealtimeService {
 
   get isConnected(): boolean {
     return this.realtimeClient?.isConnected() ?? false;
+  }
+
+  get isConnecting(): boolean {
+    return this.connecting;
   }
 
   async connect(
@@ -67,14 +78,44 @@ export class DecartRealtimeService {
 
     this.connecting = true;
     const generation = ++this.connectionGeneration;
+    this.pendingConnectionGeneration = generation;
+    const connectStartedAt = Date.now();
+    this.diagnostics.log('decart.connect.started', {
+      model: this.model.name,
+      speed,
+      initialPromptPresent: Boolean(garment.prompt.trim()),
+      initialPromptLength: garment.prompt.trim().length,
+      image: this.imageInfo(garment.image),
+      localVideoTrackCount: stream.getVideoTracks().length,
+      localAudioTrackCount: stream.getAudioTracks().length,
+    });
     const options: RealTimeClientConnectOptions = {
       model: this.model,
       mirror: 'auto',
+      retries: 0,
       onRemoteStream: remoteStream => {
-        if (generation === this.connectionGeneration) callbacks.onRemoteStream(remoteStream);
+        if (generation !== this.connectionGeneration) return;
+        this.diagnostics.remoteStreamStatus = 'received';
+        this.diagnostics.log('webrtc.remote-stream.received', this.remoteStreamInfo(remoteStream));
+        callbacks.onRemoteStream(remoteStream);
       },
       onConnectionChange: state => {
-        if (generation === this.connectionGeneration) callbacks.onConnectionChange(state);
+        if (generation !== this.connectionGeneration) return;
+        this.diagnostics.connectionState = state;
+        this.diagnostics.log('decart.connection-state.changed', { state, elapsedMs: Date.now() - connectStartedAt });
+        callbacks.onConnectionChange(state);
+        if (state === 'connected') {
+          this.diagnostics.localStreamStatus = 'published by SDK';
+          this.diagnostics.log('webrtc.local-track-published', this.localStreamInfo(stream));
+        }
+        if (state === 'generating') {
+          this.diagnostics.log('decart.generation.started');
+        }
+        if (state === 'reconnecting') {
+          this.diagnostics.traceDisconnect('decart.automatic-reconnect-blocked', 'SDK automatic reconnect');
+          this.disconnect('automatic-reconnect-blocked');
+          callbacks.onConnectionChange('disconnected');
+        }
       },
     };
 
@@ -87,20 +128,87 @@ export class DecartRealtimeService {
     }
 
     try {
-      const client = createDecartClient({ apiKeyProvider: () => this.fetchClientToken() });
+      this.diagnostics.log('decart.client.initializing');
+      const logger: Logger = {
+        debug: (message, data) => this.logSdkMessage('debug', message, data),
+        info: (message, data) => this.logSdkMessage('info', message, data),
+        warn: (message, data) => this.logSdkMessage('warn', message, data),
+        error: (message, data) => this.logSdkMessage('error', message, data),
+      };
+      const client = createDecartClient({
+        apiKeyProvider: () => this.fetchClientToken(),
+        logger,
+      });
+      this.diagnostics.log('decart.client.initialized');
       const realtimeClient = await client.realtime.connect(stream, options);
       if (generation !== this.connectionGeneration) {
+        this.diagnostics.traceDisconnect('decart.stale-connect-result.disconnected', 'stale connection generation');
         realtimeClient.disconnect();
         return;
       }
 
       this.realtimeClient = realtimeClient;
-      realtimeClient.on('error', error => callbacks.onError(error.message));
+      this.diagnostics.log('decart.connect.resolved', {
+        elapsedMs: Date.now() - connectStartedAt,
+        sdkConnected: realtimeClient.isConnected(),
+        sessionIdAvailable: Boolean(realtimeClient.sessionId),
+      });
+      realtimeClient.on('error', error => {
+        this.diagnostics.log('decart.sdk.error', {
+          code: error.code,
+          message: error.message,
+        }, error.cause ?? error);
+        callbacks.onError(error.message);
+      });
       realtimeClient.on('sessionEnded', event => {
+        this.diagnostics.log('decart.session-ended', { reason: event.reason });
         callbacks.onError(`The Decart session ended: ${event.reason.replace(/_/g, ' ')}.`);
       });
+      realtimeClient.on('generationTick', event => {
+        this.diagnostics.log('decart.generation.tick', { seconds: event.seconds });
+      });
+      realtimeClient.on('generationEnded', event => {
+        this.diagnostics.log('decart.generation.ended', { seconds: event.seconds, reason: event.reason });
+      });
+      realtimeClient.on('diagnostic', event => {
+        this.diagnostics.log(`sdk.diagnostic.${event.name}`, { ...event.data });
+      });
+      realtimeClient.on('connectionQuality', report => {
+        this.diagnostics.log('webrtc.connection-quality', { ...report });
+      });
+      realtimeClient.on('stats', stats => {
+        const now = Date.now();
+        if (now - this.lastStatsAt < 5000) return;
+        this.lastStatsAt = now;
+        this.diagnostics.log('webrtc.stats', {
+          inboundVideo: stats.video && {
+            framesReceived: stats.video.framesReceived,
+            framesDecoded: stats.video.framesDecoded,
+            framesPerSecond: stats.video.framesPerSecond,
+            width: stats.video.frameWidth,
+            height: stats.video.frameHeight,
+            packetsLost: stats.video.packetsLost,
+          },
+          outboundVideo: stats.outboundVideo && {
+            framesPerSecond: stats.outboundVideo.framesPerSecond,
+            width: stats.outboundVideo.frameWidth,
+            height: stats.outboundVideo.frameHeight,
+            bytesSent: stats.outboundVideo.bytesSent,
+            bitrate: stats.outboundVideo.bitrate,
+          },
+          connection: stats.connection,
+        });
+      });
+    } catch (error) {
+      this.diagnostics.log('decart.connect.failed', {
+        elapsedMs: Date.now() - connectStartedAt,
+      }, error);
+      throw error;
     } finally {
-      if (generation === this.connectionGeneration) this.connecting = false;
+      if (this.pendingConnectionGeneration === generation) {
+        this.pendingConnectionGeneration = null;
+        this.connecting = false;
+      }
     }
   }
 
@@ -116,23 +224,49 @@ export class DecartRealtimeService {
     await this.realtimeClient.set(state);
   }
 
-  disconnect(): void {
+  disconnect(initiator = 'application'): void {
+    if (!this.realtimeClient && !this.connecting) return;
+    this.diagnostics.traceDisconnect('decart.client.disconnect', initiator);
     this.connectionGeneration += 1;
-    this.connecting = false;
-    this.realtimeClient?.disconnect();
+    this.diagnostics.connectionState = 'disconnected';
+    const realtimeClient = this.realtimeClient;
     this.realtimeClient = null;
+    realtimeClient?.disconnect();
   }
 
   private async fetchClientToken(): Promise<string> {
+    const requestStartedAt = Date.now();
+    this.diagnostics.tokenStatus = 'requesting';
+    this.diagnostics.log('auth.realtime-token.requested');
     let accessToken = this.authService.getAccessToken();
-    if (!accessToken) throw new Error('Sign in to start a virtual try-on session.');
+    if (!accessToken) {
+      const error = new Error('Sign in to start a virtual try-on session.');
+      this.diagnostics.tokenStatus = 'failed';
+      this.diagnostics.log('auth.realtime-token.failed', undefined, error);
+      throw error;
+    }
 
     let response = await this.requestClientToken(accessToken);
+    this.diagnostics.log('auth.realtime-token.response', {
+      status: response.status,
+      durationMs: Date.now() - requestStartedAt,
+    });
     if (response.status === 401) {
+      this.diagnostics.log('auth.refresh.started', { purpose: 'realtime token request' });
       await firstValueFrom(this.authService.refreshToken());
       accessToken = this.authService.getAccessToken();
-      if (!accessToken) throw new Error('Your sign-in has expired. Sign in again to continue.');
+      if (!accessToken) {
+        const error = new Error('Your sign-in has expired. Sign in again to continue.');
+        this.diagnostics.tokenStatus = 'failed';
+        this.diagnostics.log('auth.refresh.failed', undefined, error);
+        throw error;
+      }
+      this.diagnostics.log('auth.refresh.succeeded');
       response = await this.requestClientToken(accessToken);
+      this.diagnostics.log('auth.realtime-token.retry-response', {
+        status: response.status,
+        durationMs: Date.now() - requestStartedAt,
+      });
     }
 
     if (!response.ok) {
@@ -154,11 +288,16 @@ export class DecartRealtimeService {
       throw error;
     }
     if (!tokenData.apiKey) throw new Error('The token service did not return a client token.');
+    this.diagnostics.tokenStatus = 'received';
     this.latestTokenInfo = {
       token: tokenData.apiKey,
       expiresAt: tokenData.expiresAt ?? null,
       receivedAt: new Date(),
     };
+    this.diagnostics.log('auth.realtime-token.received', {
+      durationMs: Date.now() - requestStartedAt,
+      expiresAt: tokenData.expiresAt ?? null,
+    });
     return tokenData.apiKey;
   }
 
@@ -216,5 +355,45 @@ export class DecartRealtimeService {
     return fetch(url, {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
+  }
+
+  private logSdkMessage(
+    level: 'debug' | 'info' | 'warn' | 'error',
+    message: string,
+    data?: Record<string, unknown>
+  ): void {
+    this.diagnostics.log(`sdk.${level}`, { message, ...(data ? { details: data } : {}) });
+  }
+
+  private imageInfo(image: RealtimeGarment['image']): Record<string, unknown> {
+    if (image instanceof File) return { type: 'File', mimeType: image.type, sizeBytes: image.size };
+    if (typeof image === 'string') return { type: 'string-reference', length: image.length };
+    return { type: image === null ? 'none' : typeof image };
+  }
+
+  private localStreamInfo(stream: MediaStream): Record<string, unknown> {
+    return {
+      streamId: stream.id,
+      tracks: stream.getTracks().map(track => ({
+        kind: track.kind,
+        readyState: track.readyState,
+        enabled: track.enabled,
+        muted: track.muted,
+      })),
+    };
+  }
+
+  private remoteStreamInfo(stream: MediaStream): Record<string, unknown> {
+    return {
+      streamId: stream.id,
+      videoTrackCount: stream.getVideoTracks().length,
+      audioTrackCount: stream.getAudioTracks().length,
+      tracks: stream.getTracks().map(track => ({
+        kind: track.kind,
+        readyState: track.readyState,
+        enabled: track.enabled,
+        muted: track.muted,
+      })),
+    };
   }
 }
