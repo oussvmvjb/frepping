@@ -7,6 +7,7 @@ import {
   RealTimeClient,
   RealTimeClientConnectOptions,
   SetInput,
+  WebRTCStats,
 } from '@decartai/sdk';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
@@ -24,6 +25,7 @@ export interface RealtimeCallbacks {
   onRemoteStream: (stream: MediaStream) => void;
   onConnectionChange: (state: string) => void;
   onError: (message: string) => void;
+  onRemoteVideoStats?: (stats: WebRTCStats['video']) => void;
 }
 
 export interface RealtimeTokenInfo {
@@ -88,6 +90,11 @@ export class DecartRealtimeService {
       image: this.imageInfo(garment.image),
       localVideoTrackCount: stream.getVideoTracks().length,
       localAudioTrackCount: stream.getAudioTracks().length,
+    });
+    this.diagnostics.log('webrtc.codec-capabilities', {
+      source: 'RTCRtpReceiver.getCapabilities(video); browser support only, not the negotiated codec',
+      codecs: this.diagnostics.getVideoCodecCapabilities(),
+      negotiatedCodec: 'not exposed by installed SDK stats API',
     });
     const options: RealTimeClientConnectOptions = {
       model: this.model,
@@ -184,10 +191,26 @@ export class DecartRealtimeService {
           inboundVideo: stats.video && {
             framesReceived: stats.video.framesReceived,
             framesDecoded: stats.video.framesDecoded,
+            keyFramesDecoded: stats.video.keyFramesDecoded,
             framesPerSecond: stats.video.framesPerSecond,
             width: stats.video.frameWidth,
             height: stats.video.frameHeight,
+            decoderImplementation: stats.video.decoderImplementation,
+            avgDecodeTimeMs: stats.video.avgDecodeTimeMs,
+            totalDecodeTimeSeconds: stats.video.avgDecodeTimeMs !== null && stats.video.framesDecoded > 0
+              ? stats.video.avgDecodeTimeMs * stats.video.framesDecoded / 1000
+              : null,
+            freezeCount: stats.video.freezeCount,
+            totalFreezesDuration: stats.video.totalFreezesDuration,
+            framesDropped: stats.video.framesDropped,
+            pliCount: stats.video.pliCount,
+            nackCount: stats.video.nackCount,
+            packetsReceived: stats.video.packetsReceived,
             packetsLost: stats.video.packetsLost,
+            jitter: stats.video.jitter,
+            avgJitterBufferMs: stats.video.avgJitterBufferMs,
+            avgProcessingDelayMs: stats.video.avgProcessingDelayMs,
+            bitrate: stats.video.bitrate,
           },
           outboundVideo: stats.outboundVideo && {
             framesPerSecond: stats.outboundVideo.framesPerSecond,
@@ -198,6 +221,7 @@ export class DecartRealtimeService {
           },
           connection: stats.connection,
         });
+        callbacks.onRemoteVideoStats?.(stats.video);
       });
     } catch (error) {
       this.diagnostics.log('decart.connect.failed', {

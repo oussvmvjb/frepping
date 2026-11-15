@@ -11,6 +11,7 @@ import { ActivatedRoute } from '@angular/router';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { Product } from '../../models/api.models';
+import { WebRTCStats } from '@decartai/sdk';
 import { CameraService } from '../../services/camera.service';
 import { DecartRealtimeService, RealtimeGarment, RealtimeSpeedMode, RealtimeTokenInfo } from '../../services/decart-realtime.service';
 import { RealtimeDiagnosticsService } from '../../services/realtime-diagnostics.service';
@@ -84,6 +85,7 @@ export class VirtualTryOnComponent implements OnInit, OnDestroy {
   remoteVideoNeedsGesture = false;
   isRunningDebugTest = false;
   remoteVideoDimensions = 'not received';
+  remoteDecodeFailureMessage: string | null = null;
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -186,6 +188,7 @@ export class VirtualTryOnComponent implements OnInit, OnDestroy {
     this.isConnecting = true;
     this.remoteVideoNeedsGesture = false;
     this.remoteVideoDimensions = 'not received';
+    this.remoteDecodeFailureMessage = null;
     this.remoteFrameCount = 0;
 
     try {
@@ -212,6 +215,9 @@ export class VirtualTryOnComponent implements OnInit, OnDestroy {
           }),
           onConnectionChange: state => this.zone.run(() => {
             if (generation === this.startGeneration) this.onConnectionChange(state, generation);
+          }),
+          onRemoteVideoStats: stats => this.zone.run(() => {
+            if (generation === this.startGeneration) this.onRemoteVideoStats(stats);
           }),
           onError: message => this.zone.run(() => {
             if (generation !== this.startGeneration || this.resourcesReleased) return;
@@ -578,6 +584,46 @@ export class VirtualTryOnComponent implements OnInit, OnDestroy {
     }
   }
 
+  private onRemoteVideoStats(stats: WebRTCStats['video']): void {
+    if (!stats || stats.framesReceived === 0) return;
+    if (stats.framesDecoded === 0) {
+      if (!this.remoteDecodeFailureMessage) {
+        this.remoteDecodeFailureMessage =
+          'Remote video received, but the browser has not decoded any frames.';
+        this.errorMessage = this.remoteDecodeFailureMessage;
+        this.diagnostics.videoStatus = 'remote packets received; zero frames decoded';
+        this.diagnostics.log('remote-video.received-no-decoded-frames', {
+          framesReceived: stats.framesReceived,
+          framesDecoded: stats.framesDecoded,
+          keyFramesDecoded: stats.keyFramesDecoded,
+          packetsReceived: stats.packetsReceived,
+          packetsLost: stats.packetsLost,
+          jitter: stats.jitter,
+          decoderImplementation: stats.decoderImplementation,
+          avgDecodeTimeMs: stats.avgDecodeTimeMs,
+          freezeCount: stats.freezeCount,
+          pliCount: stats.pliCount,
+          nackCount: stats.nackCount,
+        }, new Error(this.remoteDecodeFailureMessage));
+      }
+      this.changeDetector.markForCheck();
+      return;
+    }
+
+    if (this.remoteDecodeFailureMessage) {
+      this.diagnostics.log('remote-video.decoding-started', {
+        framesReceived: stats.framesReceived,
+        framesDecoded: stats.framesDecoded,
+        keyFramesDecoded: stats.keyFramesDecoded,
+        decoderImplementation: stats.decoderImplementation,
+      });
+      this.remoteDecodeFailureMessage = null;
+      if (this.errorMessage === 'Remote video received, but the browser has not decoded any frames.') {
+        this.errorMessage = null;
+      }
+    }
+  }
+
   private describeRealtimeError(message: string): string {
     if (/could not establish pc connection/i.test(message)) {
       return 'Decart signaling connected, but the WebRTC media connection could not be established. A VPN, firewall, or restricted network may be blocking WebRTC traffic. Try another network (such as a mobile hotspot) or ask your network administrator to allow WebRTC traffic, then start a new session.';
@@ -682,7 +728,9 @@ export class VirtualTryOnComponent implements OnInit, OnDestroy {
     this.firstFrameTimeout = setTimeout(() => {
       if (generation !== this.startGeneration || this.hasRemoteVideo || !this.hasLiveSession) return;
       this.failSession(
-        'Decart connected but no transformed video frames arrived within 30 seconds. The session was stopped to avoid ongoing charges.',
+        this.remoteDecodeFailureMessage
+          ? `${this.remoteDecodeFailureMessage} The session was stopped to avoid ongoing charges.`
+          : 'Decart connected but no transformed video frames arrived within 30 seconds. The session was stopped to avoid ongoing charges.',
         'transformed video first-frame timeout',
         generation
       );
@@ -772,6 +820,9 @@ export class VirtualTryOnComponent implements OnInit, OnDestroy {
       currentTime: video.currentTime,
       width: video.videoWidth,
       height: video.videoHeight,
+      autoplay: video.autoplay,
+      playsInline: video.playsInline,
+      muted: video.muted,
       srcObjectType: video.srcObject?.constructor?.name ?? null,
       streamActive: stream?.active ?? null,
       videoTracks: stream?.getVideoTracks().map(track => ({

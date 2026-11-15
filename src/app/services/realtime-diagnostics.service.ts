@@ -27,6 +27,7 @@ export class RealtimeDiagnosticsService {
   localStreamStatus = 'not-started';
   remoteStreamStatus = 'not-received';
   videoStatus = 'not-started';
+  negotiatedVideoCodec = 'Unavailable through @decartai/sdk 0.2.14 public API';
   lastError: string | null = null;
   disconnectInitiator: string | null = null;
   sessionStartedAt: number | null = null;
@@ -40,6 +41,7 @@ export class RealtimeDiagnosticsService {
     this.localStreamStatus = 'not-started';
     this.remoteStreamStatus = 'not-received';
     this.videoStatus = 'not-started';
+    this.negotiatedVideoCodec = 'Unavailable through @decartai/sdk 0.2.14 public API';
     this.lastError = null;
     this.disconnectInitiator = null;
     this.entries.length = 0;
@@ -83,6 +85,8 @@ export class RealtimeDiagnosticsService {
       tokenStatus: this.tokenStatus,
       remoteStreamStatus: this.remoteStreamStatus,
       videoStatus: this.videoStatus,
+      negotiatedVideoCodec: this.negotiatedVideoCodec,
+      browserVideoCodecCapabilities: this.getVideoCodecCapabilities(),
       lastError: this.lastError,
       disconnectInitiator: this.disconnectInitiator,
       sessionDurationMs: this.sessionStartedAt ? Date.now() - this.sessionStartedAt : 0,
@@ -97,6 +101,21 @@ export class RealtimeDiagnosticsService {
   clear(): void {
     this.entries.length = 0;
     this.log('diagnostics.cleared');
+  }
+
+  getVideoCodecCapabilities(): Array<Record<string, unknown>> | string {
+    const receiver = typeof RTCRtpReceiver !== 'undefined' ? RTCRtpReceiver : null;
+    if (!receiver || typeof receiver.getCapabilities !== 'function') return 'unsupported';
+    try {
+      return receiver.getCapabilities('video')?.codecs.map(codec => ({
+        mimeType: codec.mimeType,
+        sdpFmtpLine: codec.sdpFmtpLine ?? null,
+        clockRate: codec.clockRate,
+        channels: codec.channels ?? null,
+      })) ?? [];
+    } catch (error) {
+      return `unavailable: ${error instanceof Error ? error.message : String(error)}`;
+    }
   }
 
   private deviceInfo(): string {
@@ -140,6 +159,7 @@ export class RealtimeDiagnosticsService {
   private redactString(value: string): string {
     return value
       .replace(/\bBearer\s+\S+/gi, 'Bearer [REDACTED]')
-      .replace(/\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b/g, '[REDACTED_JWT]');
+      .replace(/\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b/g, '[REDACTED_JWT]')
+      .replace(/([?&](?:api_key|token|access_token|refresh_token|subscribe_token)=)[^&\s]+/gi, '$1[REDACTED]');
   }
 }
