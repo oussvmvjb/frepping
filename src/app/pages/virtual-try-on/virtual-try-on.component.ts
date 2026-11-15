@@ -598,12 +598,23 @@ export class VirtualTryOnComponent implements OnInit, OnDestroy {
           keyFramesDecoded: stats.keyFramesDecoded,
           packetsReceived: stats.packetsReceived,
           packetsLost: stats.packetsLost,
+          packetsLostDelta: stats.packetsLostDelta,
           jitter: stats.jitter,
+          avgJitterBufferMs: stats.avgJitterBufferMs,
+          jitterBufferTargetDelayMs: stats.jitterBufferTargetDelayMs,
+          jitterBufferMinimumDelayMs: stats.jitterBufferMinimumDelayMs,
           decoderImplementation: stats.decoderImplementation,
           avgDecodeTimeMs: stats.avgDecodeTimeMs,
+          avgProcessingDelayMs: stats.avgProcessingDelayMs,
+          framesDropped: stats.framesDropped,
+          framesDroppedDelta: stats.framesDroppedDelta,
           freezeCount: stats.freezeCount,
+          totalFreezesDuration: stats.totalFreezesDuration,
           pliCount: stats.pliCount,
+          firCount: stats.firCount,
           nackCount: stats.nackCount,
+          nackCountDelta: stats.nackCountDelta,
+          videoElement: this.outputVideo ? this.videoInfo(this.outputVideo.nativeElement) : null,
         }, new Error(this.remoteDecodeFailureMessage));
       }
       this.changeDetector.markForCheck();
@@ -814,7 +825,15 @@ export class VirtualTryOnComponent implements OnInit, OnDestroy {
 
   private videoInfo(video: HTMLVideoElement): Record<string, unknown> {
     const stream = video.srcObject instanceof MediaStream ? video.srcObject : null;
+    const style = getComputedStyle(video);
     return {
+      isConnected: video.isConnected,
+      hidden: video.hidden,
+      display: style.display,
+      visibility: style.visibility,
+      opacity: style.opacity,
+      clientWidth: video.clientWidth,
+      clientHeight: video.clientHeight,
       readyState: video.readyState,
       paused: video.paused,
       currentTime: video.currentTime,
@@ -823,9 +842,12 @@ export class VirtualTryOnComponent implements OnInit, OnDestroy {
       autoplay: video.autoplay,
       playsInline: video.playsInline,
       muted: video.muted,
+      requestVideoFrameCallbackAvailable: typeof video.requestVideoFrameCallback === 'function',
       srcObjectType: video.srcObject?.constructor?.name ?? null,
       streamActive: stream?.active ?? null,
+      streamId: stream?.id ?? null,
       videoTracks: stream?.getVideoTracks().map(track => ({
+        id: track.id,
         readyState: track.readyState,
         enabled: track.enabled,
         muted: track.muted,

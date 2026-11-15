@@ -188,6 +188,7 @@ export class DecartRealtimeService {
         if (now - this.lastStatsAt < 5000) return;
         this.lastStatsAt = now;
         this.diagnostics.log('webrtc.stats', {
+          source: '@decartai/sdk normalized stats event; raw RTCRtpReceiver report is not exposed',
           inboundVideo: stats.video && {
             framesReceived: stats.video.framesReceived,
             framesDecoded: stats.video.framesDecoded,
@@ -203,13 +204,21 @@ export class DecartRealtimeService {
             freezeCount: stats.video.freezeCount,
             totalFreezesDuration: stats.video.totalFreezesDuration,
             framesDropped: stats.video.framesDropped,
+            framesDroppedDelta: stats.video.framesDroppedDelta,
             pliCount: stats.video.pliCount,
+            firCount: stats.video.firCount,
             nackCount: stats.video.nackCount,
+            nackCountDelta: stats.video.nackCountDelta,
             packetsReceived: stats.video.packetsReceived,
             packetsLost: stats.video.packetsLost,
+            packetsLostDelta: stats.video.packetsLostDelta,
             jitter: stats.video.jitter,
             avgJitterBufferMs: stats.video.avgJitterBufferMs,
+            jitterBufferTargetDelayMs: stats.video.jitterBufferTargetDelayMs,
+            jitterBufferMinimumDelayMs: stats.video.jitterBufferMinimumDelayMs,
             avgProcessingDelayMs: stats.video.avgProcessingDelayMs,
+            avgInterFrameDelayMs: stats.video.avgInterFrameDelayMs,
+            interFrameDelayStdDevMs: stats.video.interFrameDelayStdDevMs,
             bitrate: stats.video.bitrate,
           },
           outboundVideo: stats.outboundVideo && {
@@ -400,6 +409,7 @@ export class DecartRealtimeService {
       streamId: stream.id,
       tracks: stream.getTracks().map(track => ({
         kind: track.kind,
+        id: track.id,
         readyState: track.readyState,
         enabled: track.enabled,
         muted: track.muted,
