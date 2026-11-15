@@ -303,7 +303,7 @@
   video.video-visible { display: block; }
   video.video-pending {
     display: block;
-    opacity: .01;
+    opacity: 0;
   }
 }
 

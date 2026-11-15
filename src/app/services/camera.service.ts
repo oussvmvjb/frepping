@@ -1,23 +1,31 @@
 import { Injectable } from '@angular/core';
 import { ModelDefinition } from '@decartai/sdk';
+import { environment } from '../../environments/environment';
 import { RealtimeDiagnosticsService } from './realtime-diagnostics.service';
 
 @Injectable({ providedIn: 'root' })
 export class CameraService {
   private stream: MediaStream | null = null;
   private startGeneration = 0;
+  private mobileOptimizationAttempted = false;
 
   constructor(private readonly diagnostics: RealtimeDiagnosticsService) {}
 
   async start(model: Pick<ModelDefinition, 'fps' | 'width' | 'height'>): Promise<MediaStream> {
     const generation = ++this.startGeneration;
+    const modelFps = typeof model.fps === 'number' ? model.fps : (model.fps?.max ?? 20);
     this.diagnostics.cameraStatus = 'requesting permission';
     this.diagnostics.log('camera.permission.requested', {
       secureContext: window.isSecureContext,
       getUserMediaAvailable: Boolean(navigator.mediaDevices?.getUserMedia),
+      captureProfile: 'model-default',
+      mobileOptimizationAvailable: this.isMobileOptimizationAvailable,
       requestedWidth: model.width,
       requestedHeight: model.height,
-      requestedFps: typeof model.fps === 'number' ? model.fps : model.fps?.max,
+      requestedFps: modelFps,
+      modelWidth: model.width,
+      modelHeight: model.height,
+      modelFps,
     });
 
     if (!navigator.mediaDevices?.getUserMedia) {
@@ -43,46 +51,65 @@ export class CameraService {
       this.diagnostics.log('camera.permission.status-unavailable', undefined, error);
     }
 
-    const fpsNumber = typeof model.fps === 'number' ? model.fps : (model.fps?.max ?? 20);
-
-    const constraintAttempts: MediaStreamConstraints[] = [
+    const constraintAttempts: Array<{
+      profile: string;
+      constraints: MediaStreamConstraints;
+    }> = [];
+    constraintAttempts.push(
       {
-        audio: false,
-        video: {
-          facingMode: { ideal: 'user' },
-          width: { ideal: model.width },
-          height: { ideal: model.height },
-          frameRate: { ideal: fpsNumber },
+        profile: 'model-default',
+        constraints: {
+          audio: false,
+          video: {
+            facingMode: { ideal: 'user' },
+            width: { ideal: model.width },
+            height: { ideal: model.height },
+            frameRate: { ideal: modelFps },
+          },
         },
       },
       {
-        audio: false,
-        video: {
-          facingMode: 'user',
+        profile: 'user-camera-default',
+        constraints: {
+          audio: false,
+          video: {
+            facingMode: 'user',
+          },
         },
       },
       {
-        audio: false,
-        video: true,
-      },
-    ];
+        profile: 'browser-camera-default',
+        constraints: {
+          audio: false,
+          video: true,
+        },
+      }
+    );
 
     let lastError: unknown;
-    for (const constraints of constraintAttempts) {
+    for (const [index, attempt] of constraintAttempts.entries()) {
       try {
         this.diagnostics.log('camera.get-user-media.started', {
-          constraintAttempt: constraintAttempts.indexOf(constraints) + 1,
+          constraintAttempt: index + 1,
+          captureProfile: attempt.profile,
         });
-        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        const stream = await navigator.mediaDevices.getUserMedia(attempt.constraints);
         if (generation !== this.startGeneration) {
           stream.getTracks().forEach(track => track.stop());
           this.diagnostics.log('camera.get-user-media.cancelled-stale');
           throw new DOMException('Camera start cancelled.', 'AbortError');
         }
         this.stream = stream;
+        this.mobileOptimizationAttempted = false;
         this.diagnostics.cameraStatus = 'ready';
         this.diagnostics.localStreamStatus = 'camera acquired';
-        this.diagnostics.log('camera.get-user-media.succeeded', this.streamInfo(stream));
+        this.diagnostics.log('camera.get-user-media.succeeded', {
+          captureProfile: attempt.profile,
+          requestedWidth: model.width,
+          requestedHeight: model.height,
+          requestedFps: modelFps,
+          ...this.streamInfo(stream),
+        });
         return stream;
       } catch (error) {
         if (error instanceof DOMException && error.name === 'AbortError' && generation !== this.startGeneration) {
@@ -90,7 +117,8 @@ export class CameraService {
         }
         lastError = error;
         this.diagnostics.log('camera.get-user-media.failed', {
-          constraintAttempt: constraintAttempts.indexOf(constraints) + 1,
+          constraintAttempt: index + 1,
+          captureProfile: attempt.profile,
         }, error);
         if (error instanceof DOMException && error.name === 'OverconstrainedError') {
           // Retry with more relaxed constraints
@@ -116,6 +144,55 @@ export class CameraService {
     }
     this.diagnostics.cameraStatus = 'failed';
     throw lastError;
+  }
+
+  get isMobileOptimizationAvailable(): boolean {
+    return environment.realtimeCamera.mobile.enabled && this.isMobileDevice();
+  }
+
+  async applyMobileOptimization(): Promise<void> {
+    if (!this.isMobileOptimizationAvailable || this.mobileOptimizationAttempted) return;
+    const stream = this.stream;
+    const track = stream?.getVideoTracks()[0];
+    if (!stream || !track || track.readyState !== 'live') {
+      throw new Error('Cannot optimize mobile camera capture because no live camera track is available.');
+    }
+
+    this.mobileOptimizationAttempted = true;
+    const settings = environment.realtimeCamera.mobile;
+    const before = track.getSettings();
+    this.diagnostics.log('camera.mobile-optimization.started', {
+      before: {
+        width: before.width,
+        height: before.height,
+        frameRate: before.frameRate,
+      },
+      target: {
+        width: settings.width,
+        height: settings.height,
+        frameRate: settings.frameRate,
+      },
+    });
+
+    try {
+      await track.applyConstraints({
+        width: { ideal: settings.width, max: settings.width },
+        height: { ideal: settings.height, max: settings.height },
+        frameRate: { ideal: settings.frameRate, max: settings.frameRate },
+      });
+    } catch (error) {
+      this.diagnostics.log('camera.mobile-optimization.failed', undefined, error);
+      throw error;
+    }
+
+    this.diagnostics.log('camera.mobile-optimization.applied', {
+      target: {
+        width: settings.width,
+        height: settings.height,
+        frameRate: settings.frameRate,
+      },
+      ...this.streamInfo(stream),
+    });
   }
 
   setEnabled(enabled: boolean): void {
@@ -163,5 +240,11 @@ export class CameraService {
         };
       }),
     };
+  }
+
+  private isMobileDevice(): boolean {
+    const userAgent = navigator.userAgent;
+    const isTouchMac = navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
+    return /Android|iPhone|iPad|iPod/i.test(userAgent) || isTouchMac;
   }
 }
