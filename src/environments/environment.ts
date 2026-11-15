@@ -15,17 +15,6 @@ const getLocalApiUrl = (): string => {
 
 export const environment = {
   production: false,
-  realtimeCamera: {
-    mobile: {
-      enabled: true,
-      width: 960,
-      height: 540,
-      frameRate: 24,
-      minimumPacketsReceived: 500,
-      packetLossThreshold: 0.05,
-      jitterBufferThresholdMs: 300
-    }
-  },
   get apiUrl(): string {
     return getLocalApiUrl();
   }

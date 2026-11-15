@@ -71,7 +71,6 @@ export class VirtualTryOnComponent implements OnInit, OnDestroy {
   private frameProgressTimer: ReturnType<typeof setInterval> | null = null;
   private lastRemoteVideoTime = -1;
   private remoteFrameCount = 0;
-  private mobileCameraOptimizationRequested = false;
   private garmentUpdatePending = false;
   private garmentRevision = 0;
   private readonly destroy$ = new Subject<void>();
@@ -191,7 +190,6 @@ export class VirtualTryOnComponent implements OnInit, OnDestroy {
     this.remoteVideoDimensions = 'not received';
     this.remoteDecodeFailureMessage = null;
     this.remoteFrameCount = 0;
-    this.mobileCameraOptimizationRequested = false;
 
     try {
       const stream = await this.cameraService.start(this.decartService.getModel());
@@ -588,7 +586,6 @@ export class VirtualTryOnComponent implements OnInit, OnDestroy {
 
   private onRemoteVideoStats(stats: WebRTCStats['video']): void {
     if (!stats || stats.framesReceived === 0) return;
-    this.maybeOptimizeMobileCapture(stats);
     if (stats.framesDecoded === 0) {
       if (!this.remoteDecodeFailureMessage) {
         this.remoteDecodeFailureMessage =
@@ -636,37 +633,6 @@ export class VirtualTryOnComponent implements OnInit, OnDestroy {
         this.errorMessage = null;
       }
     }
-  }
-
-  private maybeOptimizeMobileCapture(stats: NonNullable<WebRTCStats['video']>): void {
-    if (!this.cameraService.isMobileOptimizationAvailable || this.mobileCameraOptimizationRequested) return;
-
-    const settings = environment.realtimeCamera.mobile;
-    const totalPackets = stats.packetsReceived + stats.packetsLost;
-    const packetLossRatio = totalPackets > 0 ? stats.packetsLost / totalPackets : 0;
-    const highPacketLoss =
-      stats.packetsReceived >= settings.minimumPacketsReceived &&
-      packetLossRatio >= settings.packetLossThreshold;
-    const highJitterBuffer =
-      stats.avgJitterBufferMs !== null &&
-      stats.avgJitterBufferMs >= settings.jitterBufferThresholdMs;
-    if (!highPacketLoss && !highJitterBuffer) return;
-
-    this.mobileCameraOptimizationRequested = true;
-    this.diagnostics.log('camera.mobile-optimization.triggered', {
-      packetLossRatio,
-      packetsReceived: stats.packetsReceived,
-      packetsLost: stats.packetsLost,
-      avgJitterBufferMs: stats.avgJitterBufferMs,
-      thresholds: {
-        minimumPacketsReceived: settings.minimumPacketsReceived,
-        packetLossRatio: settings.packetLossThreshold,
-        jitterBufferMs: settings.jitterBufferThresholdMs,
-      },
-    });
-    void this.cameraService.applyMobileOptimization().catch(error => {
-      this.diagnostics.log('camera.mobile-optimization.request-failed', undefined, error);
-    });
   }
 
   private describeRealtimeError(message: string): string {
