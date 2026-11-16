@@ -96,7 +96,7 @@
       <div class="video-stage">
         <video #cameraVideo autoplay playsinline muted [class.video-visible]="hasCameraPreview && !hasRemoteVideo"
           aria-label="Camera preview"></video>
-        <video #outputVideo autoplay playsinline muted
+        <video #outputVideo autoplay playsinline muted webkit-playsinline
           [class.video-visible]="hasRemoteVideo"
           [class.video-pending]="hasCameraPreview && !hasRemoteVideo"
           (loadedmetadata)="onRemoteVideoMetadata()"
@@ -140,6 +140,7 @@
           <div><dt>Token</dt><dd>{{ diagnostics.tokenStatus }}</dd></div>
           <div><dt>Connection</dt><dd>{{ diagnostics.connectionState }}</dd></div>
           <div><dt>Remote stream</dt><dd>{{ diagnostics.remoteStreamStatus }}</dd></div>
+          <div><dt>Codec requested</dt><dd>{{ diagnostics.requestedVideoCodec }}</dd></div>
           <div><dt>Remote video</dt><dd>{{ remoteVideoDimensions }} · {{ diagnostics.videoStatus }}</dd></div>
           <div><dt>Session duration</dt><dd>{{ sessionDurationSeconds }}s</dd></div>
           <div><dt>Disconnect initiator</dt><dd>{{ diagnostics.disconnectInitiator || 'none' }}</dd></div>

@@ -96,10 +96,24 @@ export class DecartRealtimeService {
       codecs: this.diagnostics.getVideoCodecCapabilities(),
       negotiatedCodec: 'not exposed by installed SDK stats API',
     });
+    // VP8 is universally decoded on Android Chrome and iOS/Safari WebRTC.
+    // H.264 (the SDK default) requires specific profile-level-id negotiation;
+    // mobile receivers report framesDecoded=0 when the profile is incompatible.
+    // We only override on mobile to leave desktop behaviour unchanged.
+    const preferredCodec = this.detectMobileVideoCodec();
+    this.diagnostics.log('webrtc.preferred-codec', {
+      codec: preferredCodec,
+      reason: preferredCodec === 'vp8'
+        ? 'mobile browser detected; VP8 avoids H.264 profile negotiation'
+        : 'desktop browser; using SDK default h264',
+    });
+    this.diagnostics.requestedVideoCodec = preferredCodec;
+
     const options: RealTimeClientConnectOptions = {
       model: this.model,
       mirror: 'auto',
       retries: 0,
+      preferredVideoCodec: preferredCodec,
       onRemoteStream: remoteStream => {
         if (generation !== this.connectionGeneration) return;
         this.diagnostics.remoteStreamStatus = 'received';
@@ -396,6 +410,22 @@ export class DecartRealtimeService {
     data?: Record<string, unknown>
   ): void {
     this.diagnostics.log(`sdk.${level}`, { message, ...(data ? { details: data } : {}) });
+  }
+
+  /**
+   * Returns 'vp8' on mobile browsers (Android Chrome, iOS Safari, iOS Chrome) so
+   * the SDK requests VP8 from the Decart server. VP8 decodes cleanly on all mobile
+   * WebRTC implementations without H.264 profile-level-id negotiation. Desktop keeps
+   * the SDK default of h264. Only 'h264', 'vp8', and 'vp9' are accepted by the SDK.
+   */
+  private detectMobileVideoCodec(): 'h264' | 'vp8' | 'vp9' {
+    if (typeof navigator === 'undefined') return 'h264';
+    const ua = navigator.userAgent;
+    const isMobile =
+      /Android/i.test(ua) ||
+      /iPhone|iPad|iPod/i.test(ua) ||
+      (/Macintosh/i.test(ua) && typeof navigator.maxTouchPoints === 'number' && navigator.maxTouchPoints > 1);
+    return isMobile ? 'vp8' : 'h264';
   }
 
   private imageInfo(image: RealtimeGarment['image']): Record<string, unknown> {

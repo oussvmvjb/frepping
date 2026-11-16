@@ -28,6 +28,7 @@ export class RealtimeDiagnosticsService {
   remoteStreamStatus = 'not-received';
   videoStatus = 'not-started';
   negotiatedVideoCodec = 'Unavailable through @decartai/sdk 0.2.14 public API';
+  requestedVideoCodec: string = 'not-yet-determined';
   lastError: string | null = null;
   disconnectInitiator: string | null = null;
   sessionStartedAt: number | null = null;
@@ -42,6 +43,7 @@ export class RealtimeDiagnosticsService {
     this.remoteStreamStatus = 'not-received';
     this.videoStatus = 'not-started';
     this.negotiatedVideoCodec = 'Unavailable through @decartai/sdk 0.2.14 public API';
+    this.requestedVideoCodec = 'not-yet-determined';
     this.lastError = null;
     this.disconnectInitiator = null;
     this.entries.length = 0;
@@ -86,6 +88,7 @@ export class RealtimeDiagnosticsService {
       remoteStreamStatus: this.remoteStreamStatus,
       videoStatus: this.videoStatus,
       negotiatedVideoCodec: this.negotiatedVideoCodec,
+      requestedVideoCodec: this.requestedVideoCodec,
       browserVideoCodecCapabilities: this.getVideoCodecCapabilities(),
       lastError: this.lastError,
       disconnectInitiator: this.disconnectInitiator,
