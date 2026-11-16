@@ -2,23 +2,113 @@ import { Injectable } from '@angular/core';
 import { ModelDefinition } from '@decartai/sdk';
 import { RealtimeDiagnosticsService } from './realtime-diagnostics.service';
 
+export type CameraProfileMode = 'standard' | 'reduced';
+
+export interface CameraProfile {
+  name: CameraProfileMode;
+  label: string;
+  width: number;
+  height: number;
+  fps: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class CameraService {
   private stream: MediaStream | null = null;
   private startGeneration = 0;
+  activeProfile: CameraProfileMode = this.getDefaultProfile();
 
   constructor(private readonly diagnostics: RealtimeDiagnosticsService) {}
 
+  isMobileDevice(): boolean {
+    if (typeof navigator === 'undefined') return false;
+    const ua = navigator.userAgent;
+    return /Android/i.test(ua) ||
+      /iPhone|iPad|iPod/i.test(ua) ||
+      (/Macintosh/i.test(ua) && typeof navigator.maxTouchPoints === 'number' && navigator.maxTouchPoints > 1);
+  }
+
+  private getDefaultProfile(): CameraProfileMode {
+    if (typeof window !== 'undefined') {
+      const param = new URLSearchParams(window.location.search).get('profile')?.toLowerCase();
+      if (param === 'standard' || param === 'reduced') return param;
+    }
+    return this.isMobileDevice() ? 'reduced' : 'standard';
+  }
+
+  getProfile(mode: CameraProfileMode = this.activeProfile): CameraProfile {
+    if (mode === 'reduced') {
+      return {
+        name: 'reduced',
+        label: '540p @ 15fps (Mobile Optimized)',
+        width: 540,
+        height: 960,
+        fps: 15,
+      };
+    }
+    return {
+      name: 'standard',
+      label: '720p @ 30fps (Standard)',
+      width: 720,
+      height: 1280,
+      fps: 30,
+    };
+  }
+
+  async setProfile(mode: CameraProfileMode, reason = 'user manual selection'): Promise<void> {
+    this.activeProfile = mode;
+    const profile = this.getProfile(mode);
+    this.diagnostics.log('camera.profile.switched', {
+      profile: mode,
+      width: profile.width,
+      height: profile.height,
+      fps: profile.fps,
+      reason,
+      streamActive: Boolean(this.stream?.active),
+    });
+
+    if (this.stream?.active) {
+      const videoTrack = this.stream.getVideoTracks()[0];
+      if (videoTrack) {
+        try {
+          await videoTrack.applyConstraints({
+            width: { ideal: profile.width },
+            height: { ideal: profile.height },
+            frameRate: { ideal: profile.fps, max: profile.fps },
+          });
+          const actualSettings = videoTrack.getSettings ? videoTrack.getSettings() : {};
+          this.diagnostics.log('camera.profile.applied-live', {
+            profile: mode,
+            requested: { width: profile.width, height: profile.height, fps: profile.fps },
+            actual: {
+              width: actualSettings.width,
+              height: actualSettings.height,
+              frameRate: actualSettings.frameRate,
+            },
+            reason,
+          });
+        } catch (error) {
+          this.diagnostics.log('camera.profile.apply-failed', { profile: mode }, error);
+        }
+      }
+    }
+  }
+
   async start(model: Pick<ModelDefinition, 'fps' | 'width' | 'height'>): Promise<MediaStream> {
     const generation = ++this.startGeneration;
-    const modelFps = typeof model.fps === 'number' ? model.fps : (model.fps?.max ?? 20);
+    const profile = this.getProfile(this.activeProfile);
+    const targetWidth = profile.width;
+    const targetHeight = profile.height;
+    const targetFps = profile.fps;
+
     this.diagnostics.cameraStatus = 'requesting permission';
     this.diagnostics.log('camera.permission.requested', {
       secureContext: window.isSecureContext,
       getUserMediaAvailable: Boolean(navigator.mediaDevices?.getUserMedia),
-      requestedWidth: model.width,
-      requestedHeight: model.height,
-      requestedFps: typeof model.fps === 'number' ? model.fps : model.fps?.max,
+      profile: profile.name,
+      requestedWidth: targetWidth,
+      requestedHeight: targetHeight,
+      requestedFps: targetFps,
     });
 
     if (!navigator.mediaDevices?.getUserMedia) {
@@ -49,9 +139,9 @@ export class CameraService {
         audio: false,
         video: {
           facingMode: { ideal: 'user' },
-          width: { ideal: model.width },
-          height: { ideal: model.height },
-          frameRate: { ideal: modelFps },
+          width: { ideal: targetWidth },
+          height: { ideal: targetHeight },
+          frameRate: { ideal: targetFps, max: targetFps },
         },
       },
       {

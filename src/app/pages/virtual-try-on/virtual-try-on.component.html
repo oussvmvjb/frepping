@@ -14,6 +14,11 @@
           {{ statusLabel }}
         </div>
         <div class="toolbar-badges">
+          <button type="button" class="profile-toggle-btn" (click)="toggleCameraProfile()"
+            [title]="activeCameraProfile === 'reduced' ? 'Profile: 540p @ 15fps (Tap to switch to 720p @ 30fps)' : 'Profile: 720p @ 30fps (Tap to switch to 540p @ 15fps)'">
+            <i class="fas fa-sliders"></i>
+            <span>{{ activeCameraProfile === 'reduced' ? '540P · 15FPS' : '720P · 30FPS' }}</span>
+          </button>
           <button type="button" class="token-toggle-btn" (click)="toggleTokenDetails()"
             [title]="tokenInfo ? 'Decart Token Active' : 'View Session Token'">
             <i class="fas fa-key"></i>
@@ -124,6 +129,27 @@
           (click)="resumeRemoteVideo()">
           <i class="fas fa-play"></i> Play transformed video
         </button>
+
+        <!-- Mobile-Only Vertical Clothing Selector (Right side of live camera/video) -->
+        <aside class="mobile-garment-sidebar" *ngIf="products.length > 0" aria-label="Mobile clothing selector">
+          <button type="button" class="mobile-upload-btn" (click)="openGarmentPicker()" title="Upload custom garment" aria-label="Upload garment">
+            <i class="fas fa-plus"></i>
+          </button>
+          <div class="mobile-garment-scroll">
+            <button type="button" *ngFor="let product of products"
+              class="mobile-garment-item"
+              [class.mobile-garment-item--selected]="selectedProduct?.id === product.id"
+              [disabled]="isSwitchingGarment"
+              (click)="selectProduct(product)"
+              [title]="product.name"
+              [attr.aria-label]="product.name">
+              <img [src]="productService.getPrimaryImage(product)" [alt]="product.name" loading="lazy" />
+              <span class="mobile-item-indicator" *ngIf="selectedProduct?.id === product.id">
+                <i class="fas fa-check"></i>
+              </span>
+            </button>
+          </div>
+        </aside>
       </div>
 
       <section class="diagnostic-panel" *ngIf="isDebugPanelEnabled">
@@ -136,6 +162,7 @@
         </div>
         <dl class="diagnostic-grid">
           <div><dt>Camera</dt><dd>{{ diagnostics.cameraStatus }}</dd></div>
+          <div><dt>Camera profile</dt><dd>{{ cameraService.activeProfile }} ({{ cameraService.getProfile().width }}×{{ cameraService.getProfile().height }} @ {{ cameraService.getProfile().fps }}fps)</dd></div>
           <div><dt>Local stream</dt><dd>{{ diagnostics.localStreamStatus }}</dd></div>
           <div><dt>Token</dt><dd>{{ diagnostics.tokenStatus }}</dd></div>
           <div><dt>Connection</dt><dd>{{ diagnostics.connectionState }}</dd></div>

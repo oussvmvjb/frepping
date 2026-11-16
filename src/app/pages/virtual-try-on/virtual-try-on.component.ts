@@ -12,7 +12,7 @@ import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { Product } from '../../models/api.models';
 import { WebRTCStats } from '@decartai/sdk';
-import { CameraService } from '../../services/camera.service';
+import { CameraService, CameraProfileMode } from '../../services/camera.service';
 import { DecartRealtimeService, RealtimeGarment, RealtimeSpeedMode, RealtimeTokenInfo } from '../../services/decart-realtime.service';
 import { RealtimeDiagnosticsService } from '../../services/realtime-diagnostics.service';
 import { AuthService } from '../../services/auth.service';
@@ -106,6 +106,16 @@ export class VirtualTryOnComponent implements OnInit, OnDestroy {
     return this.diagnostics.sessionStartedAt
       ? Math.floor((Date.now() - this.diagnostics.sessionStartedAt) / 1000)
       : 0;
+  }
+
+  get activeCameraProfile(): CameraProfileMode {
+    return this.cameraService.activeProfile;
+  }
+
+  toggleCameraProfile(): void {
+    const next: CameraProfileMode = this.activeCameraProfile === 'reduced' ? 'standard' : 'reduced';
+    void this.cameraService.setProfile(next, 'user toolbar toggle');
+    this.changeDetector.markForCheck();
   }
 
   get activeModelName(): string {
@@ -636,6 +646,26 @@ export class VirtualTryOnComponent implements OnInit, OnDestroy {
       if (this.errorMessage === 'Remote video received, but the browser has not decoded any frames.') {
         this.errorMessage = null;
       }
+    }
+
+    // Adaptive camera profile for mobile connections:
+    // If running in standard (720p@30fps) on mobile and upload network congestion is detected
+    // (repeated freezes, high jitter buffer delay, or packet loss delta), dynamically
+    // step down to the reduced profile (540p@15fps) via applyConstraints without restarting the camera.
+    if (
+      this.cameraService.isMobileDevice() &&
+      this.cameraService.activeProfile === 'standard' &&
+      ((stats.freezeCount && stats.freezeCount >= 3) ||
+       (stats.avgJitterBufferMs && stats.avgJitterBufferMs > 180) ||
+       (stats.packetsLostDelta && stats.packetsLostDelta > 4))
+    ) {
+      this.diagnostics.log('camera.profile.auto-downgrade-triggered', {
+        freezeCount: stats.freezeCount,
+        avgJitterBufferMs: stats.avgJitterBufferMs,
+        packetsLostDelta: stats.packetsLostDelta,
+        reason: 'Network congestion detected on mobile; auto-adapting to 540p @ 15fps to eliminate bufferbloat and freezes',
+      });
+      void this.cameraService.setProfile('reduced', 'auto network congestion mitigation');
     }
   }
 
