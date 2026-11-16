@@ -90,7 +90,7 @@ export class VirtualTryOnComponent implements OnInit, OnDestroy {
   constructor(
     private readonly route: ActivatedRoute,
     readonly productService: ProductService,
-    private readonly cameraService: CameraService,
+    readonly cameraService: CameraService,
     private readonly decartService: DecartRealtimeService,
     readonly authService: AuthService,
     private readonly zone: NgZone,

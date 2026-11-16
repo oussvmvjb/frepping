@@ -15,16 +15,16 @@
         </div>
         <div class="toolbar-badges">
           <button type="button" class="profile-toggle-btn" (click)="toggleCameraProfile()"
-            [title]="activeCameraProfile === 'reduced' ? 'Profile: 540p @ 15fps (Tap to switch to 720p @ 30fps)' : 'Profile: 720p @ 30fps (Tap to switch to 540p @ 15fps)'">
+            [title]="activeCameraProfile === 'reduced' ? 'Profile: 540p @ 15fps (Tap to test 720p @ 30fps)' : 'Profile: 720p @ 30fps (Tap to test 540p @ 15fps)'">
             <i class="fas fa-sliders"></i>
-            <span>{{ activeCameraProfile === 'reduced' ? '540P · 15FPS' : '720P · 30FPS' }}</span>
+            <span>{{ activeCameraProfile === 'reduced' ? '540P' : '720P' }}</span>
           </button>
           <button type="button" class="token-toggle-btn" (click)="toggleTokenDetails()"
             [title]="tokenInfo ? 'Decart Token Active' : 'View Session Token'">
             <i class="fas fa-key"></i>
-            <span>{{ tokenInfo ? 'TOKEN ACTIVE' : (userAccessToken ? 'VIEW TOKEN' : 'SIGN IN FOR TOKEN') }}</span>
+            <span>{{ tokenInfo ? 'TOKEN' : (userAccessToken ? 'TOKEN' : 'SIGN IN') }}</span>
           </button>
-          <span class="model-badge">{{ activeModelName }}</span>
+          <span class="model-badge">VTON 3.6</span>
         </div>
       </div>
 
@@ -49,7 +49,8 @@
           </div>
           <div class="token-value-empty" *ngIf="!tokenInfo">
             <span>No active Decart client token yet.</span>
-            <button type="button" class="token-fetch-btn" [disabled]="isFetchingToken || !userAccessToken" (click)="checkOrFetchToken()">
+            <button type="button" class="token-fetch-btn" [disabled]="isFetchingToken || !userAccessToken"
+              (click)="checkOrFetchToken()">
               <i class="fas fa-arrows-rotate" [class.fa-spin]="isFetchingToken"></i>
               {{ isFetchingToken ? 'Generating...' : 'Get Token Now' }}
             </button>
@@ -101,12 +102,9 @@
       <div class="video-stage">
         <video #cameraVideo autoplay playsinline muted [class.video-visible]="hasCameraPreview && !hasRemoteVideo"
           aria-label="Camera preview"></video>
-        <video #outputVideo autoplay playsinline muted webkit-playsinline
-          [class.video-visible]="hasRemoteVideo"
-          [class.video-pending]="hasCameraPreview && !hasRemoteVideo"
-          (loadedmetadata)="onRemoteVideoMetadata()"
-          (playing)="onRemoteVideoPlaying()"
-          (timeupdate)="onRemoteVideoTimeUpdate()"
+        <video #outputVideo autoplay playsinline muted webkit-playsinline [class.video-visible]="hasRemoteVideo"
+          [class.video-pending]="hasCameraPreview && !hasRemoteVideo" (loadedmetadata)="onRemoteVideoMetadata()"
+          (playing)="onRemoteVideoPlaying()" (timeupdate)="onRemoteVideoTimeUpdate()"
           aria-label="Transformed virtual try-on video"></video>
         <div class="camera-preview-badge" *ngIf="hasCameraPreview && !hasRemoteVideo">
           <i class="fas fa-video"></i> CAMERA PREVIEW · NOT TRANSFORMED
@@ -125,24 +123,20 @@
           <img [src]="garmentPreview" [alt]="selectedProduct.name" />
           <span>{{ selectedProduct.name }}</span>
         </div>
-        <button type="button" class="resume-video-button" *ngIf="remoteVideoNeedsGesture"
-          (click)="resumeRemoteVideo()">
+        <button type="button" class="resume-video-button" *ngIf="remoteVideoNeedsGesture" (click)="resumeRemoteVideo()">
           <i class="fas fa-play"></i> Play transformed video
         </button>
 
         <!-- Mobile-Only Vertical Clothing Selector (Right side of live camera/video) -->
         <aside class="mobile-garment-sidebar" *ngIf="products.length > 0" aria-label="Mobile clothing selector">
-          <button type="button" class="mobile-upload-btn" (click)="openGarmentPicker()" title="Upload custom garment" aria-label="Upload garment">
+          <button type="button" class="mobile-upload-btn" (click)="openGarmentPicker()" title="Upload custom garment"
+            aria-label="Upload garment">
             <i class="fas fa-plus"></i>
           </button>
           <div class="mobile-garment-scroll">
-            <button type="button" *ngFor="let product of products"
-              class="mobile-garment-item"
-              [class.mobile-garment-item--selected]="selectedProduct?.id === product.id"
-              [disabled]="isSwitchingGarment"
-              (click)="selectProduct(product)"
-              [title]="product.name"
-              [attr.aria-label]="product.name">
+            <button type="button" *ngFor="let product of products" class="mobile-garment-item"
+              [class.mobile-garment-item--selected]="selectedProduct?.id === product.id" [disabled]="isSwitchingGarment"
+              (click)="selectProduct(product)" [title]="product.name" [attr.aria-label]="product.name">
               <img [src]="productService.getPrimaryImage(product)" [alt]="product.name" loading="lazy" />
               <span class="mobile-item-indicator" *ngIf="selectedProduct?.id === product.id">
                 <i class="fas fa-check"></i>
@@ -161,26 +155,60 @@
           <span class="diagnostic-badge">DEBUG MODE</span>
         </div>
         <dl class="diagnostic-grid">
-          <div><dt>Camera</dt><dd>{{ diagnostics.cameraStatus }}</dd></div>
-          <div><dt>Camera profile</dt><dd>{{ cameraService.activeProfile }} ({{ cameraService.getProfile().width }}×{{ cameraService.getProfile().height }} @ {{ cameraService.getProfile().fps }}fps)</dd></div>
-          <div><dt>Local stream</dt><dd>{{ diagnostics.localStreamStatus }}</dd></div>
-          <div><dt>Token</dt><dd>{{ diagnostics.tokenStatus }}</dd></div>
-          <div><dt>Connection</dt><dd>{{ diagnostics.connectionState }}</dd></div>
-          <div><dt>Remote stream</dt><dd>{{ diagnostics.remoteStreamStatus }}</dd></div>
-          <div><dt>Codec requested</dt><dd>{{ diagnostics.requestedVideoCodec }}</dd></div>
-          <div><dt>Remote video</dt><dd>{{ remoteVideoDimensions }} · {{ diagnostics.videoStatus }}</dd></div>
-          <div><dt>Session duration</dt><dd>{{ sessionDurationSeconds }}s</dd></div>
-          <div><dt>Disconnect initiator</dt><dd>{{ diagnostics.disconnectInitiator || 'none' }}</dd></div>
+          <div>
+            <dt>Camera</dt>
+            <dd>{{ diagnostics.cameraStatus }}</dd>
+          </div>
+          <div>
+            <dt>Camera profile</dt>
+            <dd>{{ cameraService.activeProfile }} ({{ cameraService.getProfile().width }}×{{
+              cameraService.getProfile().height }} @ {{ cameraService.getProfile().fps }}fps)</dd>
+          </div>
+          <div>
+            <dt>Local stream</dt>
+            <dd>{{ diagnostics.localStreamStatus }}</dd>
+          </div>
+          <div>
+            <dt>Token</dt>
+            <dd>{{ diagnostics.tokenStatus }}</dd>
+          </div>
+          <div>
+            <dt>Connection</dt>
+            <dd>{{ diagnostics.connectionState }}</dd>
+          </div>
+          <div>
+            <dt>Remote stream</dt>
+            <dd>{{ diagnostics.remoteStreamStatus }}</dd>
+          </div>
+          <div>
+            <dt>Codec requested</dt>
+            <dd>{{ diagnostics.requestedVideoCodec }}</dd>
+          </div>
+          <div>
+            <dt>Remote video</dt>
+            <dd>{{ remoteVideoDimensions }} · {{ diagnostics.videoStatus }}</dd>
+          </div>
+          <div>
+            <dt>Session duration</dt>
+            <dd>{{ sessionDurationSeconds }}s</dd>
+          </div>
+          <div>
+            <dt>Disconnect initiator</dt>
+            <dd>{{ diagnostics.disconnectInitiator || 'none' }}</dd>
+          </div>
           <div class="diagnostic-error" *ngIf="diagnostics.lastError">
-            <dt>Last error</dt><dd>{{ diagnostics.lastError }}</dd>
+            <dt>Last error</dt>
+            <dd>{{ diagnostics.lastError }}</dd>
           </div>
         </dl>
         <div class="diagnostic-actions">
           <button type="button" (click)="copyDiagnosticReport()">Copy report</button>
           <button type="button" (click)="clearDiagnosticLogs()">Clear logs</button>
-          <button type="button" [disabled]="isRunningDebugTest || isSessionActive" (click)="runCameraDiagnostic()">Test camera</button>
+          <button type="button" [disabled]="isRunningDebugTest || isSessionActive" (click)="runCameraDiagnostic()">Test
+            camera</button>
           <button type="button" [disabled]="isRunningDebugTest" (click)="runBackendDiagnostic()">Test backend</button>
-          <button type="button" [disabled]="isRunningDebugTest || isSessionActive" (click)="runTokenDiagnostic()">Test Decart token</button>
+          <button type="button" [disabled]="isRunningDebugTest || isSessionActive" (click)="runTokenDiagnostic()">Test
+            Decart token</button>
         </div>
         <video #debugCameraVideo class="debug-camera-video" autoplay playsinline muted></video>
         <details>
@@ -214,7 +242,9 @@
     <aside class="control-panel">
       <section class="panel-section">
         <div class="section-heading">
-          <div><span class="section-kicker">01 / YOUR LOOK</span><h2>Choose a garment</h2></div>
+          <div><span class="section-kicker">01 / YOUR LOOK</span>
+            <h2>Choose a garment</h2>
+          </div>
           <button type="button" class="upload-button" (click)="openGarmentPicker()">
             <i class="fas fa-arrow-up-from-bracket"></i> Upload
           </button>
@@ -228,8 +258,8 @@
         </div>
         <div class="garment-grid" *ngIf="products.length">
           <button type="button" class="garment-card" *ngFor="let product of products"
-            [class.garment-card--selected]="selectedProduct?.id === product.id"
-            [disabled]="isSwitchingGarment" (click)="selectProduct(product)">
+            [class.garment-card--selected]="selectedProduct?.id === product.id" [disabled]="isSwitchingGarment"
+            (click)="selectProduct(product)">
             <img [src]="productService.getPrimaryImage(product)" [alt]="product.name" />
             <span class="garment-check" *ngIf="selectedProduct?.id === product.id"><i class="fas fa-check"></i></span>
             <span class="garment-name">{{ product.name }}</span>
@@ -242,7 +272,9 @@
 
       <section class="panel-section prompt-section">
         <div class="section-heading">
-          <div><span class="section-kicker">02 / STYLE DETAILS</span><h2>Describe your look</h2></div>
+          <div><span class="section-kicker">02 / STYLE DETAILS</span>
+            <h2>Describe your look</h2>
+          </div>
         </div>
         <textarea [(ngModel)]="prompt" (ngModelChange)="onPromptChange()" rows="3"
           placeholder="e.g. Wearing a black oversized hoodie with a white logo on the chest."
@@ -257,7 +289,9 @@
 
       <section class="panel-section speed-section">
         <div class="section-heading">
-          <div><span class="section-kicker">03 / CONNECTION</span><h2>Choose a speed</h2></div>
+          <div><span class="section-kicker">03 / CONNECTION</span>
+            <h2>Choose a speed</h2>
+          </div>
         </div>
         <div class="speed-options">
           <label class="speed-option" [class.speed-option--selected]="speed === 'standard'">
@@ -278,6 +312,7 @@
 
   <footer class="privacy-note">
     <i class="fas fa-shield-halved"></i>
-    <span>Your webcam is connected only after you start. Stop the session at any time to end processing and release camera access.</span>
+    <span>Your webcam is connected only after you start. Stop the session at any time to end processing and release
+      camera access.</span>
   </footer>
 </main>
