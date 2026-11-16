@@ -34,6 +34,7 @@ import { OptionWheelComponent } from './shared/option-wheel/option-wheel.compone
 import { Ai3dPageComponent } from './pages/ai-3d/ai-3d.component';
 import { TshirtViewerComponent } from './components/tshirt-viewer/tshirt-viewer.component';
 import { TshirtCustomizerComponent } from './components/tshirt-customizer/tshirt-customizer.component';
+import { AuthHeroComponent } from './shared/auth-hero/auth-hero.component';
 
 @NgModule({
   declarations: [
@@ -50,6 +51,7 @@ import { TshirtCustomizerComponent } from './components/tshirt-customizer/tshirt
     ModelViewerComponent,
     LoginComponent,
     RegisterComponent,
+    AuthHeroComponent,
     StorePageComponent,
     SellerDashboardComponent
   ],

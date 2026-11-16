@@ -1,9 +1,6 @@
 <div class="auth-container">
 
-  <!-- LEFT: WebGL warp animation (looping OR password-state frames) -->
-  <div class="anim-left">
-    <div #bgContainer class="bg-warp-container"></div>
-  </div>
+  <app-auth-hero class="anim-left" #authHero aria-hidden="true"></app-auth-hero>
 
   <!-- RIGHT: Login card -->
   <div class="auth-box">
@@ -28,27 +25,27 @@
         <label>Password</label>
         <div class="password-input-wrapper">
           <input
-            [type]="isPasswordVisible ? 'text' : 'password'"
+            [type]="authHero.isPasswordVisible ? 'text' : 'password'"
             formControlName="password"
             class="form-control"
             [ngClass]="{ 'is-invalid': loginForm.get('password')?.invalid && loginForm.get('password')?.touched }"
-            (focus)="onPasswordFocus()"
-            (blur)="onPasswordBlur()"
+            (focus)="authHero.onPasswordFocus(loginForm.get('password')?.value?.length || 0)"
+            (blur)="authHero.onPasswordBlur()"
           />
           <button
             type="button"
             class="eye-toggle"
             (mousedown)="$event.preventDefault()"
-            (click)="togglePasswordVisibility()"
-            [attr.aria-label]="isPasswordVisible ? 'Hide password' : 'Show password'"
+            (click)="authHero.togglePasswordVisibility()"
+            [attr.aria-label]="authHero.isPasswordVisible ? 'Hide password' : 'Show password'"
           >
             <!-- Eye open (password visible) -->
-            <svg *ngIf="isPasswordVisible" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg *ngIf="authHero.isPasswordVisible" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
               <circle cx="12" cy="12" r="3"/>
             </svg>
             <!-- Eye closed / slash (password hidden) -->
-            <svg *ngIf="!isPasswordVisible" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg *ngIf="!authHero.isPasswordVisible" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
               <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
               <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/>
