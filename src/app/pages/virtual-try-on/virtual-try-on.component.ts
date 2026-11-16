@@ -108,6 +108,10 @@ export class VirtualTryOnComponent implements OnInit, OnDestroy {
       : 0;
   }
 
+  get activeModelName(): string {
+    return this.decartService.getModel().name.toUpperCase().replace(/-/g, ' ');
+  }
+
   get tokenInfo(): RealtimeTokenInfo | null {
     return this.decartService.latestTokenInfo;
   }

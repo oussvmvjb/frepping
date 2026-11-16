@@ -57,7 +57,21 @@ export class DecartRealtimeService {
   ) {}
 
   getModel(): ModelDefinition {
-    return this.model;
+    return this.getActiveModel();
+  }
+
+  private getActiveModel(): ModelDefinition {
+    if (typeof window !== 'undefined') {
+      const modelParam = new URLSearchParams(window.location.search).get('model')?.trim();
+      if (modelParam) {
+        try {
+          return models.realtime(modelParam as any);
+        } catch {
+          // Unknown model, fall back to default
+        }
+      }
+    }
+    return models.realtime('lucy-vton-3.6');
   }
 
   get isConnected(): boolean {
@@ -82,8 +96,9 @@ export class DecartRealtimeService {
     const generation = ++this.connectionGeneration;
     this.pendingConnectionGeneration = generation;
     const connectStartedAt = Date.now();
+    const activeModel = this.getActiveModel();
     this.diagnostics.log('decart.connect.started', {
-      model: this.model.name,
+      model: activeModel.name,
       speed,
       initialPromptPresent: Boolean(garment.prompt.trim()),
       initialPromptLength: garment.prompt.trim().length,
@@ -97,23 +112,36 @@ export class DecartRealtimeService {
       negotiatedCodec: 'not exposed by installed SDK stats API',
     });
     // VP8 is universally decoded on Android Chrome and iOS/Safari WebRTC.
-    // H.264 (the SDK default) requires specific profile-level-id negotiation;
-    // mobile receivers report framesDecoded=0 when the profile is incompatible.
-    // We only override on mobile to leave desktop behaviour unchanged.
+    // H.264 requires specific profile-level-id negotiation; mobile WebKit
+    // receivers report framesDecoded=0 when the server encodes an incompatible profile.
+    // In @decartai/sdk, preferredVideoCodec only sets the LOCAL publish codec.
+    // To force the DECART INFERENCE SERVER to send VP8 downstream, we must pass
+    // livekit_server_codec=vp8 via queryParams in RealTimeClientConnectOptions.
     const preferredCodec = this.detectMobileVideoCodec();
+    const queryParams: Record<string, string> = {};
+    if (preferredCodec === 'vp8') {
+      queryParams['livekit_server_codec'] = 'vp8';
+    } else if (preferredCodec === 'vp9') {
+      queryParams['livekit_server_codec'] = 'vp9';
+    }
+
     this.diagnostics.log('webrtc.preferred-codec', {
       codec: preferredCodec,
+      serverCodec: queryParams['livekit_server_codec'] ?? 'default (server decides, typically h264)',
       reason: preferredCodec === 'vp8'
-        ? 'mobile browser detected; VP8 avoids H.264 profile negotiation'
+        ? 'mobile browser or explicit vp8 requested; forcing both local publish codec and server livekit_server_codec to vp8'
         : 'desktop browser; using SDK default h264',
     });
-    this.diagnostics.requestedVideoCodec = preferredCodec;
+    this.diagnostics.requestedVideoCodec = preferredCodec === 'vp8'
+      ? 'vp8 (client publish + server remote via livekit_server_codec)'
+      : preferredCodec;
 
     const options: RealTimeClientConnectOptions = {
-      model: this.model,
+      model: activeModel,
       mirror: 'auto',
       retries: 0,
       preferredVideoCodec: preferredCodec,
+      ...(Object.keys(queryParams).length > 0 ? { queryParams } : {}),
       onRemoteStream: remoteStream => {
         if (generation !== this.connectionGeneration) return;
         this.diagnostics.remoteStreamStatus = 'received';
@@ -419,6 +447,12 @@ export class DecartRealtimeService {
    * the SDK default of h264. Only 'h264', 'vp8', and 'vp9' are accepted by the SDK.
    */
   private detectMobileVideoCodec(): 'h264' | 'vp8' | 'vp9' {
+    if (typeof window !== 'undefined') {
+      const paramCodec = new URLSearchParams(window.location.search).get('codec')?.toLowerCase()?.trim();
+      if (paramCodec === 'vp8' || paramCodec === 'h264' || paramCodec === 'vp9') {
+        return paramCodec;
+      }
+    }
     if (typeof navigator === 'undefined') return 'h264';
     const ua = navigator.userAgent;
     const isMobile =
