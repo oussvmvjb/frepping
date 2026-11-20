@@ -2,6 +2,14 @@
   <app-auth-hero class="anim-left" #authHero aria-hidden="true"></app-auth-hero>
 
   <div class="auth-box">
+    <!-- Independent mascot positioned on the right of the auth card -->
+    <div class="mascot-card-anchor">
+      <app-password-mascot
+        #mascot
+        [isPasswordVisible]="authHero.isPasswordVisible"
+      ></app-password-mascot>
+    </div>
+
     <h2 class="title">FREPPING</h2>
     <h3>Create Account</h3>
     <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
@@ -30,14 +38,14 @@
             formControlName="password"
             class="form-control"
             [ngClass]="{ 'is-invalid': registerForm.get('password')?.invalid && registerForm.get('password')?.touched }"
-            (focus)="authHero.onPasswordFocus(registerForm.get('password')?.value?.length || 0)"
-            (blur)="authHero.onPasswordBlur()"
+            (focus)="authHero.onPasswordFocus(registerForm.get('password')?.value?.length || 0); mascot.onPasswordFocus()"
+            (blur)="authHero.onPasswordBlur(); mascot.onPasswordBlur()"
           />
           <button
             type="button"
             class="eye-toggle"
             (mousedown)="$event.preventDefault()"
-            (click)="authHero.togglePasswordVisibility()"
+            (click)="authHero.togglePasswordVisibility(); mascot.togglePasswordVisibility(authHero.isPasswordVisible)"
             [attr.aria-label]="authHero.isPasswordVisible ? 'Hide password' : 'Show password'"
           >
             <svg *ngIf="authHero.isPasswordVisible" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

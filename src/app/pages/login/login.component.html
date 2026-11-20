@@ -4,6 +4,14 @@
 
   <!-- RIGHT: Login card -->
   <div class="auth-box">
+    <!-- Independent mascot positioned on the right of the auth card -->
+    <div class="mascot-card-anchor">
+      <app-password-mascot
+        #mascot
+        [isPasswordVisible]="authHero.isPasswordVisible"
+      ></app-password-mascot>
+    </div>
+
     <h2 class="title">FREPPING</h2>
     <h3>Login</h3>
     <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
@@ -29,14 +37,14 @@
             formControlName="password"
             class="form-control"
             [ngClass]="{ 'is-invalid': loginForm.get('password')?.invalid && loginForm.get('password')?.touched }"
-            (focus)="authHero.onPasswordFocus(loginForm.get('password')?.value?.length || 0)"
-            (blur)="authHero.onPasswordBlur()"
+            (focus)="authHero.onPasswordFocus(loginForm.get('password')?.value?.length || 0); mascot.onPasswordFocus()"
+            (blur)="authHero.onPasswordBlur(); mascot.onPasswordBlur()"
           />
           <button
             type="button"
             class="eye-toggle"
             (mousedown)="$event.preventDefault()"
-            (click)="authHero.togglePasswordVisibility()"
+            (click)="authHero.togglePasswordVisibility(); mascot.togglePasswordVisibility(authHero.isPasswordVisible)"
             [attr.aria-label]="authHero.isPasswordVisible ? 'Hide password' : 'Show password'"
           >
             <!-- Eye open (password visible) -->

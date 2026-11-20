@@ -47,7 +47,7 @@
   z-index: 2;
   position: relative;
 
-  > * {
+  >* {
     transform: skew(2deg);
   }
 
@@ -110,6 +110,25 @@
       font-size: 0.85rem;
       margin-top: 0.4rem;
       font-weight: 500;
+    }
+  }
+
+  /* ─── Independent Password Mascot (positioned at card right edge) ─── */
+  .mascot-card-anchor {
+    position: absolute;
+    right: -20px;
+    top: 220px;
+    width: 140px;
+    height: 145px;
+    pointer-events: none; // ensures form inputs and buttons are always interactive
+    z-index: 10;
+
+    app-password-mascot {
+      display: block;
+      width: 100%;
+      height: 100%;
+      // Cancels card skew(-2deg) so character renders naturally upright
+      transform: skew(2deg);
     }
   }
 
@@ -286,7 +305,7 @@
     position: relative;
     z-index: 3;
 
-    > * {
+    >* {
       transform: none;
     }
 
@@ -342,6 +361,18 @@
       }
     }
 
+    /* Mascot: responsive positioning on mobile */
+    .mascot-card-anchor {
+      top: 130px;
+      right: 4px;
+      width: 95px;
+      height: 100px;
+
+      app-password-mascot {
+        transform: none; // auth-box is unskewed on mobile
+      }
+    }
+
     .btn {
       height: 42px;
       min-height: 42px;
@@ -380,6 +411,13 @@
 
     h3 {
       font-size: 0.85rem;
+    }
+
+    .mascot-card-anchor {
+      top: 120px;
+      right: 2px;
+      width: 80px;
+      height: 85px;
     }
   }
 }

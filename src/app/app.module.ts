@@ -35,6 +35,7 @@ import { Ai3dPageComponent } from './pages/ai-3d/ai-3d.component';
 import { TshirtViewerComponent } from './components/tshirt-viewer/tshirt-viewer.component';
 import { TshirtCustomizerComponent } from './components/tshirt-customizer/tshirt-customizer.component';
 import { AuthHeroComponent } from './shared/auth-hero/auth-hero.component';
+import { PasswordMascotComponent } from './shared/password-mascot/password-mascot.component';
 
 @NgModule({
   declarations: [
@@ -52,6 +53,7 @@ import { AuthHeroComponent } from './shared/auth-hero/auth-hero.component';
     LoginComponent,
     RegisterComponent,
     AuthHeroComponent,
+    PasswordMascotComponent,
     StorePageComponent,
     SellerDashboardComponent
   ],
