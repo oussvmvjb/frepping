@@ -317,7 +317,7 @@ export class AuthHeroComponent implements OnInit, AfterViewInit, OnDestroy {
       renderer.setSize(rect.width, rect.height);
       program.uniforms.uResolution.value[0] = gl.drawingBufferWidth;
       program.uniforms.uResolution.value[1] = gl.drawingBufferHeight;
-      program.uniforms.uCover.value = window.matchMedia('(max-width: 600px)').matches ? 1 : 0;
+      program.uniforms.uCover.value = window.matchMedia('(max-width: 900px)').matches ? 1 : 0;
     };
     const resizeObserver = new ResizeObserver(resize);
     resizeObserver.observe(container);

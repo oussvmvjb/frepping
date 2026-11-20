@@ -680,7 +680,7 @@ body {
 
 // ── Layout Main Content Offset for Left Sidebar ────────────────────────────
 :root {
-  --sidebar-w: 260px;
+  --sidebar-w: 300px;
 }
 
 .app-main {
@@ -689,7 +689,7 @@ body {
   transition: padding-left 250ms ease;
 
   @media (min-width: 769px) {
-    padding-left: var(--sidebar-w, 260px);
+    padding-left: var(--sidebar-w, 300px);
 
     &.app-main--full {
       padding-left: 0;
